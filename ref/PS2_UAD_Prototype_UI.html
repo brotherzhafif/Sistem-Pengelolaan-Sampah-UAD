@@ -1,0 +1,1263 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>PS2 UAD — Zero Waste Campus</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500&display=swap" rel="stylesheet">
+<style>
+/* ─── tokens ─── */
+:root {
+  --slate-950: #0c1222;
+  --slate-900: #111a2e;
+  --slate-800: #1a2540;
+  --slate-700: #253352;
+  --slate-600: #3d4f6f;
+  --slate-500: #64748b;
+  --slate-400: #94a3b8;
+  --slate-300: #cbd5e1;
+  --slate-200: #e2e8f0;
+  --slate-100: #f1f5f9;
+  --slate-50: #f8fafc;
+  --sage: #3a9d6e;
+  --sage-dim: #2d7d57;
+  --sage-bright: #4ade80;
+  --sage-wash: rgba(58,157,110,.08);
+  --sage-wash2: rgba(58,157,110,.15);
+  --coral: #ef6b4a;
+  --coral-wash: rgba(239,107,74,.1);
+  --amber: #e5a520;
+  --amber-wash: rgba(229,165,32,.1);
+  --sky: #3b82f6;
+  --sky-wash: rgba(59,130,246,.08);
+  --plum: #8b5cf6;
+  --plum-wash: rgba(139,92,246,.08);
+  --surface: #ffffff;
+  --page: #f5f7fa;
+  --text: var(--slate-900);
+  --text-2: var(--slate-500);
+  --text-3: var(--slate-400);
+  --border: var(--slate-200);
+  --radius: 12px;
+  --radius-sm: 8px;
+  --shadow-sm: 0 1px 2px rgba(12,18,34,.04);
+  --shadow: 0 2px 8px rgba(12,18,34,.06);
+  --shadow-lg: 0 8px 24px rgba(12,18,34,.08);
+  --font: 'DM Sans', system-ui, sans-serif;
+  --mono: 'JetBrains Mono', monospace;
+  --sidebar-w: 232px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --surface: var(--slate-900);
+    --page: var(--slate-950);
+    --text: #f1f5f9;
+    --text-2: var(--slate-400);
+    --text-3: var(--slate-600);
+    --border: var(--slate-800);
+    --shadow-sm: 0 1px 2px rgba(0,0,0,.2);
+    --shadow: 0 2px 8px rgba(0,0,0,.15);
+    --shadow-lg: 0 8px 24px rgba(0,0,0,.2);
+  }
+}
+
+/* ─── reset ─── */
+*, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0); }
+:root { padding-top: env(safe-area-inset-top, 0); padding-bottom: env(safe-area-inset-bottom, 0); }
+body { font-family: var(--font); background: var(--page); color: var(--text); line-height: 1.55; height: 100%; -webkit-font-smoothing: antialiased; }
+
+/* ─── layout ─── */
+.shell { display: flex; min-height: 100vh; }
+
+/* ─── sidebar ─── */
+.side {
+  width: var(--sidebar-w); flex-shrink: 0; position: fixed; top: 0; left: 0; bottom: 0; z-index: 100;
+  background: var(--slate-950); color: #fff; display: flex; flex-direction: column;
+  padding: 0; overflow-y: auto; overflow-x: hidden;
+  transition: transform .25s cubic-bezier(.4,0,.2,1);
+}
+@media (max-width: 860px) {
+  .side { transform: translateX(-100%); width: 260px; }
+  .side.open { transform: translateX(0); box-shadow: 8px 0 32px rgba(0,0,0,.4); }
+}
+.side-brand {
+  padding: 22px 20px 18px;
+  display: flex; align-items: center; gap: 10px;
+  border-bottom: 1px solid rgba(255,255,255,.06);
+}
+.side-brand-icon {
+  width: 36px; height: 36px; border-radius: 10px;
+  background: linear-gradient(135deg, var(--sage) 0%, var(--sage-dim) 100%);
+  display: flex; align-items: center; justify-content: center; font-size: 18px;
+}
+.side-brand h1 { font-size: 15px; font-weight: 700; letter-spacing: -.02em; line-height: 1.2; }
+.side-brand p { font-size: 10px; color: var(--slate-400); font-weight: 400; margin-top: 1px; }
+
+.side-campus {
+  margin: 12px 14px; padding: 8px 12px; border-radius: var(--radius-sm);
+  background: rgba(255,255,255,.06); border: 1px solid rgba(255,255,255,.08);
+  font-size: 12px; font-weight: 600; color: var(--sage-bright);
+  display: flex; align-items: center; gap: 6px; cursor: pointer;
+}
+.side-campus::after { content: '▾'; margin-left: auto; font-size: 10px; opacity: .5; }
+
+.side-section { padding: 6px 14px 4px; font-size: 9px; font-weight: 600; color: var(--slate-600); letter-spacing: .06em; margin-top: 6px; }
+.side-nav { list-style: none; padding: 0 8px; }
+.side-nav li { margin-bottom: 1px; }
+.side-nav a {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 12px; border-radius: var(--radius-sm);
+  font-size: 13px; font-weight: 500; color: var(--slate-300);
+  text-decoration: none; transition: all .15s; cursor: pointer;
+}
+.side-nav a:hover { background: rgba(255,255,255,.06); color: #fff; }
+.side-nav a.active {
+  background: linear-gradient(135deg, rgba(58,157,110,.2), rgba(58,157,110,.08));
+  color: var(--sage-bright); font-weight: 600;
+}
+.side-nav a .icon { width: 20px; text-align: center; font-size: 15px; flex-shrink: 0; }
+.side-nav a .badge-count {
+  margin-left: auto; background: var(--coral); color: #fff;
+  font-size: 9px; font-weight: 700; padding: 1px 6px; border-radius: 99px;
+}
+.side-footer {
+  margin-top: auto; padding: 14px;
+  border-top: 1px solid rgba(255,255,255,.06);
+  display: flex; align-items: center; gap: 10px;
+}
+.side-avatar {
+  width: 32px; height: 32px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--sky), var(--plum));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 700; color: #fff;
+}
+.side-footer .name { font-size: 12px; font-weight: 600; color: var(--slate-200); }
+.side-footer .role { font-size: 10px; color: var(--slate-500); }
+
+/* ─── main ─── */
+.main { flex: 1; margin-left: var(--sidebar-w); min-width: 0; }
+@media (max-width: 860px) { .main { margin-left: 0; } }
+
+.topbar-mobile {
+  display: none; position: sticky; top: 0; z-index: 50;
+  background: var(--surface); border-bottom: 1px solid var(--border);
+  padding: 10px 16px; align-items: center; gap: 10px;
+}
+@media (max-width: 860px) { .topbar-mobile { display: flex; } }
+.hamburger { width: 36px; height: 36px; border-radius: var(--radius-sm); border: 1px solid var(--border); background: var(--surface); cursor: pointer; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+.topbar-mobile h2 { flex: 1; font-size: 15px; font-weight: 700; }
+
+.page { padding: 24px; max-width: 1080px; }
+@media (max-width: 860px) { .page { padding: 14px; } }
+
+.page-header { margin-bottom: 20px; }
+.page-header h2 { font-size: 22px; font-weight: 700; letter-spacing: -.02em; }
+.page-header p { font-size: 13px; color: var(--text-2); margin-top: 2px; }
+
+/* ─── screen visibility ─── */
+.view { display: none; }
+.view.active { display: block; }
+
+/* ─── metrics ─── */
+.metrics { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 20px; }
+@media (max-width: 700px) { .metrics { grid-template-columns: repeat(2, 1fr); } }
+.metric {
+  background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius);
+  padding: 16px; box-shadow: var(--shadow-sm); position: relative; overflow: hidden;
+}
+.metric::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+}
+.metric[data-color="sage"]::before { background: var(--sage); }
+.metric[data-color="coral"]::before { background: var(--coral); }
+.metric[data-color="amber"]::before { background: var(--amber); }
+.metric[data-color="sky"]::before { background: var(--sky); }
+.metric[data-color="plum"]::before { background: var(--plum); }
+.metric-label { font-size: 11px; color: var(--text-2); font-weight: 500; margin-bottom: 4px; }
+.metric-value { font-family: var(--mono); font-size: 24px; font-weight: 500; letter-spacing: -.03em; line-height: 1.1; }
+.metric-sub { font-size: 10px; color: var(--text-3); margin-top: 4px; }
+.metric-spark { margin-top: 6px; height: 24px; }
+
+/* ─── card ─── */
+.card {
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); box-shadow: var(--shadow-sm);
+  margin-bottom: 14px; overflow: hidden;
+}
+.card-head {
+  padding: 14px 18px; display: flex; justify-content: space-between; align-items: center;
+  border-bottom: 1px solid var(--border);
+}
+.card-head h3 { font-size: 13px; font-weight: 700; }
+.card-body { padding: 18px; }
+.card-body--flush { padding: 0; }
+
+/* ─── toggle ─── */
+.toggle-group {
+  display: inline-flex; border: 1px solid var(--border); border-radius: 6px;
+  overflow: hidden; background: var(--page);
+}
+.toggle-group button {
+  padding: 5px 14px; border: none; background: transparent;
+  font-family: var(--font); font-size: 11px; font-weight: 600;
+  color: var(--text-2); cursor: pointer; transition: .15s;
+}
+.toggle-group button.active {
+  background: var(--surface); color: var(--text);
+  box-shadow: var(--shadow-sm);
+}
+
+/* ─── table ─── */
+.data-table { width: 100%; border-collapse: collapse; }
+.data-table thead th {
+  text-align: left; padding: 10px 14px; font-size: 11px; font-weight: 600;
+  color: var(--text-2); border-bottom: 1px solid var(--border);
+  background: var(--page); white-space: nowrap;
+}
+.data-table tbody td {
+  padding: 10px 14px; font-size: 12px; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.data-table tbody tr:last-child td { border-bottom: none; }
+.data-table tbody tr:hover { background: var(--sage-wash); }
+.data-table .mono { font-family: var(--mono); font-size: 12px; font-weight: 500; }
+.data-table .right { text-align: right; }
+.data-table .positive { color: var(--sage); }
+.data-table .negative { color: var(--coral); }
+.data-table .bold { font-weight: 700; }
+
+/* ─── tag ─── */
+.tag { display: inline-flex; align-items: center; padding: 3px 8px; border-radius: 6px; font-size: 10px; font-weight: 600; }
+.tag--sage { background: var(--sage-wash2); color: var(--sage); }
+.tag--coral { background: var(--coral-wash); color: var(--coral); }
+.tag--amber { background: var(--amber-wash); color: var(--amber); }
+.tag--sky { background: var(--sky-wash); color: var(--sky); }
+.tag--plum { background: var(--plum-wash); color: var(--plum); }
+.tag--neutral { background: var(--slate-100); color: var(--slate-500); }
+
+/* ─── form ─── */
+.form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 500px) { .form-grid { grid-template-columns: 1fr; } }
+.form-group { margin-bottom: 14px; }
+.form-label { display: block; font-size: 12px; font-weight: 600; margin-bottom: 5px; color: var(--text); }
+.form-input, .form-select {
+  width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-sm);
+  font-family: var(--font); font-size: 13px; background: var(--surface); color: var(--text);
+  outline: none; -webkit-appearance: none; transition: .15s;
+}
+.form-input:focus, .form-select:focus { border-color: var(--sage); box-shadow: 0 0 0 3px var(--sage-wash2); }
+.form-hint { font-size: 10px; color: var(--text-3); margin-top: 3px; }
+
+/* ─── item rows (weighing) ─── */
+.weigh-row {
+  display: grid; grid-template-columns: 1fr 100px 80px 32px; gap: 8px;
+  align-items: center; margin-bottom: 6px;
+}
+@media (max-width: 500px) { .weigh-row { grid-template-columns: 1fr 80px 32px; } .weigh-row .vol-col { display: none; } }
+.weigh-row .form-input, .weigh-row .form-select { padding: 8px 10px; font-size: 12px; }
+.remove-btn {
+  width: 32px; height: 32px; border-radius: var(--radius-sm); border: 1px solid var(--border);
+  background: var(--surface); color: var(--coral); font-size: 14px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: .15s;
+}
+.remove-btn:hover { background: var(--coral-wash); border-color: var(--coral); }
+
+/* ─── buttons ─── */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px 20px; border-radius: var(--radius-sm); font-family: var(--font);
+  font-size: 13px; font-weight: 600; cursor: pointer; border: none; transition: .15s;
+}
+.btn--primary { background: var(--sage); color: #fff; }
+.btn--primary:hover { background: var(--sage-dim); box-shadow: var(--shadow); }
+.btn--secondary { background: var(--surface); color: var(--text); border: 1px solid var(--border); }
+.btn--secondary:hover { background: var(--page); }
+.btn--full { width: 100%; }
+.btn--sm { padding: 6px 14px; font-size: 11px; }
+
+/* ─── info strip ─── */
+.info-strip {
+  display: flex; align-items: center; gap: 8px; padding: 10px 14px;
+  border-radius: var(--radius-sm); font-size: 12px; font-weight: 500; margin-bottom: 14px;
+}
+.info-strip--sage { background: var(--sage-wash); color: var(--sage-dim); border: 1px solid var(--sage-wash2); }
+.info-strip--amber { background: var(--amber-wash); color: var(--amber); border: 1px solid rgba(229,165,32,.2); }
+.info-strip--coral { background: var(--coral-wash); color: var(--coral); border: 1px solid rgba(239,107,74,.15); }
+.info-strip--sky { background: var(--sky-wash); color: var(--sky); border: 1px solid rgba(59,130,246,.15); }
+
+/* ─── summary bar ─── */
+.summary-bar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 12px 14px; border-radius: var(--radius-sm); font-weight: 600;
+  margin: 14px 0;
+}
+.summary-bar--total { background: var(--page); border: 1px solid var(--border); font-size: 14px; }
+.summary-bar--income { background: var(--sage-wash); color: var(--sage-dim); border: 1px solid var(--sage-wash2); }
+.summary-bar--cost { background: var(--coral-wash); color: var(--coral); border: 1px solid rgba(239,107,74,.15); }
+
+/* ─── KAP horizontal bar ─── */
+.kap-item { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+.kap-item-label { width: 42%; text-align: right; font-size: 11px; color: var(--text-2); flex-shrink: 0; line-height: 1.3; }
+.kap-item-track { flex: 1; height: 22px; background: var(--page); border-radius: 4px; overflow: hidden; border: 1px solid var(--border); }
+.kap-item-fill {
+  height: 100%; border-radius: 3px;
+  background: linear-gradient(90deg, var(--sage-dim), var(--sage));
+  display: flex; align-items: center; padding: 0 8px;
+  font-size: 10px; color: #fff; font-weight: 700;
+}
+.kap-item-val { width: 36px; text-align: right; font-family: var(--mono); font-size: 12px; font-weight: 500; }
+
+/* ─── legend ─── */
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 10px; color: var(--text-2); margin-top: 8px; }
+.legend-dot { width: 8px; height: 8px; border-radius: 3px; display: inline-block; margin-right: 3px; vertical-align: middle; }
+
+/* ─── bottom nav (mobile) ─── */
+.bottom-nav {
+  display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 50;
+  background: var(--surface); border-top: 1px solid var(--border);
+  padding: 4px 0; padding-bottom: calc(4px + env(safe-area-inset-bottom, 0));
+  justify-content: space-around;
+}
+@media (max-width: 860px) { .bottom-nav { display: flex; } }
+.bnav-item {
+  display: flex; flex-direction: column; align-items: center; gap: 1px;
+  font-size: 9px; font-weight: 500; color: var(--text-3);
+  cursor: pointer; padding: 4px 8px; background: none; border: none;
+}
+.bnav-item .bnav-icon { font-size: 18px; }
+.bnav-item.active { color: var(--sage); font-weight: 700; }
+
+.overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,.4); z-index: 90; }
+.overlay.show { display: block; }
+.spacer { height: 70px; }
+
+/* ─── chart containers ─── */
+.chart-svg { width: 100%; }
+
+/* ─── two-col on desktop ─── */
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 700px) { .grid-2 { grid-template-columns: 1fr; } }
+
+/* ─── tabs (master data, laporan) ─── */
+.tab-bar { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.tab-btn {
+  padding: 7px 16px; border-radius: var(--radius-sm); font-family: var(--font);
+  font-size: 12px; font-weight: 600; cursor: pointer;
+  background: var(--surface); color: var(--text-2);
+  border: 1.5px solid var(--border); transition: .15s;
+}
+.tab-btn:hover { border-color: var(--sage); color: var(--text); }
+.tab-btn.active { background: var(--sage-wash2); border-color: var(--sage); color: var(--sage-dim); }
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+
+/* ─── report card ─── */
+.report-card {
+  display: flex; align-items: center; gap: 14px; padding: 16px 18px;
+  background: var(--surface); border: 1px solid var(--border);
+  border-radius: var(--radius); margin-bottom: 8px; cursor: pointer;
+  transition: .15s; box-shadow: var(--shadow-sm);
+}
+.report-card:hover { border-color: var(--sage); box-shadow: var(--shadow); transform: translateY(-1px); }
+.report-icon {
+  width: 42px; height: 42px; border-radius: 10px; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center; font-size: 20px;
+}
+.report-icon--sage { background: var(--sage-wash2); }
+.report-icon--sky { background: var(--sky-wash); }
+.report-icon--amber { background: var(--amber-wash); }
+.report-icon--coral { background: var(--coral-wash); }
+.report-icon--plum { background: var(--plum-wash); }
+.report-body { flex: 1; min-width: 0; }
+.report-title { font-size: 13px; font-weight: 700; margin-bottom: 2px; }
+.report-desc { font-size: 11px; color: var(--text-2); line-height: 1.4; }
+.report-arrow { color: var(--text-3); font-size: 18px; flex-shrink: 0; }
+
+/* ─── export bar ─── */
+.export-bar {
+  display: flex; gap: 8px; padding: 14px 18px; background: var(--page);
+  border: 1px solid var(--border); border-radius: var(--radius);
+  align-items: center; margin-top: 14px;
+}
+.export-bar-label { font-size: 12px; font-weight: 600; color: var(--text-2); margin-right: auto; }
+
+/* ─── user card row ─── */
+.user-row {
+  display: flex; align-items: center; gap: 12px; padding: 12px 16px;
+  border-bottom: 1px solid var(--border); transition: .1s;
+}
+.user-row:last-child { border-bottom: none; }
+.user-row:hover { background: var(--sage-wash); }
+.user-avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 13px; font-weight: 700; color: #fff;
+}
+.user-info { flex: 1; min-width: 0; }
+.user-name { font-size: 13px; font-weight: 600; }
+.user-email { font-size: 11px; color: var(--text-2); }
+.user-meta { display: flex; gap: 6px; align-items: center; flex-shrink: 0; }
+
+/* ─── permission matrix ─── */
+.perm-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.perm-table thead th {
+  padding: 10px 12px; font-size: 10px; font-weight: 700; color: var(--text-2);
+  border-bottom: 2px solid var(--border); text-align: center; white-space: nowrap;
+}
+.perm-table thead th:first-child { text-align: left; }
+.perm-table tbody td {
+  padding: 10px 12px; text-align: center; border-bottom: 1px solid var(--border);
+  vertical-align: middle;
+}
+.perm-table tbody td:first-child { text-align: left; font-weight: 600; }
+.perm-check { color: var(--sage); font-size: 16px; }
+.perm-view { color: var(--sky); font-size: 14px; }
+.perm-none { color: var(--text-3); font-size: 12px; }
+
+/* ─── modal ─── */
+.modal-overlay {
+  display: none; position: fixed; inset: 0; background: rgba(12,18,34,.5);
+  z-index: 300; align-items: flex-end; justify-content: center;
+  backdrop-filter: blur(2px);
+}
+.modal-overlay.show { display: flex; }
+@media (min-width: 640px) { .modal-overlay { align-items: center; } }
+.modal-box {
+  background: var(--surface); border-radius: 16px 16px 0 0;
+  width: 100%; max-width: 520px; max-height: 90vh; overflow-y: auto;
+  padding: 24px; box-shadow: var(--shadow-lg);
+}
+@media (min-width: 640px) { .modal-box { border-radius: 16px; } }
+.modal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 18px; }
+.modal-header h3 { font-size: 16px; font-weight: 700; }
+.modal-close {
+  width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--border);
+  background: var(--surface); cursor: pointer; font-size: 18px;
+  display: flex; align-items: center; justify-content: center; transition: .15s;
+}
+.modal-close:hover { background: var(--page); }
+
+/* ─── status dot ─── */
+.status-dot { width: 8px; height: 8px; border-radius: 50%; display: inline-block; margin-right: 4px; }
+.status-dot--active { background: var(--sage); }
+.status-dot--inactive { background: var(--text-3); }
+</style>
+</head>
+<body>
+
+<div class="overlay" id="overlay" onclick="closeSide()"></div>
+
+<div class="shell">
+<!-- ═════ SIDEBAR ═════ -->
+<aside class="side" id="sidebar">
+  <div class="side-brand">
+    <div class="side-brand-icon">♻️</div>
+    <div><h1>PS2 UAD</h1><p>Zero Waste Campus</p></div>
+  </div>
+  <div class="side-campus" onclick="toast('Ganti kampus')">📍 Kampus 4<span style="opacity:.4;font-size:10px;margin-left:4px">Tamanan</span></div>
+  <div class="side-section">Pencatatan</div>
+  <ul class="side-nav">
+    <li><a class="active" onclick="nav('dash')"><span class="icon">📊</span>Dashboard</a></li>
+    <li><a onclick="nav('timbang')"><span class="icon">⚖️</span>Penimbangan</a></li>
+    <li><a onclick="nav('jual')"><span class="icon">💰</span>Penjualan</a></li>
+    <li><a onclick="nav('angkut')"><span class="icon">🚛</span>Pengangkutan</a></li>
+  </ul>
+  <div class="side-section">Keuangan</div>
+  <ul class="side-nav">
+    <li><a onclick="nav('biaya')"><span class="icon">🧾</span>Pengeluaran</a></li>
+    <li><a onclick="nav('saldo')"><span class="icon">💳</span>Saldo</a></li>
+  </ul>
+  <div class="side-section">Analitik</div>
+  <ul class="side-nav">
+    <li><a onclick="nav('kap')"><span class="icon">🎓</span>Survei KAP</a></li>
+    <li><a onclick="nav('laporan')"><span class="icon">📄</span>Laporan</a></li>
+  </ul>
+  <div class="side-section">Sistem</div>
+  <ul class="side-nav">
+    <li><a onclick="nav('master')"><span class="icon">⚙️</span>Master Data</a></li>
+    <li><a onclick="nav('user')"><span class="icon">👥</span>Pengguna</a></li>
+    <li><a onclick="toast('Notifikasi')"><span class="icon">🔔</span>Notifikasi<span class="badge-count">3</span></a></li>
+  </ul>
+  <div class="side-footer">
+    <div class="side-avatar">SP</div>
+    <div><div class="name">Supriyanto</div><div class="role">Super Admin</div></div>
+  </div>
+</aside>
+
+<!-- ═════ MAIN ═════ -->
+<div class="main">
+  <div class="topbar-mobile">
+    <button class="hamburger" onclick="openSide()">☰</button>
+    <h2>PS2 UAD</h2>
+    <div class="side-avatar" style="width:30px;height:30px;font-size:11px">SP</div>
+  </div>
+
+  <div class="page">
+
+  <!-- ═══ DASHBOARD ═══ -->
+  <div class="view active" id="v-dash">
+    <div class="page-header">
+      <h2>Dashboard Teknis</h2>
+      <p>Kampus 4 — 24 Mar 2026 s.d. 22 Sep 2026</p>
+    </div>
+
+    <div class="metrics">
+      <div class="metric" data-color="sky">
+        <div class="metric-label">Jumlah Input</div>
+        <div class="metric-value">307</div>
+        <div class="metric-sub">pencatatan</div>
+      </div>
+      <div class="metric" data-color="plum">
+        <div class="metric-label">Total Berat</div>
+        <div class="metric-value">45.654</div>
+        <div class="metric-sub">kilogram</div>
+      </div>
+      <div class="metric" data-color="sage">
+        <div class="metric-label">Total Volume</div>
+        <div class="metric-value">295</div>
+        <div class="metric-sub">meter kubik</div>
+      </div>
+      <div class="metric" data-color="amber">
+        <div class="metric-label">Saldo Kampus</div>
+        <div class="metric-value" style="font-size:20px">4.319.364</div>
+        <div class="metric-sub">rupiah</div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head">
+        <h3>Tren Mingguan per Kategori Sampah</h3>
+        <div class="toggle-group">
+          <button class="active" onclick="this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Bar</button>
+          <button onclick="this.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));this.classList.add('active')">Line</button>
+        </div>
+      </div>
+      <div class="card-body">
+        <svg viewBox="0 0 520 180" class="chart-svg" style="height:180px">
+          <g stroke="var(--border)" stroke-width=".5"><line x1="44" y1="10" x2="44" y2="150"/><line x1="44" y1="150" x2="510" y2="150"/><line x1="44" y1="115" x2="510" y2="115" stroke-dasharray="3"/><line x1="44" y1="80" x2="510" y2="80" stroke-dasharray="3"/><line x1="44" y1="45" x2="510" y2="45" stroke-dasharray="3"/></g>
+          <g font-size="8" fill="var(--text-3)" font-family="var(--mono)"><text x="14" y="153">0</text><text x="10" y="118">500</text><text x="4" y="83">1.000</text><text x="4" y="48">1.500</text></g>
+          <g font-size="7" fill="var(--text-3)" text-anchor="middle" font-family="var(--font)">
+            <text x="74" y="165">22 Mar</text><text x="114" y="165">5 Apr</text><text x="154" y="165">19 Apr</text><text x="194" y="165">3 Mei</text><text x="234" y="165">17 Mei</text><text x="274" y="165">31 Mei</text><text x="314" y="165">14 Jun</text><text x="354" y="165">28 Jun</text><text x="394" y="165">12 Jul</text><text x="434" y="165">2 Ags</text><text x="474" y="165">13 Sep</text>
+          </g>
+          <!-- Stacked bars -->
+          <g transform="translate(58,0)">
+            <g><rect y="46" width="22" height="104" rx="2" fill="#0d9488" opacity=".85"/><rect y="36" width="22" height="10" fill="#84cc16"/><rect y="28" width="22" height="8" fill="#eab308"/><rect y="20" width="22" height="8" fill="#3b82f6"/><rect y="14" width="22" height="6" fill="#8b5cf6"/><rect y="8" width="22" height="6" rx="2" fill="#78716c"/></g>
+            <g transform="translate(40,0)"><rect y="38" width="22" height="112" rx="2" fill="#0d9488" opacity=".85"/><rect y="28" width="22" height="10" fill="#84cc16"/><rect y="20" width="22" height="8" fill="#eab308"/><rect y="12" width="22" height="8" fill="#3b82f6"/><rect y="6" width="22" height="6" fill="#8b5cf6"/><rect y="0" width="22" height="6" rx="2" fill="#78716c"/></g>
+            <g transform="translate(80,0)"><rect y="42" width="22" height="108" rx="2" fill="#0d9488" opacity=".85"/><rect y="32" width="22" height="10" fill="#84cc16"/><rect y="24" width="22" height="8" fill="#eab308"/><rect y="16" width="22" height="8" fill="#3b82f6"/><rect y="10" width="22" height="6" fill="#8b5cf6"/><rect y="4" width="22" height="6" rx="2" fill="#78716c"/></g>
+            <g transform="translate(120,0)"><rect y="34" width="22" height="116" rx="2" fill="#0d9488" opacity=".85"/><rect y="24" width="22" height="10" fill="#84cc16"/><rect y="16" width="22" height="8" fill="#eab308"/><rect y="8" width="22" height="8" fill="#3b82f6"/><rect y="2" width="22" height="6" rx="2" fill="#8b5cf6"/></g>
+            <g transform="translate(160,0)"><rect y="30" width="22" height="120" rx="2" fill="#0d9488" opacity=".85"/><rect y="20" width="22" height="10" fill="#84cc16"/><rect y="12" width="22" height="8" fill="#eab308"/><rect y="4" width="22" height="8" fill="#3b82f6"/><rect y="0" width="22" height="4" rx="2" fill="#8b5cf6"/></g>
+            <g transform="translate(200,0)"><rect y="36" width="22" height="114" rx="2" fill="#0d9488" opacity=".85"/><rect y="26" width="22" height="10" fill="#84cc16"/><rect y="18" width="22" height="8" fill="#eab308"/><rect y="10" width="22" height="8" fill="#3b82f6"/><rect y="4" width="22" height="6" rx="2" fill="#8b5cf6"/></g>
+            <g transform="translate(240,0)"><rect y="28" width="22" height="122" rx="2" fill="#0d9488" opacity=".85"/><rect y="18" width="22" height="10" fill="#84cc16"/><rect y="10" width="22" height="8" fill="#eab308"/><rect y="2" width="22" height="8" fill="#3b82f6"/></g>
+            <g transform="translate(280,0)"><rect y="26" width="22" height="124" rx="2" fill="#0d9488" opacity=".85"/><rect y="16" width="22" height="10" fill="#84cc16"/><rect y="8" width="22" height="8" fill="#eab308"/><rect y="0" width="22" height="8" rx="2" fill="#3b82f6"/></g>
+            <g transform="translate(320,0)"><rect y="22" width="22" height="128" rx="2" fill="#0d9488" opacity=".85"/><rect y="12" width="22" height="10" fill="#84cc16"/><rect y="4" width="22" height="8" fill="#eab308"/><rect y="0" width="22" height="4" rx="2" fill="#3b82f6"/></g>
+            <g transform="translate(360,0)"><rect y="18" width="22" height="132" rx="2" fill="#0d9488" opacity=".85"/><rect y="8" width="22" height="10" fill="#84cc16"/><rect y="0" width="22" height="8" rx="2" fill="#eab308"/></g>
+            <g transform="translate(400,0)"><rect y="56" width="22" height="94" rx="2" fill="#0d9488" opacity=".85"/><rect y="48" width="22" height="8" fill="#84cc16"/><rect y="42" width="22" height="6" rx="2" fill="#eab308"/></g>
+          </g>
+        </svg>
+        <div class="legend">
+          <span><span class="legend-dot" style="background:#0d9488"></span>Sampah Taman</span>
+          <span><span class="legend-dot" style="background:#84cc16"></span>Organik Sisa Makanan</span>
+          <span><span class="legend-dot" style="background:#eab308"></span>Kertas/Karton/Kardus</span>
+          <span><span class="legend-dot" style="background:#3b82f6"></span>Plastik Keras</span>
+          <span><span class="legend-dot" style="background:#8b5cf6"></span>Plastik Multilayer</span>
+          <span><span class="legend-dot" style="background:#78716c"></span>Residu</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Ringkasan per Sumber Sampah</h3>
+        <div class="toggle-group"><button class="active">Tabel</button><button>Pie Chart</button></div>
+      </div>
+      <div class="card-body--flush">
+        <div style="overflow-x:auto">
+        <table class="data-table">
+          <thead><tr><th>Sumber</th><th class="right">Organik</th><th class="right">Taman</th><th class="right">Kertas</th><th class="right">Plastik</th><th class="right">Residu</th><th class="right bold">Total (kg)</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">Area Taman Barat</td><td class="right mono">236</td><td class="right mono">5.627</td><td class="right mono">307</td><td class="right mono">180</td><td class="right mono">351</td><td class="right mono bold">6.879</td></tr>
+            <tr><td class="bold">Kantin Pusat</td><td class="right mono">8.465</td><td class="right mono">485</td><td class="right mono">1.039</td><td class="right mono">876</td><td class="right mono">634</td><td class="right mono bold">11.849</td></tr>
+            <tr><td class="bold">Asrama (Ged. A)</td><td class="right mono">3.662</td><td class="right mono">345</td><td class="right mono">946</td><td class="right mono">1.021</td><td class="right mono">860</td><td class="right mono bold">7.122</td></tr>
+            <tr><td class="bold">Fakultas Teknik</td><td class="right mono">1.640</td><td class="right mono">565</td><td class="right mono">1.841</td><td class="right mono">1.098</td><td class="right mono">729</td><td class="right mono bold">6.107</td></tr>
+            <tr><td class="bold">Gedung Rektorat</td><td class="right mono">1.004</td><td class="right mono">792</td><td class="right mono">2.085</td><td class="right mono">673</td><td class="right mono">595</td><td class="right mono bold">5.365</td></tr>
+          </tbody>
+        </table>
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENIMBANGAN ═══ -->
+  <div class="view" id="v-timbang">
+    <div class="page-header"><h2>Penimbangan Harian</h2><p>Input hasil timbang setelah pemilahan per kategori dan sumber</p></div>
+    <div class="card"><div class="card-body">
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="form-group" style="margin:0"><label class="form-label">Tanggal</label><input class="form-input" type="date" value="2026-09-22"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Sumber Sampah</label><select class="form-select"><option>Pilih lokasi...</option><option>Area Taman Barat</option><option>Kantin Pusat</option><option>Asrama (Ged. A)</option><option>Fakultas Teknik</option><option>Gedung Rektorat</option></select></div>
+      </div>
+      <label class="form-label" style="margin-bottom:8px">Hasil timbang per kategori</label>
+      <div class="weigh-row" style="margin-bottom:2px"><span style="font-size:10px;font-weight:600;color:var(--text-2)">Kategori</span><span style="font-size:10px;font-weight:600;color:var(--text-2)">Berat (kg)</span><span class="vol-col" style="font-size:10px;font-weight:600;color:var(--text-2)">Vol (m³)</span><span></span></div>
+      <div class="weigh-row"><select class="form-select"><option>Sampah Taman</option></select><input class="form-input" type="number" value="320"><input class="form-input vol-col" type="number" placeholder="—"><button class="remove-btn">×</button></div>
+      <div class="weigh-row"><select class="form-select"><option>Organik Sisa Makanan</option></select><input class="form-input" type="number" value="85"><input class="form-input vol-col" type="number" placeholder="—"><button class="remove-btn">×</button></div>
+      <div class="weigh-row"><select class="form-select"><option>Kertas/Karton/Kardus</option></select><input class="form-input" type="number" value="42"><input class="form-input vol-col" type="number" placeholder="—"><button class="remove-btn">×</button></div>
+      <div class="weigh-row"><select class="form-select"><option>Plastik Keras</option></select><input class="form-input" type="number" value="28"><input class="form-input vol-col" type="number" placeholder="—"><button class="remove-btn">×</button></div>
+      <div class="weigh-row"><select class="form-select"><option>Residu</option></select><input class="form-input" type="number" value="51"><input class="form-input vol-col" type="number" placeholder="—"><button class="remove-btn">×</button></div>
+      <button class="btn btn--secondary btn--full btn--sm" style="margin-bottom:14px" onclick="toast('Kategori ditambahkan')">+ Tambah kategori</button>
+      <div class="summary-bar summary-bar--total"><span>Total hari ini</span><span style="font-family:var(--mono)">526 kg · 5 kategori</span></div>
+      <div class="form-group"><label class="form-label">Catatan</label><input class="form-input" placeholder="Opsional"></div>
+      <button class="btn btn--primary btn--full" onclick="toast('Penimbangan 526 kg tersimpan')">Simpan penimbangan</button>
+    </div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENJUALAN ═══ -->
+  <div class="view" id="v-jual">
+    <div class="page-header"><h2>Penjualan</h2><p>Catat transaksi jual sampah ke pengepul</p></div>
+    <div class="info-strip info-strip--sky">📦 Stok tersedia — Kertas/Karton 2.140 kg · Plastik Keras 405 kg · Kardus 130 kg</div>
+    <div class="card"><div class="card-body">
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="form-group" style="margin:0"><label class="form-label">Tanggal</label><input class="form-input" type="date" value="2026-09-22"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Pembeli</label><select class="form-select"><option>Pak Tono</option><option>UD Jaya Makmur</option></select></div>
+      </div>
+      <div style="background:var(--page);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px;margin-bottom:8px">
+        <div class="form-grid" style="margin-bottom:6px"><div class="form-group" style="margin:0"><label class="form-label">Kategori</label><select class="form-select" style="font-size:12px"><option>Kertas/Karton/Kardus</option></select></div><div class="form-group" style="margin:0"><label class="form-label">Item</label><input class="form-input" style="font-size:12px" value="Duplek 500"></div></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px"><div class="form-group" style="margin:0"><label class="form-label">Kg</label><input class="form-input" style="font-size:12px" value="285"></div><div class="form-group" style="margin:0"><label class="form-label">Rp/Kg</label><input class="form-input" style="font-size:12px" value="700"></div><div class="form-group" style="margin:0"><label class="form-label">Subtotal</label><input class="form-input" style="font-size:12px;background:var(--page)" value="Rp 199.500" disabled></div></div>
+      </div>
+      <button class="btn btn--secondary btn--full btn--sm" style="margin-bottom:14px">+ Tambah item</button>
+      <div class="summary-bar summary-bar--income"><span>Total pemasukan</span><span style="font-family:var(--mono)">Rp 199.500</span></div>
+      <button class="btn btn--primary btn--full" onclick="toast('Penjualan tersimpan')">Simpan penjualan</button>
+    </div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENGANGKUTAN ═══ -->
+  <div class="view" id="v-angkut">
+    <div class="page-header"><h2>Pengangkutan</h2><p>Catat pengangkutan residu oleh vendor</p></div>
+    <div class="info-strip info-strip--amber">⚠️ Akumulasi residu belum diangkut: <strong>1.320 kg</strong></div>
+    <div class="card"><div class="card-body">
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="form-group" style="margin:0"><label class="form-label">Tanggal</label><input class="form-input" type="date" value="2026-09-22"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Vendor</label><select class="form-select" onchange="document.getElementById('rr').value=this.selectedIndex===0?'150':'200';ccc()"><option>Pasti Angkut — Rp 150/kg</option><option>Kibar Jaya — Rp 200/kg</option></select></div>
+      </div>
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="form-group" style="margin:0"><label class="form-label">Volume (kg)</label><input class="form-input" type="number" id="vv" oninput="ccc()" placeholder="0"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Tarif per kg</label><input class="form-input" type="number" id="rr" value="150" oninput="ccc()"><div class="form-hint">Default dari master vendor</div></div>
+      </div>
+      <div class="summary-bar summary-bar--cost"><span>Biaya angkut</span><span id="cc" style="font-family:var(--mono)">Rp 0</span></div>
+      <div class="form-group"><label class="form-label">Keterangan</label><input class="form-input" placeholder="Opsional"></div>
+      <button class="btn btn--primary btn--full" onclick="toast('Pengangkutan tersimpan')">Simpan pengangkutan</button>
+    </div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENGELUARAN ═══ -->
+  <div class="view" id="v-biaya">
+    <div class="page-header"><h2>Pengeluaran Operasional</h2><p>Catat biaya selain angkut: upah, makan, alat, dll</p></div>
+    <div class="card"><div class="card-body">
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="form-group" style="margin:0"><label class="form-label">Tanggal</label><input class="form-input" type="date" value="2026-09-22"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Kategori</label><select class="form-select"><option>Upah Pemilahan</option><option>Makan & Minum TPS</option><option>Pembelian Alat</option><option>Bagor/Karung</option><option>Pakan Ternak</option><option>Material Kandang</option><option>Lainnya</option></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Keterangan</label><input class="form-input" placeholder="Detail pengeluaran"></div>
+      <div class="form-group"><label class="form-label">Nominal (Rp)</label><input class="form-input" type="number" placeholder="150000"></div>
+      <button class="btn btn--primary btn--full" onclick="toast('Pengeluaran tersimpan')">Simpan pengeluaran</button>
+    </div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ SALDO ═══ -->
+  <div class="view" id="v-saldo">
+    <div class="page-header"><h2>Saldo Kampus 4</h2><p>Neraca keuangan per kampus</p></div>
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric" data-color="sage"><div class="metric-label">Pemasukan</div><div class="metric-value" style="font-size:18px">52.538.900</div><div class="metric-sub">dari penjualan</div></div>
+      <div class="metric" data-color="coral"><div class="metric-label">Pengeluaran</div><div class="metric-value" style="font-size:18px">48.219.536</div><div class="metric-sub">angkut + operasional</div></div>
+      <div class="metric" data-color="sage" style="border:2px solid var(--sage)"><div class="metric-label" style="color:var(--sage);font-weight:700">Saldo</div><div class="metric-value" style="font-size:18px;color:var(--sage)">4.319.364</div></div>
+    </div>
+    <div class="card"><div class="card-head"><h3>Riwayat Transaksi</h3></div>
+    <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+      <thead><tr><th>Tanggal</th><th>Jenis</th><th>Keterangan</th><th class="right">Nominal</th></tr></thead>
+      <tbody>
+        <tr><td>22 Sep 2026</td><td><span class="tag tag--sage">Penjualan</span></td><td>2 item ke Pak Tono</td><td class="right mono positive">+283.500</td></tr>
+        <tr><td>22 Sep 2026</td><td><span class="tag tag--coral">Upah</span></td><td>Honor Pilah TPS</td><td class="right mono negative">−200.000</td></tr>
+        <tr><td>22 Sep 2026</td><td><span class="tag tag--coral">Pakan</span></td><td>Polar 10kg + BR 3kg</td><td class="right mono negative">−93.000</td></tr>
+        <tr><td>18 Sep 2026</td><td><span class="tag tag--amber">Angkut</span></td><td>Pasti Angkut · 350 kg</td><td class="right mono negative">−52.500</td></tr>
+        <tr><td>18 Sep 2026</td><td><span class="tag tag--sage">Penjualan</span></td><td>5 item ke UD Jaya</td><td class="right mono positive">+508.000</td></tr>
+      </tbody>
+    </table></div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ KAP ═══ -->
+  <div class="view" id="v-kap">
+    <div class="page-header"><h2>Dashboard KAP</h2><p>Kesadaran, Sikap & Perilaku Pemilahan Sampah</p></div>
+    <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+      <div class="metric" data-color="sky"><div class="metric-label">Responden</div><div class="metric-value">247</div></div>
+      <div class="metric" data-color="sage"><div class="metric-label">Knowledge</div><div class="metric-value">70%</div></div>
+      <div class="metric" data-color="plum"><div class="metric-label">Attitude</div><div class="metric-value">3,08</div><div class="metric-sub">skala 1–5</div></div>
+      <div class="metric" data-color="amber"><div class="metric-label">Practice</div><div class="metric-value">2,80</div><div class="metric-sub">skala 1–5</div></div>
+      <div class="metric" data-color="sage"><div class="metric-label">Satisfaction</div><div class="metric-value">3,21</div><div class="metric-sub">skala 1–5</div></div>
+      <div class="metric" data-color="coral"><div class="metric-label">Relawan</div><div class="metric-value">42%</div><div class="metric-sub">bersedia</div></div>
+    </div>
+    <div class="card"><div class="card-head"><h3>Pengetahuan — % benar per pernyataan</h3></div><div class="card-body">
+      <div class="kap-item"><span class="kap-item-label">Organik → kompos</span><div class="kap-item-track"><div class="kap-item-fill" style="width:85%">85%</div></div><span class="kap-item-val">85%</span></div>
+      <div class="kap-item"><span class="kap-item-label">Plastik daur ulang</span><div class="kap-item-track"><div class="kap-item-fill" style="width:78%">78%</div></div><span class="kap-item-val">78%</span></div>
+      <div class="kap-item"><span class="kap-item-label">Campur minyak = residu</span><div class="kap-item-track"><div class="kap-item-fill" style="width:52%">52%</div></div><span class="kap-item-val">52%</span></div>
+      <div class="kap-item"><span class="kap-item-label">Styrofoam sulit diproses</span><div class="kap-item-track"><div class="kap-item-fill" style="width:45%">45%</div></div><span class="kap-item-val">45%</span></div>
+      <div class="kap-item"><span class="kap-item-label">Tahu ke mana buang</span><div class="kap-item-track"><div class="kap-item-fill" style="width:82%">82%</div></div><span class="kap-item-val">82%</span></div>
+      <div class="kap-item"><span class="kap-item-label">Sistem pemilahan kampus</span><div class="kap-item-track"><div class="kap-item-fill" style="width:38%">38%</div></div><span class="kap-item-val">38%</span></div>
+    </div></div>
+    <div class="grid-2">
+      <div class="card"><div class="card-head"><h3>Sikap (Attitude)</h3></div><div class="card-body">
+        <div class="kap-item"><span class="kap-item-label" style="width:50%">Tanggung jawab bersama</span><div class="kap-item-track"><div class="kap-item-fill" style="width:72%"></div></div><span class="kap-item-val">3,6</span></div>
+        <div class="kap-item"><span class="kap-item-label" style="width:50%">Penting memilah</span><div class="kap-item-track"><div class="kap-item-fill" style="width:68%"></div></div><span class="kap-item-val">3,4</span></div>
+        <div class="kap-item"><span class="kap-item-label" style="width:50%">Mau belajar</span><div class="kap-item-track"><div class="kap-item-fill" style="width:56%"></div></div><span class="kap-item-val">2,8</span></div>
+      </div></div>
+      <div class="card"><div class="card-head"><h3>Perilaku (Practice)</h3></div><div class="card-body">
+        <div class="kap-item"><span class="kap-item-label" style="width:50%">Memilah organik</span><div class="kap-item-track"><div class="kap-item-fill" style="width:62%"></div></div><span class="kap-item-val">3,1</span></div>
+        <div class="kap-item"><span class="kap-item-label" style="width:50%">Buang sesuai label</span><div class="kap-item-track"><div class="kap-item-fill" style="width:52%"></div></div><span class="kap-item-val">2,6</span></div>
+        <div class="kap-item"><span class="kap-item-label" style="width:50%">Bawa tumbler</span><div class="kap-item-track"><div class="kap-item-fill" style="width:48%"></div></div><span class="kap-item-val">2,4</span></div>
+      </div></div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ LAPORAN ═══ -->
+  <div class="view" id="v-laporan">
+    <div class="page-header"><h2>Laporan & Ekspor</h2><p>Kampus 4 — September 2026</p></div>
+
+    <div class="card"><div class="card-body" style="padding:12px 18px">
+      <div class="form-grid">
+        <div class="form-group" style="margin:0"><label class="form-label">Periode</label>
+          <select class="form-select"><option>September 2026</option><option>Agustus 2026</option><option>Q3 2026 (Jul–Sep)</option><option>Semester 1 2026</option><option>Tahun 2025</option></select>
+        </div>
+        <div class="form-group" style="margin:0"><label class="form-label">Kampus</label>
+          <select class="form-select"><option>Kampus 4</option><option>Semua Kampus (Agregat)</option></select>
+        </div>
+      </div>
+    </div></div>
+
+    <div class="tab-bar" id="rptTabs">
+      <button class="tab-btn active" onclick="switchTab('rptTabs','rptPanels','rp-timbang',this)">⚖️ Penimbangan</button>
+      <button class="tab-btn" onclick="switchTab('rptTabs','rptPanels','rp-jual',this)">💰 Penjualan</button>
+      <button class="tab-btn" onclick="switchTab('rptTabs','rptPanels','rp-angkut',this)">🚛 Pengangkutan</button>
+      <button class="tab-btn" onclick="switchTab('rptTabs','rptPanels','rp-keuangan',this)">💳 Keuangan</button>
+      <button class="tab-btn" onclick="switchTab('rptTabs','rptPanels','rp-persen',this)">📊 Persentase</button>
+      <button class="tab-btn" onclick="switchTab('rptTabs','rptPanels','rp-kap',this)">🎓 KAP</button>
+    </div>
+
+    <div id="rptPanels">
+
+    <!-- ── RPT: PENIMBANGAN ── -->
+    <div class="tab-panel active" id="rp-timbang">
+      <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+        <div class="metric" data-color="sky"><div class="metric-label">Total Sesi</div><div class="metric-value">52</div><div class="metric-sub">pencatatan</div></div>
+        <div class="metric" data-color="plum"><div class="metric-label">Total Berat</div><div class="metric-value">8.420</div><div class="metric-sub">kg</div></div>
+        <div class="metric" data-color="sage"><div class="metric-label">Total Volume</div><div class="metric-value">67,3</div><div class="metric-sub">m³</div></div>
+        <div class="metric" data-color="amber"><div class="metric-label">Rata-rata/Hari</div><div class="metric-value">382</div><div class="metric-sub">kg/hari</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Tren Harian September 2026</h3></div><div class="card-body">
+        <svg viewBox="0 0 520 140" class="chart-svg" style="height:140px">
+          <g stroke="var(--border)" stroke-width=".5"><line x1="36" y1="8" x2="36" y2="110"/><line x1="36" y1="110" x2="510" y2="110"/><line x1="36" y1="60" x2="510" y2="60" stroke-dasharray="3"/></g>
+          <g font-size="7" fill="var(--text-3)" font-family="var(--mono)"><text x="6" y="113">0</text><text x="2" y="63">400</text><text x="2" y="13">800</text></g>
+          <g font-size="7" fill="var(--text-3)" text-anchor="middle"><text x="58" y="124">1</text><text x="80" y="124">2</text><text x="102" y="124">3</text><text x="124" y="124">4</text><text x="146" y="124">5</text><text x="190" y="124">8</text><text x="234" y="124">10</text><text x="278" y="124">12</text><text x="322" y="124">15</text><text x="366" y="124">17</text><text x="410" y="124">19</text><text x="454" y="124">22</text></g>
+          <polyline points="58,54 80,48 102,62 124,56 146,44 168,50 190,42 212,38 234,52 256,46 278,36 300,42 322,48 344,34 366,30 388,44 410,38 432,28 454,24" fill="none" stroke="var(--sage)" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <g fill="var(--sage)"><circle cx="58" cy="54" r="3"/><circle cx="146" cy="44" r="3"/><circle cx="278" cy="36" r="3"/><circle cx="366" cy="30" r="3"/><circle cx="454" cy="24" r="3"/></g>
+          <text x="510" y="130" text-anchor="end" font-size="7" fill="var(--text-3)">Tanggal September</text>
+        </svg>
+      </div></div>
+      <div class="card"><div class="card-head"><h3>Rekap per Kategori Sampah</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Kategori</th><th class="right">Total Kg</th><th class="right">Total m³</th><th class="right">% dari Total</th><th class="right">Avg/Hari</th></tr></thead>
+        <tbody>
+          <tr><td class="bold">Sampah Taman</td><td class="right mono">3.284</td><td class="right mono">26,2</td><td class="right mono">39,0%</td><td class="right mono">149</td></tr>
+          <tr><td class="bold">Organik Sisa Makanan</td><td class="right mono">1.852</td><td class="right mono">14,8</td><td class="right mono">22,0%</td><td class="right mono">84</td></tr>
+          <tr><td class="bold">Kertas/Karton/Kardus</td><td class="right mono">1.179</td><td class="right mono">9,4</td><td class="right mono">14,0%</td><td class="right mono">54</td></tr>
+          <tr><td class="bold">Plastik Keras</td><td class="right mono">842</td><td class="right mono">6,7</td><td class="right mono">10,0%</td><td class="right mono">38</td></tr>
+          <tr><td class="bold">Plastik Multilayer</td><td class="right mono">421</td><td class="right mono">3,4</td><td class="right mono">5,0%</td><td class="right mono">19</td></tr>
+          <tr><td class="bold">Logam dan Kaca</td><td class="right mono">336</td><td class="right mono">2,7</td><td class="right mono">4,0%</td><td class="right mono">15</td></tr>
+          <tr><td class="bold">Residu</td><td class="right mono">506</td><td class="right mono">4,1</td><td class="right mono">6,0%</td><td class="right mono">23</td></tr>
+          <tr style="background:var(--page)"><td class="bold" style="font-size:13px">Total</td><td class="right mono bold" style="font-size:13px">8.420</td><td class="right mono bold">67,3</td><td class="right mono bold">100%</td><td class="right mono bold">382</td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="card"><div class="card-head"><h3>Rekap per Sumber Sampah</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Sumber</th><th class="right">Total Kg</th><th class="right">Total m³</th><th class="right">Sesi</th><th class="right">% Total</th></tr></thead>
+        <tbody>
+          <tr><td class="bold">Kantin Pusat</td><td class="right mono">2.526</td><td class="right mono">20,2</td><td class="right mono">22</td><td class="right mono">30,0%</td></tr>
+          <tr><td class="bold">Area Taman Barat</td><td class="right mono">1.852</td><td class="right mono">14,8</td><td class="right mono">22</td><td class="right mono">22,0%</td></tr>
+          <tr><td class="bold">Fakultas Teknik</td><td class="right mono">1.516</td><td class="right mono">12,1</td><td class="right mono">20</td><td class="right mono">18,0%</td></tr>
+          <tr><td class="bold">Asrama (Ged. A)</td><td class="right mono">1.347</td><td class="right mono">10,8</td><td class="right mono">18</td><td class="right mono">16,0%</td></tr>
+          <tr><td class="bold">Gedung Rektorat</td><td class="right mono">1.179</td><td class="right mono">9,4</td><td class="right mono">16</td><td class="right mono">14,0%</td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="export-bar"><span class="export-bar-label">Ekspor Laporan Penimbangan</span><button class="btn btn--secondary btn--sm" onclick="toast('Download Excel Penimbangan')">📊 Excel</button><button class="btn btn--secondary btn--sm" onclick="toast('Download PDF Penimbangan')">📕 PDF</button></div>
+    </div>
+
+    <!-- ── RPT: PENJUALAN ── -->
+    <div class="tab-panel" id="rp-jual">
+      <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+        <div class="metric" data-color="sage"><div class="metric-label">Total Pemasukan</div><div class="metric-value" style="font-size:18px">4.508.000</div><div class="metric-sub">rupiah</div></div>
+        <div class="metric" data-color="sky"><div class="metric-label">Volume Terjual</div><div class="metric-value">2.340</div><div class="metric-sub">kg</div></div>
+        <div class="metric" data-color="plum"><div class="metric-label">Transaksi</div><div class="metric-value">8</div><div class="metric-sub">penjualan</div></div>
+        <div class="metric" data-color="amber"><div class="metric-label">Avg Harga</div><div class="metric-value">1.927</div><div class="metric-sub">Rp/kg</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Penjualan per Kategori Sampah</h3></div>
+      <div class="card-body">
+        <svg viewBox="0 0 480 160" class="chart-svg" style="height:160px">
+          <g stroke="var(--border)" stroke-width=".5"><line x1="110" y1="140" x2="470" y2="140"/></g>
+          <g font-size="9" fill="var(--text-2)" text-anchor="end" font-family="var(--font)">
+            <text x="106" y="24">Kertas/Karton</text><text x="106" y="49">Plastik Keras</text><text x="106" y="74">Kardus</text><text x="106" y="99">Logam & Kaca</text><text x="106" y="124">Plastik Multi</text>
+          </g>
+          <rect x="112" y="14" width="280" height="18" rx="3" fill="var(--sage)" opacity=".85"/><text x="398" y="27" font-size="9" font-weight="700" fill="var(--sage)" font-family="var(--mono)">Rp 1.904.000</text>
+          <rect x="112" y="39" width="180" height="18" rx="3" fill="var(--sage)" opacity=".7"/><text x="298" y="52" font-size="9" font-weight="700" fill="var(--sage)" font-family="var(--mono)">Rp 1.225.000</text>
+          <rect x="112" y="64" width="120" height="18" rx="3" fill="var(--sage)" opacity=".6"/><text x="238" y="77" font-size="9" font-weight="700" fill="var(--sage)" font-family="var(--mono)">Rp 816.000</text>
+          <rect x="112" y="89" width="55" height="18" rx="3" fill="var(--sage)" opacity=".5"/><text x="173" y="102" font-size="9" font-weight="700" fill="var(--sage)" font-family="var(--mono)">Rp 374.000</text>
+          <rect x="112" y="114" width="28" height="18" rx="3" fill="var(--sage)" opacity=".4"/><text x="146" y="127" font-size="9" font-weight="700" fill="var(--sage)" font-family="var(--mono)">Rp 189.000</text>
+        </svg>
+      </div></div>
+      <div class="card"><div class="card-head"><h3>Riwayat Transaksi Penjualan</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Tanggal</th><th>Pembeli</th><th class="right">Item</th><th class="right">Kg</th><th class="right">Total</th></tr></thead>
+        <tbody>
+          <tr><td>22 Sep</td><td class="bold">Pak Tono</td><td class="right">2</td><td class="right mono">313</td><td class="right mono positive">Rp 283.500</td></tr>
+          <tr><td>18 Sep</td><td class="bold">UD Jaya Makmur</td><td class="right">5</td><td class="right mono">397</td><td class="right mono positive">Rp 508.000</td></tr>
+          <tr><td>14 Sep</td><td class="bold">Pak Tono</td><td class="right">3</td><td class="right mono">280</td><td class="right mono positive">Rp 476.000</td></tr>
+          <tr><td>11 Sep</td><td class="bold">CV Daur Sejahtera</td><td class="right">4</td><td class="right mono">350</td><td class="right mono positive">Rp 595.000</td></tr>
+          <tr><td>08 Sep</td><td class="bold">UD Jaya Makmur</td><td class="right">3</td><td class="right mono">210</td><td class="right mono positive">Rp 357.000</td></tr>
+          <tr><td>04 Sep</td><td class="bold">Pak Tono</td><td class="right">4</td><td class="right mono">380</td><td class="right mono positive">Rp 646.000</td></tr>
+          <tr><td>02 Sep</td><td class="bold">CV Daur Sejahtera</td><td class="right">2</td><td class="right mono">195</td><td class="right mono positive">Rp 331.500</td></tr>
+          <tr><td>01 Sep</td><td class="bold">UD Jaya Makmur</td><td class="right">3</td><td class="right mono">215</td><td class="right mono positive">Rp 311.000</td></tr>
+          <tr style="background:var(--page)"><td colspan="2" class="bold">Total</td><td class="right bold">26</td><td class="right mono bold">2.340</td><td class="right mono bold positive">Rp 4.508.000</td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="export-bar"><span class="export-bar-label">Ekspor Laporan Penjualan</span><button class="btn btn--secondary btn--sm" onclick="toast('Download Excel')">📊 Excel</button><button class="btn btn--secondary btn--sm" onclick="toast('Download PDF')">📕 PDF</button></div>
+    </div>
+
+    <!-- ── RPT: PENGANGKUTAN ── -->
+    <div class="tab-panel" id="rp-angkut">
+      <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+        <div class="metric" data-color="amber"><div class="metric-label">Total Diangkut</div><div class="metric-value">2.870</div><div class="metric-sub">kg residu</div></div>
+        <div class="metric" data-color="coral"><div class="metric-label">Total Biaya</div><div class="metric-value" style="font-size:18px">445.500</div><div class="metric-sub">rupiah</div></div>
+        <div class="metric" data-color="sky"><div class="metric-label">Frekuensi</div><div class="metric-value">7</div><div class="metric-sub">pengangkutan</div></div>
+        <div class="metric" data-color="plum"><div class="metric-label">Avg Biaya</div><div class="metric-value">155</div><div class="metric-sub">Rp/kg</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Riwayat Pengangkutan</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Tanggal</th><th>Vendor</th><th class="right">Volume (kg)</th><th class="right">Tarif/Kg</th><th class="right">Total Biaya</th><th>Oleh</th></tr></thead>
+        <tbody>
+          <tr><td>18 Sep</td><td class="bold">Pasti Angkut</td><td class="right mono">350</td><td class="right mono">Rp 150</td><td class="right mono negative">Rp 52.500</td><td>Adi</td></tr>
+          <tr><td>14 Sep</td><td class="bold">Pasti Angkut</td><td class="right mono">420</td><td class="right mono">Rp 150</td><td class="right mono negative">Rp 63.000</td><td>Adi</td></tr>
+          <tr><td>11 Sep</td><td class="bold">Kibar Jaya</td><td class="right mono">380</td><td class="right mono">Rp 200</td><td class="right mono negative">Rp 76.000</td><td>Adi</td></tr>
+          <tr><td>08 Sep</td><td class="bold">Pasti Angkut</td><td class="right mono">450</td><td class="right mono">Rp 150</td><td class="right mono negative">Rp 67.500</td><td>Adi</td></tr>
+          <tr><td>04 Sep</td><td class="bold">Pasti Angkut</td><td class="right mono">390</td><td class="right mono">Rp 150</td><td class="right mono negative">Rp 58.500</td><td>Adi</td></tr>
+          <tr><td>02 Sep</td><td class="bold">Kibar Jaya</td><td class="right mono">510</td><td class="right mono">Rp 200</td><td class="right mono negative">Rp 102.000</td><td>Adi</td></tr>
+          <tr><td>01 Sep</td><td class="bold">Pasti Angkut</td><td class="right mono">370</td><td class="right mono">Rp 150</td><td class="right mono negative">Rp 55.500</td><td>Adi</td></tr>
+          <tr style="background:var(--page)"><td colspan="2" class="bold">Total</td><td class="right mono bold">2.870</td><td></td><td class="right mono bold negative">Rp 445.500</td><td></td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="card"><div class="card-head"><h3>Perbandingan Vendor</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Vendor</th><th class="right">Frekuensi</th><th class="right">Total Kg</th><th class="right">Tarif/Kg</th><th class="right">Total Biaya</th><th class="right">% Biaya</th></tr></thead>
+        <tbody>
+          <tr><td class="bold">Pasti Angkut</td><td class="right mono">5</td><td class="right mono">1.980</td><td class="right mono">Rp 150</td><td class="right mono negative">Rp 297.000</td><td class="right mono">66,6%</td></tr>
+          <tr><td class="bold">Kibar Jaya</td><td class="right mono">2</td><td class="right mono">890</td><td class="right mono">Rp 200</td><td class="right mono negative">Rp 148.500</td><td class="right mono">33,4%</td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="export-bar"><span class="export-bar-label">Ekspor Laporan Pengangkutan</span><button class="btn btn--secondary btn--sm" onclick="toast('Download Excel')">📊 Excel</button><button class="btn btn--secondary btn--sm" onclick="toast('Download PDF')">📕 PDF</button></div>
+    </div>
+
+    <!-- ── RPT: KEUANGAN ── -->
+    <div class="tab-panel" id="rp-keuangan">
+      <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+        <div class="metric" data-color="sage"><div class="metric-label">Pemasukan</div><div class="metric-value" style="font-size:18px">4.508.000</div><div class="metric-sub">penjualan sampah</div></div>
+        <div class="metric" data-color="coral"><div class="metric-label">Pengeluaran</div><div class="metric-value" style="font-size:18px">3.725.500</div><div class="metric-sub">angkut + operasional</div></div>
+        <div class="metric" data-color="sage" style="border:2px solid var(--sage)"><div class="metric-label" style="color:var(--sage);font-weight:700">Surplus</div><div class="metric-value" style="font-size:18px;color:var(--sage)">782.500</div><div class="metric-sub">bulan ini</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Komposisi Pengeluaran</h3></div><div class="card-body">
+        <svg viewBox="0 0 480 140" class="chart-svg" style="height:140px">
+          <g font-size="9" fill="var(--text-2)" text-anchor="end" font-family="var(--font)">
+            <text x="106" y="21">Biaya Angkut</text><text x="106" y="46">Upah Pemilahan</text><text x="106" y="71">Makan & Minum</text><text x="106" y="96">Alat & Material</text><text x="106" y="121">Lainnya</text>
+          </g>
+          <rect x="112" y="10" width="210" height="18" rx="3" fill="var(--coral)" opacity=".9"/><text x="328" y="23" font-size="9" font-weight="700" fill="var(--coral)" font-family="var(--mono)">Rp 445.500 (12,0%)</text>
+          <rect x="112" y="35" width="350" height="18" rx="3" fill="var(--coral)" opacity=".75"/><text x="468" y="48" font-size="9" font-weight="700" fill="var(--coral)" font-family="var(--mono)">Rp 1.400.000 (37,6%)</text>
+          <rect x="112" y="60" width="250" height="18" rx="3" fill="var(--coral)" opacity=".6"/><text x="368" y="73" font-size="9" font-weight="700" fill="var(--coral)" font-family="var(--mono)">Rp 880.000 (23,6%)</text>
+          <rect x="112" y="85" width="170" height="18" rx="3" fill="var(--coral)" opacity=".5"/><text x="288" y="98" font-size="9" font-weight="700" fill="var(--coral)" font-family="var(--mono)">Rp 620.000 (16,6%)</text>
+          <rect x="112" y="110" width="100" height="18" rx="3" fill="var(--coral)" opacity=".4"/><text x="218" y="123" font-size="9" font-weight="700" fill="var(--coral)" font-family="var(--mono)">Rp 380.000 (10,2%)</text>
+        </svg>
+      </div></div>
+      <div class="card"><div class="card-head"><h3>Arus Kas Harian</h3></div><div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Tanggal</th><th>Tipe</th><th>Keterangan</th><th class="right">Nominal</th><th class="right">Saldo Berjalan</th></tr></thead>
+        <tbody>
+          <tr><td>22 Sep</td><td><span class="tag tag--sage">Jual</span></td><td>2 item ke Pak Tono</td><td class="right mono positive">+283.500</td><td class="right mono bold">4.319.364</td></tr>
+          <tr><td>22 Sep</td><td><span class="tag tag--coral">Upah</span></td><td>Honor Pilah TPS</td><td class="right mono negative">−200.000</td><td class="right mono bold">4.035.864</td></tr>
+          <tr><td>22 Sep</td><td><span class="tag tag--coral">Pakan</span></td><td>Polar 10kg + BR</td><td class="right mono negative">−93.000</td><td class="right mono bold">3.942.864</td></tr>
+          <tr><td>18 Sep</td><td><span class="tag tag--sage">Jual</span></td><td>5 item ke UD Jaya</td><td class="right mono positive">+508.000</td><td class="right mono bold">4.450.864</td></tr>
+          <tr><td>18 Sep</td><td><span class="tag tag--amber">Angkut</span></td><td>Pasti Angkut 350kg</td><td class="right mono negative">−52.500</td><td class="right mono bold">3.942.864</td></tr>
+          <tr><td>14 Sep</td><td><span class="tag tag--sage">Jual</span></td><td>3 item ke Pak Tono</td><td class="right mono positive">+476.000</td><td class="right mono bold">3.995.364</td></tr>
+          <tr><td>14 Sep</td><td><span class="tag tag--amber">Angkut</span></td><td>Pasti Angkut 420kg</td><td class="right mono negative">−63.000</td><td class="right mono bold">3.519.364</td></tr>
+          <tr><td>14 Sep</td><td><span class="tag tag--coral">Makan</span></td><td>Makan siang TPS</td><td class="right mono negative">−105.000</td><td class="right mono bold">3.414.364</td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="export-bar"><span class="export-bar-label">Ekspor Laporan Keuangan</span><button class="btn btn--secondary btn--sm" onclick="toast('Download Excel')">📊 Excel</button><button class="btn btn--secondary btn--sm" onclick="toast('Download PDF')">📕 PDF</button></div>
+    </div>
+
+    <!-- ── RPT: PERSENTASE ── -->
+    <div class="tab-panel" id="rp-persen">
+      <div class="metrics" style="grid-template-columns:repeat(4,1fr)">
+        <div class="metric" data-color="coral"><div class="metric-label">% Residu</div><div class="metric-value">6,0%</div><div class="metric-sub">dari total timbang</div></div>
+        <div class="metric" data-color="sage"><div class="metric-label">% Terjual</div><div class="metric-value">27,8%</div><div class="metric-sub">dari total timbang</div></div>
+        <div class="metric" data-color="amber"><div class="metric-label">% Organik</div><div class="metric-value">61,0%</div><div class="metric-sub">taman + sisa makanan</div></div>
+        <div class="metric" data-color="sky"><div class="metric-label">% Diangkut</div><div class="metric-value">34,1%</div><div class="metric-sub">dari total timbang</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Tren Persentase Residu (Year-over-Year)</h3></div><div class="card-body">
+        <svg viewBox="0 0 480 160" class="chart-svg" style="height:160px">
+          <g stroke="var(--border)" stroke-width=".5"><line x1="36" y1="130" x2="470" y2="130"/><line x1="36" y1="70" x2="470" y2="70" stroke-dasharray="3"/><line x1="36" y1="10" x2="470" y2="10" stroke-dasharray="3"/></g>
+          <g font-size="7" fill="var(--text-3)" font-family="var(--mono)"><text x="8" y="133">0%</text><text x="4" y="73">50%</text><text x="2" y="13">100%</text></g>
+          <g font-size="8" fill="var(--text-2)" text-anchor="middle">
+            <text x="80" y="148">Jan</text><text x="116" y="148">Feb</text><text x="152" y="148">Mar</text><text x="188" y="148">Apr</text><text x="224" y="148">Mei</text><text x="260" y="148">Jun</text><text x="296" y="148">Jul</text><text x="332" y="148">Ags</text><text x="368" y="148">Sep</text>
+          </g>
+          <polyline points="80,40 116,42 152,38 188,44 224,46 260,36 296,38 332,34 368,32" fill="none" stroke="var(--coral)" stroke-width="2.5" stroke-linecap="round" opacity=".4" stroke-dasharray="6"/>
+          <polyline points="80,78 116,84 152,90 188,96 224,100 260,104 296,108 332,112 368,118" fill="none" stroke="var(--sage)" stroke-width="2.5" stroke-linecap="round"/>
+          <g fill="var(--sage)"><circle cx="80" cy="78" r="3"/><circle cx="224" cy="100" r="3"/><circle cx="368" cy="118" r="3"/></g>
+          <g font-size="8" fill="var(--text-2)"><rect x="50" y="155" width="8" height="3" rx="1" fill="var(--coral)" opacity=".4"/><text x="62" y="158">2024</text><rect x="95" y="155" width="8" height="3" rx="1" fill="var(--sage)"/><text x="107" y="158">2025–26 (menurun)</text></g>
+        </svg>
+      </div></div>
+      <div class="card"><div class="card-head"><h3>Perbandingan Antar Kampus (Sep 2026)</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Kampus</th><th class="right">Total Kg</th><th class="right">% Residu</th><th class="right">% Terjual</th><th class="right">% Organik</th><th class="right">Saldo</th></tr></thead>
+        <tbody>
+          <tr><td class="bold">Kampus 1</td><td class="right mono">5.120</td><td class="right mono">8,2%</td><td class="right mono">22,0%</td><td class="right mono">58,0%</td><td class="right mono positive">Rp 1.230.000</td></tr>
+          <tr><td class="bold">Kampus 2</td><td class="right mono">4.380</td><td class="right mono">7,5%</td><td class="right mono">25,0%</td><td class="right mono">60,0%</td><td class="right mono positive">Rp 320.000</td></tr>
+          <tr><td class="bold">Kampus 3</td><td class="right mono">6.200</td><td class="right mono">5,8%</td><td class="right mono">30,0%</td><td class="right mono">55,0%</td><td class="right mono positive">Rp 2.850.000</td></tr>
+          <tr style="background:var(--sage-wash)"><td class="bold">Kampus 4</td><td class="right mono bold">8.420</td><td class="right mono bold">6,0%</td><td class="right mono bold">27,8%</td><td class="right mono bold">61,0%</td><td class="right mono positive bold">Rp 4.319.364</td></tr>
+          <tr><td class="bold">Kampus 5</td><td class="right mono">3.750</td><td class="right mono">9,0%</td><td class="right mono">20,0%</td><td class="right mono">62,0%</td><td class="right mono positive">Rp 890.000</td></tr>
+          <tr><td class="bold">Kampus 6</td><td class="right mono">4.900</td><td class="right mono">6,5%</td><td class="right mono">28,0%</td><td class="right mono">57,0%</td><td class="right mono positive">Rp 1.750.000</td></tr>
+          <tr style="background:var(--page)"><td class="bold">Universitas</td><td class="right mono bold">32.770</td><td class="right mono bold">7,0%</td><td class="right mono bold">25,8%</td><td class="right mono bold">59,0%</td><td class="right mono positive bold">Rp 11.359.364</td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="export-bar"><span class="export-bar-label">Ekspor Laporan Persentase</span><button class="btn btn--secondary btn--sm" onclick="toast('Download Excel')">📊 Excel</button><button class="btn btn--secondary btn--sm" onclick="toast('Download PDF')">📕 PDF</button></div>
+    </div>
+
+    <!-- ── RPT: KAP ── -->
+    <div class="tab-panel" id="rp-kap">
+      <div class="metrics" style="grid-template-columns:repeat(3,1fr)">
+        <div class="metric" data-color="sky"><div class="metric-label">Responden (Sep)</div><div class="metric-value">247</div><div class="metric-sub">mahasiswa & staf</div></div>
+        <div class="metric" data-color="sage"><div class="metric-label">Pernah Sosialisasi</div><div class="metric-value">89%</div><div class="metric-sub">dari responden</div></div>
+        <div class="metric" data-color="amber"><div class="metric-label">Bersedia Relawan</div><div class="metric-value">42%</div><div class="metric-sub">dari responden</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Indeks per Konstruk</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Konstruk</th><th class="right">Skor</th><th class="right">Skala</th><th class="right">Indeks (0–100)</th><th>Interpretasi</th></tr></thead>
+        <tbody>
+          <tr><td class="bold">Knowledge</td><td class="right mono">70,0%</td><td class="right">% benar</td><td class="right mono bold">70</td><td><span class="tag tag--sage">Baik</span></td></tr>
+          <tr><td class="bold">Attitude</td><td class="right mono">3,08</td><td class="right">1–5</td><td class="right mono bold">52</td><td><span class="tag tag--amber">Cukup</span></td></tr>
+          <tr><td class="bold">Practice</td><td class="right mono">2,80</td><td class="right">1–5</td><td class="right mono bold">45</td><td><span class="tag tag--coral">Kurang</span></td></tr>
+          <tr><td class="bold">Satisfaction</td><td class="right mono">3,21</td><td class="right">1–5</td><td class="right mono bold">55</td><td><span class="tag tag--amber">Cukup</span></td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="card"><div class="card-head"><h3>Detail per Item Knowledge</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Pernyataan</th><th class="right">% Benar</th><th class="right">n</th></tr></thead>
+        <tbody>
+          <tr><td>K1. Sampah organik bisa dijadikan kompos</td><td class="right mono positive bold">85%</td><td class="right mono">210</td></tr>
+          <tr><td>K2. Plastik bisa didaur ulang tanpa syarat (reverse)</td><td class="right mono positive bold">78%</td><td class="right mono">193</td></tr>
+          <tr><td>K6. Tahu ke mana membuang sesuai label</td><td class="right mono positive bold">82%</td><td class="right mono">203</td></tr>
+          <tr><td>K3. Sampah campur minyak termasuk residu</td><td class="right mono bold" style="color:var(--amber)">52%</td><td class="right mono">128</td></tr>
+          <tr><td>K5. Styrofoam/kain sulit diproses daur ulang</td><td class="right mono negative bold">45%</td><td class="right mono">111</td></tr>
+          <tr><td>K4. Mengetahui sistem pemilahan di kampus</td><td class="right mono negative bold">38%</td><td class="right mono">94</td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="card"><div class="card-head"><h3>Perbandingan KAP Antar Kampus</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+        <thead><tr><th>Kampus</th><th class="right">n</th><th class="right">Knowledge</th><th class="right">Attitude</th><th class="right">Practice</th><th class="right">Satisfaction</th></tr></thead>
+        <tbody>
+          <tr><td class="bold">Kampus 1</td><td class="right mono">42</td><td class="right mono">65%</td><td class="right mono">2,95</td><td class="right mono">2,60</td><td class="right mono">3,10</td></tr>
+          <tr><td class="bold">Kampus 2</td><td class="right mono">38</td><td class="right mono">68%</td><td class="right mono">3,12</td><td class="right mono">2,75</td><td class="right mono">3,05</td></tr>
+          <tr><td class="bold">Kampus 3</td><td class="right mono">45</td><td class="right mono">72%</td><td class="right mono">3,20</td><td class="right mono">2,90</td><td class="right mono">3,30</td></tr>
+          <tr style="background:var(--sage-wash)"><td class="bold">Kampus 4</td><td class="right mono bold">247</td><td class="right mono bold">70%</td><td class="right mono bold">3,08</td><td class="right mono bold">2,80</td><td class="right mono bold">3,21</td></tr>
+          <tr><td class="bold">Kampus 5</td><td class="right mono">30</td><td class="right mono">60%</td><td class="right mono">2,85</td><td class="right mono">2,50</td><td class="right mono">2,90</td></tr>
+          <tr><td class="bold">Kampus 6</td><td class="right mono">35</td><td class="right mono">67%</td><td class="right mono">3,00</td><td class="right mono">2,70</td><td class="right mono">3,15</td></tr>
+        </tbody>
+      </table></div></div>
+      <div class="export-bar"><span class="export-bar-label">Ekspor Laporan KAP</span><button class="btn btn--secondary btn--sm" onclick="toast('Download Excel')">📊 Excel</button><button class="btn btn--secondary btn--sm" onclick="toast('Download PDF')">📕 PDF</button></div>
+    </div>
+
+    </div><!-- /rptPanels -->
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ MASTER DATA ═══ -->
+  <div class="view" id="v-master">
+    <div class="page-header"><h2>Master Data</h2><p>Kelola data referensi sistem</p></div>
+
+    <div class="tab-bar" id="masterTabs">
+      <button class="tab-btn active" onclick="switchTab('masterTabs','masterPanels','mt-vendor',this)">Vendor Angkut</button>
+      <button class="tab-btn" onclick="switchTab('masterTabs','masterPanels','mt-jenis',this)">Jenis Sampah</button>
+      <button class="tab-btn" onclick="switchTab('masterTabs','masterPanels','mt-sumber',this)">Sumber Sampah</button>
+      <button class="tab-btn" onclick="switchTab('masterTabs','masterPanels','mt-pembeli',this)">Pembeli</button>
+      <button class="tab-btn" onclick="switchTab('masterTabs','masterPanels','mt-kampus',this)">Kampus</button>
+      <button class="tab-btn" onclick="switchTab('masterTabs','masterPanels','mt-katbiaya',this)">Kat. Biaya</button>
+    </div>
+
+    <div id="masterPanels">
+      <!-- VENDOR -->
+      <div class="tab-panel active" id="mt-vendor">
+        <div class="card"><div class="card-head"><h3>Vendor Pengangkut</h3><button class="btn btn--primary btn--sm" onclick="openModal('modalVendor')">+ Tambah vendor</button></div>
+        <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+          <thead><tr><th>Nama Vendor</th><th>Kontak</th><th class="right">Tarif per Kg</th><th>Status</th><th class="right">Aksi</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">Pasti Angkut</td><td>081234567890</td><td class="right mono">Rp 150</td><td><span class="status-dot status-dot--active"></span><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm" onclick="toast('Edit Pasti Angkut')">Edit</button></td></tr>
+            <tr><td class="bold">Kibar Jaya</td><td>082345678901</td><td class="right mono">Rp 200</td><td><span class="status-dot status-dot--active"></span><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm" onclick="toast('Edit Kibar Jaya')">Edit</button></td></tr>
+            <tr><td class="bold">CV Bersih Makmur</td><td>089876543210</td><td class="right mono">Rp 175</td><td><span class="status-dot status-dot--inactive"></span><span class="tag tag--neutral">Nonaktif</span></td><td class="right"><button class="btn btn--secondary btn--sm" onclick="toast('Edit CV Bersih')">Edit</button></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- JENIS SAMPAH -->
+      <div class="tab-panel" id="mt-jenis">
+        <div class="card"><div class="card-head"><h3>Kategori Sampah</h3><button class="btn btn--primary btn--sm" onclick="toast('Form tambah jenis')">+ Tambah jenis</button></div>
+        <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+          <thead><tr><th>Nama Kategori</th><th>Grup</th><th class="right">Harga Default/Kg</th><th>Bisa Dijual</th><th>Status</th><th class="right">Aksi</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">Organik Sisa Makanan</td><td>Organik</td><td class="right mono">—</td><td><span class="tag tag--neutral">Tidak</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Sampah Taman</td><td>Organik</td><td class="right mono">—</td><td><span class="tag tag--neutral">Tidak</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Kertas/Karton/Kardus</td><td>Kertas</td><td class="right mono">Rp 1.700</td><td><span class="tag tag--sage">Ya</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Karton</td><td>Kertas</td><td class="right mono">Rp 1.500</td><td><span class="tag tag--sage">Ya</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Kardus</td><td>Kertas</td><td class="right mono">Rp 700</td><td><span class="tag tag--sage">Ya</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Plastik Multilayer</td><td>Plastik</td><td class="right mono">Rp 500</td><td><span class="tag tag--sage">Ya</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Plastik Keras</td><td>Plastik</td><td class="right mono">Rp 2.500</td><td><span class="tag tag--sage">Ya</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Logam dan Kaca</td><td>Logam/Kaca</td><td class="right mono">Rp 200</td><td><span class="tag tag--sage">Ya</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Residu</td><td>Residu</td><td class="right mono">—</td><td><span class="tag tag--neutral">Tidak</span></td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- SUMBER SAMPAH -->
+      <div class="tab-panel" id="mt-sumber">
+        <div class="card"><div class="card-head"><h3>Sumber Sampah (Lokasi dalam Kampus)</h3><button class="btn btn--primary btn--sm" onclick="toast('Form tambah sumber')">+ Tambah sumber</button></div>
+        <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+          <thead><tr><th>Nama Lokasi</th><th>Kampus</th><th>Deskripsi</th><th>Status</th><th class="right">Aksi</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">Area Taman Barat</td><td>Kampus 4</td><td style="font-size:11px;color:var(--text-2)">Taman dan area hijau sisi barat</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Kantin Pusat</td><td>Kampus 4</td><td style="font-size:11px;color:var(--text-2)">Kantin utama lantai 1</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Asrama Mahasiswa (Ged. A)</td><td>Kampus 4</td><td style="font-size:11px;color:var(--text-2)">Gedung asrama putra</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Fakultas Teknik</td><td>Kampus 4</td><td style="font-size:11px;color:var(--text-2)">Gedung FT lantai 1–4</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Gedung A, Fakultas A</td><td>Kampus 4</td><td style="font-size:11px;color:var(--text-2)">Gedung perkuliahan</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Gedung Rektorat</td><td>Kampus 4</td><td style="font-size:11px;color:var(--text-2)">Kantor pusat rektorat</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- PEMBELI -->
+      <div class="tab-panel" id="mt-pembeli">
+        <div class="card"><div class="card-head"><h3>Pembeli / Pengepul</h3><button class="btn btn--primary btn--sm" onclick="toast('Form tambah pembeli')">+ Tambah pembeli</button></div>
+        <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+          <thead><tr><th>Nama</th><th>Kontak</th><th>Alamat</th><th>Status</th><th class="right">Aksi</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">Pak Tono</td><td>085678901234</td><td style="font-size:11px;color:var(--text-2)">Jl. Ringroad Selatan</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">UD Jaya Makmur</td><td>087654321098</td><td style="font-size:11px;color:var(--text-2)">Jl. Parangtritis Km 5</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">CV Daur Sejahtera</td><td>081298765432</td><td style="font-size:11px;color:var(--text-2)">Jl. Bantul No. 23</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- KAMPUS -->
+      <div class="tab-panel" id="mt-kampus">
+        <div class="card"><div class="card-head"><h3>Kampus</h3></div>
+        <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+          <thead><tr><th>Nama</th><th>Alamat</th><th class="right">Sumber Sampah</th><th class="right">Petugas</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">Kampus 1</td><td style="font-size:11px">Jl. Kapas 9, Semaki</td><td class="right mono">3</td><td class="right mono">2</td><td><span class="tag tag--sage">Aktif</span></td></tr>
+            <tr><td class="bold">Kampus 2</td><td style="font-size:11px">Jl. Pramuka 42, Pandeyan</td><td class="right mono">4</td><td class="right mono">2</td><td><span class="tag tag--sage">Aktif</span></td></tr>
+            <tr><td class="bold">Kampus 3</td><td style="font-size:11px">Jl. Prof. Dr. Soepomo, Warungboto</td><td class="right mono">5</td><td class="right mono">3</td><td><span class="tag tag--sage">Aktif</span></td></tr>
+            <tr><td class="bold">Kampus 4</td><td style="font-size:11px">Jl. Ringroad Selatan, Tamanan</td><td class="right mono">6</td><td class="right mono">4</td><td><span class="tag tag--sage">Aktif</span></td></tr>
+            <tr><td class="bold">Kampus 5</td><td style="font-size:11px">Jl. Ki Ageng Pemanahan 19</td><td class="right mono">3</td><td class="right mono">2</td><td><span class="tag tag--sage">Aktif</span></td></tr>
+            <tr><td class="bold">Kampus 6</td><td style="font-size:11px">Jl. Sorowajan Baru</td><td class="right mono">4</td><td class="right mono">2</td><td><span class="tag tag--sage">Aktif</span></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- KATEGORI BIAYA -->
+      <div class="tab-panel" id="mt-katbiaya">
+        <div class="card"><div class="card-head"><h3>Kategori Pengeluaran</h3><button class="btn btn--primary btn--sm" onclick="toast('Form tambah kategori')">+ Tambah kategori</button></div>
+        <div class="card-body--flush" style="overflow-x:auto"><table class="data-table">
+          <thead><tr><th>Nama Kategori</th><th class="right">Total Transaksi</th><th class="right">Total Nominal</th><th>Status</th><th class="right">Aksi</th></tr></thead>
+          <tbody>
+            <tr><td class="bold">Upah Pemilahan</td><td class="right mono">48</td><td class="right mono">Rp 9.600.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Makan & Minum TPS</td><td class="right mono">62</td><td class="right mono">Rp 6.510.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Pembelian Alat</td><td class="right mono">23</td><td class="right mono">Rp 4.140.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Bagor/Karung</td><td class="right mono">18</td><td class="right mono">Rp 2.700.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Pakan Ternak</td><td class="right mono">31</td><td class="right mono">Rp 2.883.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Material Kandang</td><td class="right mono">12</td><td class="right mono">Rp 1.440.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Obat P3K</td><td class="right mono">8</td><td class="right mono">Rp 640.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Transport</td><td class="right mono">5</td><td class="right mono">Rp 375.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+            <tr><td class="bold">Lainnya</td><td class="right mono">15</td><td class="right mono">Rp 1.125.000</td><td><span class="tag tag--sage">Aktif</span></td><td class="right"><button class="btn btn--secondary btn--sm">Edit</button></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENGGUNA ═══ -->
+  <div class="view" id="v-user">
+    <div class="page-header"><h2>Manajemen Pengguna</h2><p>Kelola akses pengguna dan hak per kampus</p></div>
+
+    <div class="card">
+      <div class="card-head"><h3>Daftar Pengguna</h3><button class="btn btn--primary btn--sm" onclick="openModal('modalUser')">+ Tambah pengguna</button></div>
+      <div class="card-body--flush">
+        <div class="user-row">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#ef4444,#f97316)">SP</div>
+          <div class="user-info"><div class="user-name">Supriyanto</div><div class="user-email">supriyanto@uad.ac.id</div></div>
+          <div class="user-meta"><span class="tag tag--coral">Super Admin</span><span class="tag tag--neutral">Semua Kampus</span></div>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">AN</div>
+          <div class="user-info"><div class="user-name">Adi Nugroho</div><div class="user-email">adi.n@uad.ac.id</div></div>
+          <div class="user-meta"><span class="tag tag--sky">Petugas TPS</span><span class="tag tag--neutral">Kampus 4</span></div>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)">BS</div>
+          <div class="user-info"><div class="user-name">Budi Santoso</div><div class="user-email">budi.s@uad.ac.id</div></div>
+          <div class="user-meta"><span class="tag tag--plum">Petugas Jual</span><span class="tag tag--neutral">Kampus 4</span></div>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#f59e0b,#eab308)">SW</div>
+          <div class="user-info"><div class="user-name">Sari Wulan</div><div class="user-email">sari.w@uad.ac.id</div></div>
+          <div class="user-meta"><span class="tag tag--amber">Keuangan</span><span class="tag tag--neutral">Kampus 4</span></div>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">HR</div>
+          <div class="user-info"><div class="user-name">Hendra Rahmawan</div><div class="user-email">hendra.r@uad.ac.id</div></div>
+          <div class="user-meta"><span class="tag tag--sky">Petugas TPS</span><span class="tag tag--neutral">Kampus 1</span></div>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#3b82f6,#06b6d4)">YP</div>
+          <div class="user-info"><div class="user-name">Yusuf Prasetyo</div><div class="user-email">yusuf.p@uad.ac.id</div></div>
+          <div class="user-meta"><span class="tag tag--sky">Petugas TPS</span><span class="tag tag--neutral">Kampus 3</span></div>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#8b5cf6,#a855f7)">NF</div>
+          <div class="user-info"><div class="user-name">Nina Fitriani</div><div class="user-email">nina.f@uad.ac.id</div></div>
+          <div class="user-meta"><span class="tag tag--plum">Petugas Jual</span><span class="tag tag--neutral">Kampus 2</span></div>
+        </div>
+        <div class="user-row">
+          <div class="user-avatar" style="background:linear-gradient(135deg,#6b7280,#9ca3af)">DR</div>
+          <div class="user-info"><div class="user-name">Dewi Ratna</div><div class="user-email">dewi.r@uad.ac.id</div></div>
+          <div class="user-meta"><span class="tag tag--neutral">Viewer</span><span class="tag tag--neutral">Kampus 4</span></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-head"><h3>Matriks Hak Akses</h3></div>
+      <div class="card-body--flush" style="overflow-x:auto">
+        <table class="perm-table">
+          <thead><tr><th>Role</th><th>Timbang</th><th>Jual</th><th>Angkut</th><th>Biaya</th><th>Saldo</th><th>Master</th><th>Users</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag--coral">Super Admin</span></td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td></tr>
+            <tr><td><span class="tag tag--sage">Admin Kampus</span></td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-none">—</td></tr>
+            <tr><td><span class="tag tag--sky">Petugas TPS</span></td><td class="perm-check">✓</td><td class="perm-none">—</td><td class="perm-check">✓</td><td class="perm-none">—</td><td class="perm-view">👁</td><td class="perm-none">—</td><td class="perm-none">—</td></tr>
+            <tr><td><span class="tag tag--plum">Petugas Jual</span></td><td class="perm-none">—</td><td class="perm-check">✓</td><td class="perm-none">—</td><td class="perm-none">—</td><td class="perm-view">👁</td><td class="perm-none">—</td><td class="perm-none">—</td></tr>
+            <tr><td><span class="tag tag--amber">Keuangan</span></td><td class="perm-view">👁</td><td class="perm-view">👁</td><td class="perm-view">👁</td><td class="perm-check">✓</td><td class="perm-check">✓</td><td class="perm-none">—</td><td class="perm-none">—</td></tr>
+            <tr><td><span class="tag tag--neutral">Viewer</span></td><td class="perm-view">👁</td><td class="perm-view">👁</td><td class="perm-view">👁</td><td class="perm-view">👁</td><td class="perm-view">👁</td><td class="perm-none">—</td><td class="perm-none">—</td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div class="card-body" style="padding:10px 18px;border-top:1px solid var(--border)">
+        <div style="font-size:11px;color:var(--text-2)">
+          <span class="perm-check" style="font-size:13px">✓</span> Input & Edit &nbsp;&nbsp;
+          <span class="perm-view" style="font-size:12px">👁</span> Lihat saja &nbsp;&nbsp;
+          <span class="perm-none">—</span> Tidak bisa akses
+        </div>
+      </div>
+    </div>
+    <div class="spacer"></div>
+  </div>
+
+  </div><!-- /page -->
+</div><!-- /main -->
+</div><!-- /shell -->
+
+<!-- ═══ MODAL: Tambah Vendor ═══ -->
+<div class="modal-overlay" id="modalVendor" onclick="if(event.target===this)closeModal('modalVendor')">
+  <div class="modal-box">
+    <div class="modal-header"><h3>Tambah Vendor Angkut</h3><button class="modal-close" onclick="closeModal('modalVendor')">×</button></div>
+    <div class="form-group"><label class="form-label">Nama Vendor</label><input class="form-input" placeholder="cth: CV Bersih Lingkungan"></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Kontak</label><input class="form-input" placeholder="08xxxxxxxxxx"></div>
+      <div class="form-group"><label class="form-label">Tarif per Kg (Rp)</label><input class="form-input" type="number" placeholder="150"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Alamat</label><input class="form-input" placeholder="Alamat vendor"></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn--secondary" onclick="closeModal('modalVendor')">Batal</button>
+      <button class="btn btn--primary" onclick="closeModal('modalVendor');toast('Vendor berhasil ditambahkan')">Simpan vendor</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL: Tambah User ═══ -->
+<div class="modal-overlay" id="modalUser" onclick="if(event.target===this)closeModal('modalUser')">
+  <div class="modal-box">
+    <div class="modal-header"><h3>Tambah Pengguna</h3><button class="modal-close" onclick="closeModal('modalUser')">×</button></div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Nama Lengkap</label><input class="form-input" placeholder="Nama pengguna"></div>
+      <div class="form-group"><label class="form-label">Email</label><input class="form-input" type="email" placeholder="nama@uad.ac.id"></div>
+    </div>
+    <div class="form-grid">
+      <div class="form-group"><label class="form-label">Role</label>
+        <select class="form-select"><option>Pilih role...</option><option>Super Admin</option><option>Admin Kampus</option><option>Petugas TPS</option><option>Petugas Jual</option><option>Keuangan</option><option>Viewer</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Kampus</label>
+        <select class="form-select"><option>Pilih kampus...</option><option>Kampus 1</option><option>Kampus 2</option><option>Kampus 3</option><option>Kampus 4</option><option>Kampus 5</option><option>Kampus 6</option><option>Semua Kampus</option></select>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Password awal</label><input class="form-input" type="password" placeholder="Min. 8 karakter"><div class="form-hint">Pengguna akan diminta ganti password saat login pertama</div></div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:18px">
+      <button class="btn btn--secondary" onclick="closeModal('modalUser')">Batal</button>
+      <button class="btn btn--primary" onclick="closeModal('modalUser');toast('Pengguna berhasil ditambahkan')">Simpan pengguna</button>
+    </div>
+  </div>
+</div>
+
+<div class="bottom-nav">
+  <button class="bnav-item active" onclick="nav('dash')"><span class="bnav-icon">📊</span>Home</button>
+  <button class="bnav-item" onclick="nav('timbang')"><span class="bnav-icon">⚖️</span>Timbang</button>
+  <button class="bnav-item" onclick="nav('jual')"><span class="bnav-icon">💰</span>Jual</button>
+  <button class="bnav-item" onclick="nav('angkut')"><span class="bnav-icon">🚛</span>Angkut</button>
+  <button class="bnav-item" onclick="nav('saldo')"><span class="bnav-icon">💳</span>Saldo</button>
+  <button class="bnav-item" onclick="nav('kap')"><span class="bnav-icon">🎓</span>KAP</button>
+</div>
+
+<div class="toast" id="toast" style="position:fixed;bottom:72px;left:50%;transform:translateX(-50%) translateY(20px);background:var(--slate-900);color:#fff;padding:10px 22px;border-radius:99px;font-size:12px;font-weight:600;opacity:0;transition:.3s;pointer-events:none;z-index:500;white-space:nowrap;box-shadow:var(--shadow-lg)"></div>
+
+<script>
+var bnm = {dash:0,timbang:1,jual:2,angkut:3,saldo:4,kap:5};
+var sideMap = {dash:0,timbang:1,jual:2,angkut:3,biaya:4,saldo:5,kap:6,laporan:7,master:8,user:9};
+function nav(id) {
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
+  var el = document.getElementById('v-'+id); if(el) el.classList.add('active');
+  document.querySelectorAll('.side-nav a').forEach(function(a){a.classList.remove('active')});
+  var links = document.querySelectorAll('.side-nav a');
+  if(sideMap[id]!==undefined && links[sideMap[id]]) links[sideMap[id]].classList.add('active');
+  document.querySelectorAll('.bnav-item').forEach(function(b){b.classList.remove('active')});
+  if(bnm[id]!==undefined) document.querySelectorAll('.bnav-item')[bnm[id]].classList.add('active');
+  closeSide();
+  window.scrollTo(0,0);
+}
+function openSide(){document.getElementById('sidebar').classList.add('open');document.getElementById('overlay').classList.add('show')}
+function closeSide(){document.getElementById('sidebar').classList.remove('open');document.getElementById('overlay').classList.remove('show')}
+function ccc(){var v=parseFloat(document.getElementById('vv').value)||0,r=parseFloat(document.getElementById('rr').value)||0;document.getElementById('cc').textContent='Rp '+Math.round(v*r).toLocaleString('id-ID')}
+function toast(m){var t=document.getElementById('toast');t.textContent='✓ '+m;t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';setTimeout(function(){t.style.opacity='0';t.style.transform='translateX(-50%) translateY(20px)'},2800)}
+function switchTab(tabBarId,panelsId,panelId,btn){
+  document.getElementById(tabBarId).querySelectorAll('.tab-btn').forEach(function(b){b.classList.remove('active')});
+  btn.classList.add('active');
+  document.getElementById(panelsId).querySelectorAll('.tab-panel').forEach(function(p){p.classList.remove('active')});
+  document.getElementById(panelId).classList.add('active');
+}
+function openModal(id){document.getElementById(id).classList.add('show')}
+function closeModal(id){document.getElementById(id).classList.remove('show')}
+</script>
+</body>
+</html>
