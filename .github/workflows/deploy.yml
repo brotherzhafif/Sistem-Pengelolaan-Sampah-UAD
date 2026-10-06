@@ -1,0 +1,86 @@
+name: Deploy to Lab Server
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy Application
+    runs-on: self-hosted
+
+    steps:
+      - name: Fix permissions before checkout
+        run: sudo chown -R $USER:$USER ${{ github.workspace }} 2>/dev/null || true
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy with Docker Compose
+        run: |
+          set -e
+          echo "🚀 Menyiapkan file konfigurasi environment..."
+          [ -f .env ] || cp .env.example .env
+
+          echo "🔧 Memastikan permission folder kerja..."
+          mkdir -p storage/app/public storage/framework/{cache,sessions,views} storage/logs bootstrap/cache vendor
+          chmod -R 777 storage bootstrap/cache vendor 2>/dev/null || true
+
+          # Cegah dubious ownership di git host & container
+          git config --global --add safe.directory "*" 2>/dev/null || true
+
+          echo "📥 Memastikan base image tersedia dengan retry..."
+          for img in "node:22-bookworm-slim" "php:8.3-fpm-bookworm" "mysql:8.0" "nginx:1.27-alpine" "amir20/dozzle:latest"; do
+            for i in 1 2 3 4 5; do
+              docker pull "$img" && break || { echo "Retry pull $img ($i/5)..."; sleep 5; }
+            done
+          done
+
+          echo "🐳 Menjalankan docker compose up & build..."
+          # Jalankan docker compose build dengan retry jika terjadi kegagalan jaringan sementara
+          for i in 1 2 3; do
+            docker compose up -d --build && break || { echo "Retry docker compose up ($i/3)..."; sleep 10; }
+          done
+
+          echo "⏳ Memastikan dependencies composer terinstall di container app..."
+          # Jika container belum selesai atau gagal install composer, jalankan langsung
+          docker compose exec -T app bash -c "if [ ! -f vendor/autoload.php ]; then composer install --no-interaction --prefer-dist; fi" || true
+
+          echo "⏳ Menunggu artisan di container app siap..."
+          count=0
+          until docker compose exec -T app php artisan --version; do
+            sleep 3
+            count=$((count+3))
+            if [ $count -ge 120 ]; then
+              echo "❌ Timeout menunggu artisan siap! Mencoba install dependencies sekali lagi..."
+              docker compose exec -T app composer install --no-interaction --prefer-dist || true
+              docker compose exec -T app php artisan --version && break
+              echo "--- Container status ---"
+              docker compose ps
+              echo "--- App logs ---"
+              docker compose logs app
+              exit 1
+            fi
+            echo "Menunggu artisan siap (${count}s)..."
+          done
+
+          echo "📦 Menjalankan migrasi database, key generate, dan cache..."
+          # Pastikan APP_KEY sudah digenerate jika masih kosong
+          docker compose exec -T app php artisan key:generate --force || true
+          docker compose exec -T app php artisan migrate --force
+
+          echo "🎨 Membangun frontend assets (Vite build)..."
+          docker compose exec -T app bash -c "if [ ! -d node_modules ]; then npm install; fi && npm run build"
+
+          docker compose exec -T app php artisan optimize:clear
+          docker compose exec -T app php artisan config:cache
+          docker compose exec -T app php artisan route:cache
+          docker compose exec -T app php artisan view:cache
+
+          echo "✅ Deployment selesai dan sukses di server lab!"
+
+      - name: Fix permissions for cleanup
+        if: always()
+        run: sudo chown -R $USER:$USER ${{ github.workspace }} 2>/dev/null || true

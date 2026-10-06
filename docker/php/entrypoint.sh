@@ -13,6 +13,13 @@ log() { echo -e "\n\033[1;36m[ps2-uad]\033[0m $*"; }
 
 rm -f "$MARK"
 
+# Pastikan folder writable
+mkdir -p storage/app/public storage/framework/{cache,sessions,views} storage/logs bootstrap/cache vendor
+chmod -R 777 storage bootstrap/cache vendor 2>/dev/null || true
+
+# Cegah fatal: detected dubious ownership in repository
+git config --global --add safe.directory '*' 2>/dev/null || true
+
 # 1. Scaffold Laravel kalau belum ada
 if [ ! -f artisan ]; then
   log "Belum ada project Laravel -> scaffold laravel/laravel:${LARAVEL_VERSION:-^12.0}"
@@ -26,8 +33,8 @@ if [ ! -f artisan ]; then
   touch .scaffold-pending
 fi
 
-# 2. Dependencies (kalau clone repo yang sudah ada)
-if [ ! -d vendor ]; then
+# 2. Dependencies (kalau clone repo yang sudah ada atau autoload belum ada)
+if [ ! -f vendor/autoload.php ]; then
   log "composer install"
   composer install --no-interaction --prefer-dist
 fi

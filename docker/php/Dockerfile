@@ -28,7 +28,6 @@ COPY --chmod=0755 entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN sed -i 's/\r$//' /usr/local/bin/entrypoint.sh
 
 WORKDIR /var/www/html
-USER app
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["php-fpm"]
