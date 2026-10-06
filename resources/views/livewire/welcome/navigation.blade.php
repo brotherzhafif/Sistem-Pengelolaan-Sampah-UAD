@@ -1,25 +1,31 @@
-<nav class="-mx-3 flex flex-1 justify-end">
+<nav class="flex items-center gap-3">
     @auth
         <a
             href="{{ url('/dashboard') }}"
-            class="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
+            class="btn btn-primary btn-sm text-white font-semibold shadow-md shadow-primary/20 hover:scale-105 transition duration-200"
+            wire:navigate
         >
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+            </svg>
             Dashboard
         </a>
     @else
         <a
             href="{{ route('login') }}"
-            class="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
+            class="btn btn-ghost btn-sm font-semibold text-neutral hover:bg-base-200"
+            wire:navigate
         >
-            Log in
+            Masuk
         </a>
 
         @if (Route::has('register'))
             <a
                 href="{{ route('register') }}"
-                class="rounded-md px-3 py-2 text-black ring-1 ring-transparent transition hover:text-black/70 focus:outline-none focus-visible:ring-[#FF2D20] dark:text-white dark:hover:text-white/80 dark:focus-visible:ring-white"
+                class="btn btn-primary btn-sm text-white font-semibold shadow-md shadow-primary/20 hover:scale-105 transition duration-200"
+                wire:navigate
             >
-                Register
+                Daftar
             </a>
         @endif
     @endauth
