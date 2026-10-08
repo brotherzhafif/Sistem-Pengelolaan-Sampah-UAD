@@ -203,7 +203,7 @@ new #[Layout('layouts.app')] class extends Component
     public function with(StockService $stockService): array
     {
         $user = auth()->user();
-        $isSuperAdmin = $user->hasRole('Super Admin') || $user->hasRole('Auditor / Pimpinan') || !$user->campus_id;
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
 
         $campusQueryId = $isSuperAdmin ? $this->selectedCampusId : $user->campus_id;
 
