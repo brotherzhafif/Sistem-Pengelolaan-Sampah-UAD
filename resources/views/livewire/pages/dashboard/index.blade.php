@@ -189,6 +189,7 @@ new #[Layout('layouts.app')] class extends Component
             'organikKg' => $organikKg,
             'anorganikKg' => $anorganikKg,
             'residuKg' => $residuKg,
+            'totalCompositionKg' => $totalCompositionKg,
             'organikPct' => $organikPct,
             'anorganikPct' => $anorganikPct,
             'residuPct' => $residuPct,
