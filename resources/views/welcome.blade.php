@@ -46,11 +46,6 @@
         <section class="relative pt-12 pb-20 md:pt-20 md:pb-32 overflow-hidden">
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
                 <div class="text-center max-w-3xl mx-auto">
-                    <div class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-primary/10 border border-primary/20 text-primary text-xs font-bold mb-6 animate-pulse">
-                        <span class="w-2 h-2 rounded-full bg-primary"></span>
-                        Platform Terintegrasi Zero-Waste Universitas Ahmad Dahlan
-                    </div>
-                    
                     <h1 class="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tight text-neutral leading-tight">
                         Wujudkan Kampus Hijau & <span class="text-transparent bg-clip-text bg-gradient-to-r from-primary to-emerald-600">Zero-Waste</span> Berkelanjutan
                     </h1>
