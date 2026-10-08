@@ -12,6 +12,10 @@ Volt::route('weighing', 'pages.weighing.index')
     ->middleware(['auth', 'verified'])
     ->name('weighing');
 
+Volt::route('sales', 'pages.sales.index')
+    ->middleware(['auth', 'verified'])
+    ->name('sales');
+
 Volt::route('master-data', 'pages.master.index')
     ->middleware(['auth', 'verified'])
     ->name('master-data');

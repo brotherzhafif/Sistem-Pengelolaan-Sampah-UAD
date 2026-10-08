@@ -102,13 +102,22 @@ flowchart TD
   - [x] Sidebar menu penimbangan aktif dan tersinkronisasi.
   - [x] Seeder `WeighingSeeder` dibuat dan didaftarkan ke `DatabaseSeeder`.
 
-### 📌 Phase 4: Penjualan Sampah & Kredit Kas (SRS M3)
-- **Tabel**: `sales` & `sale_items`.
-- **Fitur**: Form transaksi penjualan ke pengepul, pengecekan stok tersedia, subtotal & total otomatis.
-- **Otomasi**: Trigger `SaleObserver` ➔ buat jurnal Kredit (K) di `keuangan` ➔ update `buku_besar`.
+### ⏳ Phase 4: Penjualan Sampah & Kredit Kas (SRS M3) (STATUS: KODE SELESAI - MENUNGGU MIGRASI SERVER)
+- **Tabel**: `sales`, `sale_items`, `keuangan` (Buku Kas K/D), dan `buku_besar` (Saldo Harian Per Kampus).
+- **Fitur**:
+  - Validasi batas stok terpilah (`StockService::getAvailableStock`): Penjualan tidak boleh melebihi stok yang ada di TPS kampus.
+  - Multi-row penjualan jenis sampah dengan live subtotal & grand total.
+  - Otomasi pembukuan via `SaleObserver` ➔ `LedgerService::recordTransaction('K', 'penjualan')` ➔ auto insert `keuangan` (Kredit) ➔ auto update saldo akhir di `buku_besar`.
+  - Tampilan Dribbble Clean: Kartu metrik pendapatan terdata, total berat terjual, sisa stok terpilah, modal input, dan modal konfirmasi hapus seragam.
 - **Checklist Uji**:
-  - [ ] Penjualan tidak boleh melebihi stok yang ada.
-  - [ ] Jurnal Kredit dan saldo akhir bertambah otomatis.
+  - [x] Migration `2026_10_08_000004_create_sales_and_ledger_tables.php` dibuat rapi.
+  - [x] Model `Sale`, `SaleItem`, `Keuangan`, dan `BukuBesar` beserta relasi lengkap.
+  - [x] Service `LedgerService` untuk double-entry bookkeeping akurat.
+  - [x] Service `StockService` di-upgrade untuk memperhitungkan pengurangan penjualan.
+  - [x] `SaleObserver` dibuat dan didaftarkan di `AppServiceProvider`.
+  - [x] Komponen Livewire `pages.sales.index` & integrasi route `sales`.
+  - [x] Navigasi menu Penjualan di sidebar aktif dengan status ikon tersinkronisasi.
+  - [x] Seeder `SaleSeeder` dibuat dan didaftarkan ke `DatabaseSeeder`.
 
 ### 📌 Phase 5: Pengangkutan Residu & Debet Biaya Angkut (SRS M4)
 - **Tabel**: `pickups`.

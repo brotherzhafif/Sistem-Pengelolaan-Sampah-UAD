@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             RolePermissionSeeder::class,
             MasterDataSeeder::class,
             WeighingSeeder::class,
+            SaleSeeder::class,
         ]);
     }
 }
