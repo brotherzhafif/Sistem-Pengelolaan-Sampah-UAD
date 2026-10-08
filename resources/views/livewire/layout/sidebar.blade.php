@@ -17,7 +17,9 @@ new class extends Component
     public function switchCampus(?int $campusId): void
     {
         // Hanya Super Admin / Auditor yang bisa berpindah kampus global
-        if (!auth()->user()->hasRole('Super Admin') && !auth()->user()->hasRole('Auditor / Pimpinan') && auth()->user()->campus_id) {
+        $user = auth()->user();
+        $canSwitch = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
+        if (!$canSwitch) {
             return;
         }
 
@@ -41,7 +43,7 @@ new class extends Component
     public function with(): array
     {
         $user = auth()->user();
-        $isSuperAdmin = $user->hasRole('Super Admin') || $user->hasRole('Auditor / Pimpinan') || !$user->campus_id;
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
         $activeCampus = $this->activeCampusId ? Campus::find($this->activeCampusId) : $user->campus;
 
         return [

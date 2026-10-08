@@ -35,7 +35,7 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        if ($user->hasRole('Super Admin') || $user->hasRole('Auditor / Pimpinan') || !$user->campus_id) {
+        if ($user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id) {
             $this->selectedCampusId = session('active_campus_id') ?? $user->campus_id ?? null;
         } else {
             $this->selectedCampusId = $user->campus_id;
