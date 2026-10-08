@@ -9,11 +9,14 @@ use App\Services\StockService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
+use Livewire\WithPagination;
 
 new #[Layout('layouts.app')] class extends Component
 {
-    // Filter & Scope
-    public ?int $selectedCampusId = null;
+    use WithPagination;
+
+    // Filter & Scope (loose typing to prevent PHP 8 string/null TypeError with select elements)
+    public $selectedCampusId = null;
     public string $filterDateFrom = '';
     public string $filterDateTo = '';
 
@@ -22,8 +25,8 @@ new #[Layout('layouts.app')] class extends Component
     public ?int $viewSessionId = null;
 
     // Form Session
-    public ?int $formCampusId = null;
-    public ?int $formSourceId = null;
+    public $formCampusId = null;
+    public $formSourceId = null;
     public string $formDate = '';
     public string $formNotes = '';
 
@@ -34,9 +37,10 @@ new #[Layout('layouts.app')] class extends Component
     {
         $user = auth()->user();
         if ($user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id) {
-            $this->selectedCampusId = session('active_campus_id') ?? $user->campus_id ?? null;
+            $activeCampus = session('active_campus_id');
+            $this->selectedCampusId = !empty($activeCampus) ? (int) $activeCampus : null;
         } else {
-            $this->selectedCampusId = $user->campus_id;
+            $this->selectedCampusId = (int) $user->campus_id;
         }
         $this->formDate = Carbon::today()->format('Y-m-d');
         $this->filterDateFrom = Carbon::now()->subDays(30)->format('Y-m-d');
@@ -48,7 +52,11 @@ new #[Layout('layouts.app')] class extends Component
     public function resetForm(): void
     {
         $user = auth()->user();
-        $this->formCampusId = $this->selectedCampusId ?? $user->campus_id ?? Campus::first()?->id;
+        $defaultCampusId = !empty($this->selectedCampusId)
+            ? (int) $this->selectedCampusId
+            : ($user->campus_id ? (int) $user->campus_id : Campus::first()?->id);
+            
+        $this->formCampusId = $defaultCampusId;
         $this->formSourceId = WasteSource::where('campus_id', $this->formCampusId)->first()?->id;
         $this->formDate = Carbon::today()->format('Y-m-d');
         $this->formNotes = '';

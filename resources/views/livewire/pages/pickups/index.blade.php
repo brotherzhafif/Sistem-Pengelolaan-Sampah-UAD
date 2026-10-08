@@ -7,11 +7,14 @@ use App\Services\StockService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
+use Livewire\WithPagination;
 
 new #[Layout('layouts.app')] class extends Component
 {
-    // Filter & Scope
-    public ?int $selectedCampusId = null;
+    use WithPagination;
+
+    // Filter & Scope (loose typing to prevent PHP 8 string/null TypeError with select elements)
+    public $selectedCampusId = null;
     public string $filterDateFrom = '';
     public string $filterDateTo = '';
 
@@ -19,8 +22,8 @@ new #[Layout('layouts.app')] class extends Component
     public bool $showCreateModal = false;
 
     // Form Transaksi Pengangkutan
-    public ?int $formCampusId = null;
-    public ?int $formVendorId = null;
+    public $formCampusId = null;
+    public $formVendorId = null;
     public string $formDate = '';
     public string $formVolumeKg = '';
     public string $formCostPerKg = '';
@@ -36,9 +39,10 @@ new #[Layout('layouts.app')] class extends Component
     {
         $user = auth()->user();
         if ($user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id) {
-            $this->selectedCampusId = session('active_campus_id') ?? $user->campus_id ?? null;
+            $activeCampus = session('active_campus_id');
+            $this->selectedCampusId = !empty($activeCampus) ? (int) $activeCampus : null;
         } else {
-            $this->selectedCampusId = $user->campus_id;
+            $this->selectedCampusId = (int) $user->campus_id;
         }
         $this->filterDateFrom = Carbon::now()->subDays(30)->format('Y-m-d');
         $this->filterDateTo = Carbon::today()->format('Y-m-d');
@@ -49,7 +53,11 @@ new #[Layout('layouts.app')] class extends Component
     public function resetForm(): void
     {
         $user = auth()->user();
-        $this->formCampusId = $this->selectedCampusId ?? $user->campus_id ?? Campus::first()?->id;
+        $defaultCampusId = !empty($this->selectedCampusId)
+            ? (int) $this->selectedCampusId
+            : ($user->campus_id ? (int) $user->campus_id : Campus::first()?->id);
+        
+        $this->formCampusId = $defaultCampusId;
         
         $firstVendor = Vendor::where('is_active', true)->first();
         $this->formVendorId = $firstVendor?->id;
@@ -72,14 +80,18 @@ new #[Layout('layouts.app')] class extends Component
     public function closeCreateModal(): void
     {
         $this->showCreateModal = false;
+        $this->dispatch('close-modal');
     }
 
-    public function updatedFormVendorId(): void
+    public function updatedFormVendorId($value = null): void
     {
-        $vendor = Vendor::find($this->formVendorId);
-        if ($vendor) {
-            $this->formCostPerKg = (string) (float) $vendor->cost_per_kg;
-            $this->calculateTotalCost();
+        $vendorId = !empty($value) ? (int) $value : (!empty($this->formVendorId) ? (int) $this->formVendorId : null);
+        if ($vendorId) {
+            $vendor = Vendor::find($vendorId);
+            if ($vendor) {
+                $this->formCostPerKg = (string) (float) $vendor->cost_per_kg;
+                $this->calculateTotalCost();
+            }
         }
     }
 
@@ -120,9 +132,11 @@ new #[Layout('layouts.app')] class extends Component
         $volume = floatval($this->formVolumeKg);
         $costPerKg = floatval($this->formCostPerKg);
         $totalCost = round($volume * $costPerKg, 2);
+        $campusId = (int) $this->formCampusId;
+        $vendorId = (int) $this->formVendorId;
 
         // Validasi ketersediaan stok residu di kampus bersangkutan
-        $stockSummary = $stockService->getStockSummary($this->formCampusId);
+        $stockSummary = $stockService->getStockSummary($campusId);
         $availableResidual = $stockSummary['residual_stock_kg'];
 
         if ($volume > $availableResidual) {
@@ -134,8 +148,8 @@ new #[Layout('layouts.app')] class extends Component
         }
 
         $pickup = Pickup::create([
-            'campus_id' => $this->formCampusId,
-            'vendor_id' => $this->formVendorId,
+            'campus_id' => $campusId,
+            'vendor_id' => $vendorId,
             'pickup_date' => $this->formDate,
             'volume_kg' => $volume,
             'cost_per_kg' => $costPerKg,
@@ -148,6 +162,7 @@ new #[Layout('layouts.app')] class extends Component
 
         $this->showCreateModal = false;
         $this->resetForm();
+        $this->dispatch('close-modal');
         session()->flash('status', 'Pencatatan pengangkutan residu berhasil disimpan & jurnal Debet kas otomatis dicatat.');
     }
 
@@ -159,6 +174,7 @@ new #[Layout('layouts.app')] class extends Component
     public function cancelDelete(): void
     {
         $this->confirmDeletePickupId = null;
+        $this->dispatch('close-modal');
     }
 
     public function deletePickup(): void
@@ -173,11 +189,13 @@ new #[Layout('layouts.app')] class extends Component
         if (auth()->user()->campus_id && auth()->user()->campus_id !== $pickup->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
             session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data pengangkutan kampus ini.');
             $this->confirmDeletePickupId = null;
+            $this->dispatch('close-modal');
             return;
         }
 
         $pickup->delete(); // Observer otomatis hapus jurnal debet keuangan & re-sync buku besar
         $this->confirmDeletePickupId = null;
+        $this->dispatch('close-modal');
         session()->flash('status', 'Data pengangkutan residu berhasil dihapus dan jurnal keuangan disesuaikan.');
     }
 
@@ -186,7 +204,9 @@ new #[Layout('layouts.app')] class extends Component
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
 
-        $campusQueryId = $isSuperAdmin ? $this->selectedCampusId : $user->campus_id;
+        $campusQueryId = $isSuperAdmin 
+            ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
+            : (int) $user->campus_id;
 
         $pickupsQuery = Pickup::with(['campus', 'vendor', 'creator'])
             ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
@@ -219,7 +239,12 @@ new #[Layout('layouts.app')] class extends Component
     }
 }; ?>
 
-<div>
+<div x-data="{ 
+    showModal: false, 
+    deleteModal: false 
+}"
+@close-modal.window="showModal = false; deleteModal = false"
+@open-pickup-modal.window="showModal = true">
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -349,9 +374,9 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button wire:click="openCreateModal"
+                    <button @click="showModal = true; $wire.openCreateModal()"
                             type="button"
-                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm shadow-amber-600/20 transition active:scale-95">
+                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm shadow-amber-600/20 transition active:scale-95 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
@@ -420,7 +445,7 @@ new #[Layout('layouts.app')] class extends Component
                                         {{ $p->creator?->name ?? 'Sistem' }}
                                     </td>
                                     <td class="py-3 px-4 text-center">
-                                        <button wire:click="confirmDelete({{ $p->id }})" 
+                                        <button @click="deleteModal = true; $wire.confirmDelete({{ $p->id }})" 
                                                 type="button" 
                                                 title="Hapus Catatan Pengangkutan"
                                                 class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer">
@@ -450,142 +475,144 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
             </div>
 
-            <!-- Modal Form Catat Pengangkutan -->
-            @if ($showCreateModal)
-                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                            <div>
-                                <h3 class="text-base font-bold text-slate-900">Catat Pengangkutan Residu Sampah</h3>
-                                <p class="text-xs text-slate-500">Pencatatan volume residu yang diangkut keluar oleh vendor mitra</p>
-                            </div>
-                            <button wire:click="closeCreateModal" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
-                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                            </button>
+            <!-- Modal Form Catat Pengangkutan (Hybrid Alpine & Livewire for 0ms Instant Response) -->
+            <div x-show="showModal"
+                 x-cloak
+                 style="display: none;"
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                        <div>
+                            <h3 class="text-base font-bold text-slate-900">Catat Pengangkutan Residu Sampah</h3>
+                            <p class="text-xs text-slate-500">Pencatatan volume residu yang diangkut keluar oleh vendor mitra</p>
                         </div>
+                        <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
 
-                        <form wire:submit="savePickup" class="p-6 space-y-5">
-                            <!-- Info Lokasi & Vendor -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
-                                    @if ($isSuperAdmin)
-                                        <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                            @foreach ($campuses as $c)
-                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                            @endforeach
-                                        </select>
-                                    @else
-                                        <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
-                                            {{ auth()->user()->campus?->name }}
-                                        </div>
-                                    @endif
-                                    @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Vendor Pengangkut <span class="text-rose-500">*</span></label>
-                                    <select wire:model.live="formVendorId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                        @foreach ($vendors as $v)
-                                            <option value="{{ $v->id }}">{{ $v->name }} (Rp {{ number_format($v->cost_per_kg, 0, ',', '.') }}/kg)</option>
+                    <form wire:submit="savePickup" class="p-6 space-y-5">
+                        <!-- Info Lokasi & Vendor -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
+                                @if ($isSuperAdmin)
+                                    <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                        @foreach ($campuses as $c)
+                                            <option value="{{ $c->id }}">{{ $c->name }}</option>
                                         @endforeach
                                     </select>
-                                    @error('formVendorId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
+                                @else
+                                    <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
+                                        {{ auth()->user()->campus?->name }}
+                                    </div>
+                                @endif
+                                @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
-                            <!-- Tanggal & Volume Angkut -->
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Angkut <span class="text-rose-500">*</span></label>
-                                    <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                    @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Volume Muatan (kg) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="0.1" min="0" wire:model.live.debounce.300ms="formVolumeKg" placeholder="0.0" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                    @error('formVolumeKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp)</label>
-                                    <input type="number" step="50" min="0" wire:model.live.debounce.300ms="formCostPerKg" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                    @error('formCostPerKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-
-                            <!-- Total Biaya Debet Preview Card -->
-                            <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/60 flex items-center justify-between">
-                                <div>
-                                    <span class="text-xs font-bold text-amber-900">Total Biaya Operasional Pengangkutan:</span>
-                                    <p class="text-[11px] text-amber-700 mt-0.5">Otomatis didebetkan ke Buku Kas saat disimpan</p>
-                                </div>
-                                <div class="text-right">
-                                    <span class="font-mono text-lg font-bold text-rose-600">Rp {{ number_format(floatval($formTotalCost), 0, ',', '.') }}</span>
-                                </div>
-                            </div>
-
-                            <!-- Armada & Driver Info -->
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Supir / Driver</label>
-                                    <input type="text" wire:model="formDriverName" placeholder="Contoh: Pak Joko" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
-                                    @error('formDriverName') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Plat Kendaraan</label>
-                                    <input type="text" wire:model="formVehiclePlate" placeholder="Contoh: AB 1234 CD" class="w-full uppercase font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
-                                    @error('formVehiclePlate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-                            </div>
-
-                            <!-- Catatan -->
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan</label>
-                                <textarea wire:model="formNotes" rows="2" placeholder="Keterangan kondisi residu atau ritase truk..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500"></textarea>
-                                @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Vendor Pengangkut <span class="text-rose-500">*</span></label>
+                                <select wire:model.live="formVendorId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    @foreach ($vendors as $v)
+                                        <option value="{{ $v->id }}">{{ $v->name }} (Rp {{ number_format($v->cost_per_kg, 0, ',', '.') }}/kg)</option>
+                                    @endforeach
+                                </select>
+                                @error('formVendorId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Tanggal & Volume Angkut -->
+                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Angkut <span class="text-rose-500">*</span></label>
+                                <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
-                            <!-- Footer Form Modal -->
-                            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                                <button wire:click="closeCreateModal" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
-                                    Batal
-                                </button>
-                                <button type="submit" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer">
-                                    Simpan & Catat Debet Kas
-                                </button>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Volume Muatan (kg) <span class="text-rose-500">*</span></label>
+                                <input type="number" step="0.1" min="0" wire:model.live.debounce.300ms="formVolumeKg" placeholder="0.0" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                @error('formVolumeKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
-                        </form>
-                    </div>
-                </div>
-            @endif
 
-            <!-- Modal Konfirmasi Hapus Kustom (Seragam Sesuai Standar) -->
-            @if ($confirmDeletePickupId)
-                <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 space-y-4">
-                        <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp)</label>
+                                <input type="number" step="50" min="0" wire:model.live.debounce.300ms="formCostPerKg" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                @error('formCostPerKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
                         </div>
-                        <div class="text-center">
-                            <h3 class="text-sm font-bold text-slate-900">Konfirmasi Penghapusan Log Pengangkutan</h3>
-                            <p class="text-xs text-slate-500 mt-1">Apakah Anda yakin ingin menghapus catatan pengangkutan ini? Entri debet di buku kas akan otomatis disesuaikan.</p>
+
+                        <!-- Total Biaya Debet Preview Card -->
+                        <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/60 flex items-center justify-between">
+                            <div>
+                                <span class="text-xs font-bold text-amber-900">Total Biaya Operasional Pengangkutan:</span>
+                                <p class="text-[11px] text-amber-700 mt-0.5">Otomatis didebetkan ke Buku Kas saat disimpan</p>
+                            </div>
+                            <div class="text-right">
+                                <span class="font-mono text-lg font-bold text-rose-600">Rp {{ number_format(floatval($formTotalCost), 0, ',', '.') }}</span>
+                            </div>
                         </div>
-                        <div class="flex items-center justify-center gap-3 pt-2">
-                            <button wire:click="cancelDelete" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+
+                        <!-- Armada & Driver Info -->
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Supir / Driver</label>
+                                <input type="text" wire:model="formDriverName" placeholder="Contoh: Pak Joko" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                @error('formDriverName') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Plat Kendaraan</label>
+                                <input type="text" wire:model="formVehiclePlate" placeholder="Contoh: AB 1234 CD" class="w-full uppercase font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                @error('formVehiclePlate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+                        </div>
+
+                        <!-- Catatan -->
+                        <div>
+                            <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan</label>
+                            <textarea wire:model="formNotes" rows="2" placeholder="Keterangan kondisi residu atau ritase truk..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500"></textarea>
+                            @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                        </div>
+
+                        <!-- Footer Form Modal -->
+                        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                            <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
                                 Batal
                             </button>
-                            <button wire:click="deletePickup" type="button" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition active:scale-95 cursor-pointer">
-                                Ya, Hapus Data
+                            <button type="submit" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer">
+                                Simpan & Catat Debet Kas
                             </button>
                         </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Modal Konfirmasi Hapus Kustom (Seragam Sesuai Standar) -->
+            <div x-show="deleteModal"
+                 x-cloak
+                 style="display: none;"
+                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 space-y-4">
+                    <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <div class="text-center">
+                        <h3 class="text-sm font-bold text-slate-900">Konfirmasi Penghapusan Log Pengangkutan</h3>
+                        <p class="text-xs text-slate-500 mt-1">Apakah Anda yakin ingin menghapus catatan pengangkutan ini? Entri debet di buku kas akan otomatis disesuaikan.</p>
+                    </div>
+                    <div class="flex items-center justify-center gap-3 pt-2">
+                        <button @click="deleteModal = false; $wire.cancelDelete()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                            Batal
+                        </button>
+                        <button @click="deleteModal = false" wire:click="deletePickup" type="button" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition active:scale-95 cursor-pointer">
+                            Ya, Hapus Data
+                        </button>
                     </div>
                 </div>
-            @endif
+            </div>
 
         </div>
     </div>
