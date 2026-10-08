@@ -160,7 +160,7 @@ new #[Layout('layouts.app')] class extends Component
         $session = WeighingSession::findOrFail($this->confirmDeleteSessionId);
         
         // Otorisasi: hanya Super Admin atau user dari kampus bersangkutan
-        if (auth()->user()->campus_id && auth()->user()->campus_id !== $session->campus_id && !auth()->user()->hasRole('Super Admin')) {
+        if (auth()->user()->campus_id && auth()->user()->campus_id !== $session->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
             session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.');
             $this->confirmDeleteSessionId = null;
             return;

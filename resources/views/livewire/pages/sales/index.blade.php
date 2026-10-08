@@ -189,7 +189,7 @@ new #[Layout('layouts.app')] class extends Component
         $sale = Sale::findOrFail($this->confirmDeleteSaleId);
 
         // Otorisasi kampus
-        if (auth()->user()->campus_id && auth()->user()->campus_id !== $sale->campus_id && !auth()->user()->hasRole('Super Admin')) {
+        if (auth()->user()->campus_id && auth()->user()->campus_id !== $sale->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
             session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.');
             $this->confirmDeleteSaleId = null;
             return;
@@ -221,6 +221,12 @@ new #[Layout('layouts.app')] class extends Component
             ->when($this->filterDateTo, fn($q) => $q->whereDate('sale_date', '<=', $this->filterDateTo))
             ->sum('total_amount');
 
+        $totalSoldFiltered = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
+            ->when($campusQueryId, fn($q) => $q->where('sales.campus_id', $campusQueryId))
+            ->when($this->filterDateFrom, fn($q) => $q->whereDate('sales.sale_date', '>=', $this->filterDateFrom))
+            ->when($this->filterDateTo, fn($q) => $q->whereDate('sales.sale_date', '<=', $this->filterDateTo))
+            ->sum('sale_items.weight_kg');
+
         return [
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::orderBy('id')->get(),
@@ -228,6 +234,7 @@ new #[Layout('layouts.app')] class extends Component
             'sales' => $salesQuery->paginate(15),
             'stockSummary' => $stockSummary,
             'totalRevenue' => (float) $totalRevenue,
+            'totalSoldFiltered' => (float) $totalSoldFiltered,
         ];
     }
 }; ?>
@@ -312,7 +319,7 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
                     <div class="mt-3 flex items-baseline gap-1.5">
-                        <span class="font-mono text-2xl font-bold text-slate-900">{{ number_format($stockSummary['total_sold_kg'], 1) }}</span>
+                        <span class="font-mono text-2xl font-bold text-slate-900">{{ number_format($totalSoldFiltered, 1) }}</span>
                         <span class="text-xs text-slate-500 font-medium">kg</span>
                     </div>
                     <p class="text-[11px] text-slate-400 mt-1">Diserap oleh mitra pembeli/pengepul</p>
