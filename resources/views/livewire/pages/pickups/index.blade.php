@@ -32,8 +32,19 @@ new #[Layout('layouts.app')] class extends Component
     public string $formVehiclePlate = '';
     public string $formNotes = '';
 
-    // Modal Confirmation Deletion state
+    // Modal Confirmation Deletion & View Detail state
     public ?int $confirmDeletePickupId = null;
+    public ?int $viewPickupId = null;
+
+    public function viewPickup(int $id): void
+    {
+        $this->viewPickupId = $id;
+    }
+
+    public function closeViewModal(): void
+    {
+        $this->viewPickupId = null;
+    }
 
     public function mount(): void
     {
@@ -231,7 +242,8 @@ new #[Layout('layouts.app')] class extends Component
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::orderBy('id')->get(),
             'vendors' => Vendor::where('is_active', true)->orderBy('name')->get(),
-            'pickups' => $pickupsQuery->paginate(15),
+            'pickups' => $pickupsQuery->paginate(10),
+            'selectedPickup' => $this->viewPickupId ? Pickup::with(['campus', 'vendor', 'creator'])->find($this->viewPickupId) : null,
             'stockSummary' => $stockSummary,
             'totalCostFiltered' => (float) $totalCostFiltered,
             'totalVolumeFiltered' => (float) $totalVolumeFiltered,
@@ -411,48 +423,56 @@ new #[Layout('layouts.app')] class extends Component
                         <tbody class="divide-y divide-slate-100 font-medium">
                             @forelse ($pickups as $p)
                                 <tr class="hover:bg-slate-50/60 transition">
-                                    <td class="py-3 px-4 whitespace-nowrap">
+                                    <td class="py-2.5 px-4 whitespace-nowrap">
                                         <div class="font-semibold text-slate-800">{{ $p->pickup_date->format('d M Y') }}</div>
                                         <div class="text-[10px] text-slate-400">{{ $p->created_at->format('H:i') }} WIB</div>
                                     </td>
-                                    <td class="py-3 px-4">
+                                    <td class="py-2.5 px-4 whitespace-nowrap">
                                         <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 mb-0.5">
                                             {{ $p->campus->name }}
                                         </span>
                                         <div class="font-semibold text-slate-800">{{ $p->vendor->name }}</div>
-                                        @if ($p->notes)
-                                            <p class="text-[10px] text-slate-400 italic line-clamp-1 mt-0.5">Catatan: {{ $p->notes }}</p>
-                                        @endif
                                     </td>
-                                    <td class="py-3 px-4">
+                                    <td class="py-2.5 px-4 whitespace-nowrap">
                                         <div class="text-slate-800">{{ $p->driver_name ?: '-' }}</div>
                                         @if ($p->vehicle_plate)
-                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600 mt-0.5">
+                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600">
                                                 {{ $p->vehicle_plate }}
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="py-3 px-4 text-right font-mono font-bold text-slate-900">
+                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
                                         {{ number_format($p->volume_kg, 1, ',', '.') }} kg
                                     </td>
-                                    <td class="py-3 px-4 text-right font-mono text-slate-600">
+                                    <td class="py-2.5 px-4 text-right font-mono text-slate-600 whitespace-nowrap">
                                         Rp {{ number_format($p->cost_per_kg, 0, ',', '.') }}
                                     </td>
-                                    <td class="py-3 px-4 text-right font-mono font-bold text-rose-600">
+                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-rose-600 whitespace-nowrap">
                                         Rp {{ number_format($p->total_cost, 0, ',', '.') }}
                                     </td>
-                                    <td class="py-3 px-4 whitespace-nowrap text-slate-700">
+                                    <td class="py-2.5 px-4 whitespace-nowrap text-slate-700">
                                         {{ $p->creator?->name ?? 'Sistem' }}
                                     </td>
-                                    <td class="py-3 px-4 text-center">
-                                        <button @click="deleteModal = true; $wire.confirmDelete({{ $p->id }})" 
-                                                type="button" 
-                                                title="Hapus Catatan Pengangkutan"
-                                                class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer">
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                            </svg>
-                                        </button>
+                                    <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <button wire:click="viewPickup({{ $p->id }})" 
+                                                    type="button" 
+                                                    title="Lihat Rincian Pengangkutan"
+                                                    class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                            <button @click="deleteModal = true; $wire.confirmDelete({{ $p->id }})" 
+                                                    type="button" 
+                                                    title="Hapus Catatan Pengangkutan"
+                                                    class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
                                     </td>
                                 </tr>
                             @empty
@@ -475,144 +495,245 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
             </div>
 
-            <!-- Modal Form Catat Pengangkutan (Hybrid Alpine & Livewire for 0ms Instant Response) -->
-            <div x-show="showModal"
-                 x-cloak
-                 style="display: none;"
-                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                        <div>
-                            <h3 class="text-base font-bold text-slate-900">Catat Pengangkutan Residu Sampah</h3>
-                            <p class="text-xs text-slate-500">Pencatatan volume residu yang diangkut keluar oleh vendor mitra</p>
-                        </div>
-                        <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                        </button>
-                    </div>
-
-                    <form wire:submit="savePickup" class="p-6 space-y-5">
-                        <!-- Info Lokasi & Vendor -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+            <!-- Modal Form Catat Pengangkutan (Teleported to Body for 100% Full Viewport Backdrop) -->
+            <template x-teleport="body">
+                <div x-show="showModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
-                                @if ($isSuperAdmin)
-                                    <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                        @foreach ($campuses as $c)
-                                            <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                <h3 class="text-base font-bold text-slate-900">Catat Pengangkutan Residu Sampah</h3>
+                                <p class="text-xs text-slate-500">Pencatatan volume residu yang diangkut keluar oleh vendor mitra</p>
+                            </div>
+                            <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <form wire:submit="savePickup" class="p-6 space-y-5">
+                            <!-- Info Lokasi & Vendor -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
+                                    @if ($isSuperAdmin)
+                                        <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                            @foreach ($campuses as $c)
+                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
+                                            {{ auth()->user()->campus?->name }}
+                                        </div>
+                                    @endif
+                                    @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Vendor Pengangkut <span class="text-rose-500">*</span></label>
+                                    <select wire:model.live="formVendorId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                        @foreach ($vendors as $v)
+                                            <option value="{{ $v->id }}">{{ $v->name }} (Rp {{ number_format($v->cost_per_kg, 0, ',', '.') }}/kg)</option>
                                         @endforeach
                                     </select>
-                                @else
-                                    <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
-                                        {{ auth()->user()->campus?->name }}
-                                    </div>
-                                @endif
-                                @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                    @error('formVendorId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
                             </div>
 
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Vendor Pengangkut <span class="text-rose-500">*</span></label>
-                                <select wire:model.live="formVendorId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                    @foreach ($vendors as $v)
-                                        <option value="{{ $v->id }}">{{ $v->name }} (Rp {{ number_format($v->cost_per_kg, 0, ',', '.') }}/kg)</option>
-                                    @endforeach
-                                </select>
-                                @error('formVendorId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            <!-- Tanggal & Volume Angkut -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Angkut <span class="text-rose-500">*</span></label>
+                                    <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Volume Muatan (kg) <span class="text-rose-500">*</span></label>
+                                    <input type="number" step="0.1" min="0" wire:model.live.debounce.300ms="formVolumeKg" placeholder="0.0" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    @error('formVolumeKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp)</label>
+                                    <input type="number" step="50" min="0" wire:model.live.debounce.300ms="formCostPerKg" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    @error('formCostPerKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
                             </div>
+
+                            <!-- Total Biaya Debet Preview Card -->
+                            <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/60 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs font-bold text-amber-900">Total Biaya Operasional Pengangkutan:</span>
+                                    <p class="text-[11px] text-amber-700 mt-0.5">Otomatis didebetkan ke Buku Kas saat disimpan</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono text-lg font-bold text-rose-600">Rp {{ number_format(floatval($formTotalCost), 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Armada & Driver Info -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Supir / Driver</label>
+                                    <input type="text" wire:model="formDriverName" placeholder="Contoh: Pak Joko" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                    @error('formDriverName') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Plat Kendaraan</label>
+                                    <input type="text" wire:model="formVehiclePlate" placeholder="Contoh: AB 1234 CD" class="w-full uppercase font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                    @error('formVehiclePlate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Catatan -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan</label>
+                                <textarea wire:model="formNotes" rows="2" placeholder="Keterangan kondisi residu atau ritase truk..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500"></textarea>
+                                @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Footer Form Modal -->
+                            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                                <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="submit" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer">
+                                    Simpan & Catat Debet Kas
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Konfirmasi Hapus Kustom (Teleported to Body) -->
+            <template x-teleport="body">
+                <div x-show="deleteModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 space-y-4">
+                        <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
                         </div>
-
-                        <!-- Tanggal & Volume Angkut -->
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Angkut <span class="text-rose-500">*</span></label>
-                                <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Volume Muatan (kg) <span class="text-rose-500">*</span></label>
-                                <input type="number" step="0.1" min="0" wire:model.live.debounce.300ms="formVolumeKg" placeholder="0.0" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                @error('formVolumeKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp)</label>
-                                <input type="number" step="50" min="0" wire:model.live.debounce.300ms="formCostPerKg" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                @error('formCostPerKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                            </div>
+                        <div class="text-center">
+                            <h3 class="text-sm font-bold text-slate-900">Konfirmasi Penghapusan Log Pengangkutan</h3>
+                            <p class="text-xs text-slate-500 mt-1">Apakah Anda yakin ingin menghapus catatan pengangkutan ini? Entri debet di buku kas akan otomatis disesuaikan.</p>
                         </div>
-
-                        <!-- Total Biaya Debet Preview Card -->
-                        <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/60 flex items-center justify-between">
-                            <div>
-                                <span class="text-xs font-bold text-amber-900">Total Biaya Operasional Pengangkutan:</span>
-                                <p class="text-[11px] text-amber-700 mt-0.5">Otomatis didebetkan ke Buku Kas saat disimpan</p>
-                            </div>
-                            <div class="text-right">
-                                <span class="font-mono text-lg font-bold text-rose-600">Rp {{ number_format(floatval($formTotalCost), 0, ',', '.') }}</span>
-                            </div>
-                        </div>
-
-                        <!-- Armada & Driver Info -->
-                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Supir / Driver</label>
-                                <input type="text" wire:model="formDriverName" placeholder="Contoh: Pak Joko" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
-                                @error('formDriverName') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                            </div>
-
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Plat Kendaraan</label>
-                                <input type="text" wire:model="formVehiclePlate" placeholder="Contoh: AB 1234 CD" class="w-full uppercase font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
-                                @error('formVehiclePlate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                            </div>
-                        </div>
-
-                        <!-- Catatan -->
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan</label>
-                            <textarea wire:model="formNotes" rows="2" placeholder="Keterangan kondisi residu atau ritase truk..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500"></textarea>
-                            @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                        </div>
-
-                        <!-- Footer Form Modal -->
-                        <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
-                            <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                        <div class="flex items-center justify-center gap-3 pt-2">
+                            <button @click="deleteModal = false; $wire.cancelDelete()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
                                 Batal
                             </button>
-                            <button type="submit" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer">
-                                Simpan & Catat Debet Kas
+                            <button @click="deleteModal = false" wire:click="deletePickup" type="button" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition active:scale-95 cursor-pointer">
+                                Ya, Hapus Data
                             </button>
                         </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+            </template>
 
-            <!-- Modal Konfirmasi Hapus Kustom (Seragam Sesuai Standar) -->
-            <div x-show="deleteModal"
-                 x-cloak
-                 style="display: none;"
-                 class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 space-y-4">
-                    <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto">
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
+            <!-- Modal Detail Pengangkutan Residu (Teleported to Body) -->
+            @if ($viewPickupId && $selectedPickup)
+                <template x-teleport="body">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
+                         x-data
+                         @keydown.escape.window="$wire.closeViewModal()">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+                            <!-- Header Modal Detail -->
+                            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                            LOG #{{ $selectedPickup->id }}
+                                        </span>
+                                        <span class="text-xs text-slate-400 font-medium">
+                                            {{ $selectedPickup->pickup_date->translatedFormat('d F Y') }}
+                                        </span>
+                                    </div>
+                                    <h3 class="text-base font-bold text-slate-900 mt-1">Rincian Pengangkutan Residu</h3>
+                                </div>
+                                <button wire:click="closeViewModal" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+
+                            <!-- Body Modal Detail -->
+                            <div class="p-6 space-y-5">
+                                <!-- Kartu Highlight -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                                        <span class="text-[11px] font-medium text-slate-500">Volume Muatan Terangkut</span>
+                                        <div class="font-mono text-xl font-bold text-slate-900 mt-0.5">
+                                            {{ number_format($selectedPickup->volume_kg, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
+                                        </div>
+                                    </div>
+                                    <div class="p-3.5 rounded-xl bg-rose-50/60 border border-rose-200/60">
+                                        <span class="text-[11px] font-medium text-rose-600">Total Biaya Operasional</span>
+                                        <div class="font-mono text-xl font-bold text-rose-700 mt-0.5">
+                                            Rp {{ number_format($selectedPickup->total_cost, 0, ',', '.') }}
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Rincian Granular -->
+                                <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-xs">
+                                    <div class="px-4 py-3 flex justify-between bg-slate-50/50">
+                                        <span class="text-slate-500 font-medium">Kampus Asal</span>
+                                        <span class="font-semibold text-slate-800">{{ $selectedPickup->campus->name }}</span>
+                                    </div>
+                                    <div class="px-4 py-3 flex justify-between">
+                                        <span class="text-slate-500 font-medium">Vendor Mitra</span>
+                                        <span class="font-semibold text-slate-800">{{ $selectedPickup->vendor->name }}</span>
+                                    </div>
+                                    <div class="px-4 py-3 flex justify-between bg-slate-50/50">
+                                        <span class="text-slate-500 font-medium">Tarif Satuan Vendor</span>
+                                        <span class="font-mono text-slate-700">Rp {{ number_format($selectedPickup->cost_per_kg, 0, ',', '.') }} / kg</span>
+                                    </div>
+                                    <div class="px-4 py-3 flex justify-between">
+                                        <span class="text-slate-500 font-medium">Supir / Driver</span>
+                                        <span class="font-semibold text-slate-800">{{ $selectedPickup->driver_name ?: '-' }}</span>
+                                    </div>
+                                    <div class="px-4 py-3 flex justify-between bg-slate-50/50">
+                                        <span class="text-slate-500 font-medium">Nomor Plat Armada</span>
+                                        <span class="font-mono text-slate-700 font-semibold">{{ $selectedPickup->vehicle_plate ?: '-' }}</span>
+                                    </div>
+                                    <div class="px-4 py-3 flex justify-between">
+                                        <span class="text-slate-500 font-medium">Petugas Pencatat</span>
+                                        <span class="text-slate-700">{{ $selectedPickup->creator?->name ?? 'Sistem' }} ({{ $selectedPickup->created_at->format('d/m/Y H:i') }} WIB)</span>
+                                    </div>
+                                    <div class="px-4 py-3 flex justify-between bg-slate-50/50">
+                                        <span class="text-slate-500 font-medium">Status Buku Kas</span>
+                                        <span class="inline-flex items-center gap-1 font-semibold text-rose-700 bg-rose-100 px-2 py-0.5 rounded text-[10px]">
+                                            Terdebet Otomatis (Pengeluaran Operasional)
+                                        </span>
+                                    </div>
+                                </div>
+
+                                <!-- Catatan -->
+                                <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                                    <span class="text-[11px] font-semibold text-slate-600 block mb-1">Catatan Pengangkutan:</span>
+                                    <p class="text-xs text-slate-700 italic">
+                                        {{ $selectedPickup->notes ?: 'Tidak ada catatan tambahan.' }}
+                                    </p>
+                                </div>
+                            </div>
+
+                            <!-- Footer Modal Detail -->
+                            <div class="px-6 py-3 border-t border-slate-100 flex items-center justify-end bg-slate-50/50">
+                                <button wire:click="closeViewModal" type="button" class="px-4 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                    <div class="text-center">
-                        <h3 class="text-sm font-bold text-slate-900">Konfirmasi Penghapusan Log Pengangkutan</h3>
-                        <p class="text-xs text-slate-500 mt-1">Apakah Anda yakin ingin menghapus catatan pengangkutan ini? Entri debet di buku kas akan otomatis disesuaikan.</p>
-                    </div>
-                    <div class="flex items-center justify-center gap-3 pt-2">
-                        <button @click="deleteModal = false; $wire.cancelDelete()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
-                            Batal
-                        </button>
-                        <button @click="deleteModal = false" wire:click="deletePickup" type="button" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold transition active:scale-95 cursor-pointer">
-                            Ya, Hapus Data
-                        </button>
-                    </div>
-                </div>
-            </div>
+                </template>
+            @endif
 
         </div>
     </div>

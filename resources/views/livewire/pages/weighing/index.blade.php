@@ -87,6 +87,16 @@ new #[Layout('layouts.app')] class extends Component
         $this->showCreateModal = false;
     }
 
+    public function viewSession(int $id): void
+    {
+        $this->viewSessionId = $id;
+    }
+
+    public function closeViewModal(): void
+    {
+        $this->viewSessionId = null;
+    }
+
     public function updatedFormCampusId(): void
     {
         $this->formSourceId = WasteSource::where('campus_id', $this->formCampusId)->first()?->id;
@@ -199,7 +209,10 @@ new #[Layout('layouts.app')] class extends Component
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::orderBy('id')->get(),
             'wasteSources' => WasteSource::where('campus_id', $this->formCampusId)->get(),
-            'sessions' => $sessionsQuery->paginate(15),
+            'sessions' => $sessionsQuery->paginate(10),
+            'selectedSession' => $this->viewSessionId 
+                ? WeighingSession::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])->find($this->viewSessionId) 
+                : null,
             'stockSummary' => $stockSummary,
         ];
     }
@@ -371,231 +384,366 @@ new #[Layout('layouts.app')] class extends Component
                         <th class="py-3 px-4 text-center">Aksi</th>
                     </tr>
                 </thead>
-                <tbody class="divide-y divide-slate-100 text-slate-700">
-                    @forelse ($sessions as $session)
-                        <tr class="hover:bg-slate-50/50 transition">
-                            <td class="py-3 px-4 whitespace-nowrap font-medium text-slate-900">
-                                <div>{{ $session->weigh_date->translatedFormat('d M Y') }}</div>
-                                <div class="text-[10px] text-slate-400 font-normal">{{ $session->created_at->format('H:i') }} WIB</div>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="font-semibold text-slate-900">{{ $session->campus->name }}</div>
-                                <div class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                                    <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                    </svg>
-                                    <span>{{ $session->wasteSource?->name ?? 'Titik Kampus Umum' }}</span>
-                                </div>
-                            </td>
-                            <td class="py-3 px-4">
-                                <div class="flex flex-wrap gap-1.5 max-w-md">
-                                    @foreach ($session->items as $item)
-                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium 
-                                            {{ $item->wasteType->category === 'Organik' ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' : '' }}
-                                            {{ $item->wasteType->category === 'Anorganik' ? 'bg-sky-50 text-sky-700 border border-sky-100' : '' }}
-                                            {{ $item->wasteType->category === 'Residu' ? 'bg-amber-50 text-amber-700 border border-amber-100' : '' }}">
-                                            <span>{{ $item->wasteType->name }}:</span>
-                                            <span class="font-bold">{{ number_format($item->weight_kg, 1) }} kg</span>
-                                        </span>
-                                    @endforeach
-                                </div>
-                                @if ($session->notes)
-                                    <div class="text-[10px] text-slate-400 mt-1 italic line-clamp-1">
-                                        Catatan: {{ $session->notes }}
-                                    </div>
-                                @endif
-                            </td>
-                            <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-sm">
-                                {{ number_format($session->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
-                            </td>
-                            <td class="py-3 px-4 whitespace-nowrap text-slate-500 text-[11px]">
-                                {{ $session->creator?->name ?? 'Sistem' }}
-                            </td>
-                            <td class="py-3 px-4 text-center whitespace-nowrap">
-                                <button wire:click="confirmDelete({{ $session->id }})" 
-                                        class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition"
-                                        title="Hapus Sesi">
-                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </td>
-                        </tr>
-                    @empty
-                        <tr>
-                            <td colspan="6" class="py-8 text-center text-slate-400">
-                                <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-                                </svg>
-                                <span>Belum ada data penimbangan untuk filter yang dipilih.</span>
-                            </td>
-                        </tr>
-                    @endforelse
-                </tbody>
-            </table>
-        </div>
-
-        <div class="px-4 py-3 border-t border-slate-100">
-            {{ $sessions->links() }}
-        </div>
-    </div>
-
-    <!-- Modal Form Catat Penimbangan -->
-    @if ($showCreateModal)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-                <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                    <div>
-                        <h3 class="text-base font-bold text-slate-900">Catat Penimbangan Sampah</h3>
-                        <p class="text-xs text-slate-500">Input hasil timbangan harian per jenis sampah</p>
-                    </div>
-                    <button wire:click="closeCreateModal" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                    </button>
+                        <tbody class="divide-y divide-slate-100 text-slate-700">
+                            @forelse ($sessions as $session)
+                                <tr class="hover:bg-slate-50/50 transition">
+                                    <td class="py-2.5 px-4 whitespace-nowrap font-medium text-slate-900">
+                                        <div>{{ $session->weigh_date->translatedFormat('d M Y') }}</div>
+                                        <div class="text-[10px] text-slate-400 font-normal">{{ $session->created_at->format('H:i') }} WIB</div>
+                                    </td>
+                                    <td class="py-2.5 px-4 whitespace-nowrap">
+                                        <div class="font-semibold text-slate-900">{{ $session->campus->name }}</div>
+                                        <div class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
+                                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            </svg>
+                                            <span>{{ $session->wasteSource?->name ?? 'Titik Kampus Umum' }}</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-2.5 px-4 whitespace-nowrap">
+                                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                            <span>{{ $session->items->count() }} Jenis Tervalidasi</span>
+                                        </div>
+                                    </td>
+                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-sm">
+                                        {{ number_format($session->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
+                                    </td>
+                                    <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                                        {{ $session->creator?->name ?? 'Sistem' }}
+                                    </td>
+                                    <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                        <div class="flex items-center justify-center gap-1">
+                                            <button wire:click="viewSession({{ $session->id }})" 
+                                                    type="button"
+                                                    title="Lihat Rincian Sesi Timbang"
+                                                    class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                </svg>
+                                            </button>
+                                            <button wire:click="confirmDelete({{ $session->id }})" 
+                                                    type="button"
+                                                    class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                                    title="Hapus Sesi">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="6" class="py-8 text-center text-slate-400">
+                                        <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                        </svg>
+                                        <span>Belum ada data penimbangan untuk filter yang dipilih.</span>
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
 
-                <form wire:submit="saveWeighing" class="p-6 space-y-6">
-                    <!-- Sesi Info Grid -->
-                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
-                            @if ($isSuperAdmin)
-                                <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                    @foreach ($campuses as $c)
-                                        <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                    @endforeach
-                                </select>
-                            @else
-                                <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
-                                    {{ auth()->user()->campus?->name }}
+                <div class="px-4 py-3 border-t border-slate-100">
+                    {{ $sessions->links() }}
+                </div>
+            </div>
+
+            <!-- Modal Form Catat Penimbangan (Teleported to Body) -->
+            @if ($showCreateModal)
+                <template x-teleport="body">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                                <div>
+                                    <h3 class="text-base font-bold text-slate-900">Catat Penimbangan Sampah</h3>
+                                    <p class="text-xs text-slate-500">Input hasil timbangan harian per jenis sampah</p>
                                 </div>
-                            @endif
-                            @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Titik Sumber</label>
-                            <select wire:model="formSourceId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                <option value="">-- Pilih Titik Lokasi --</option>
-                                @foreach ($wasteSources as $s)
-                                    <option value="{{ $s->id }}">{{ $s->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('formSourceId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Timbang <span class="text-rose-500">*</span></label>
-                            <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                            @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <!-- Items Matrix -->
-                    <div>
-                        <div class="flex items-center justify-between mb-2">
-                            <div>
-                                <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Jenis Sampah Terpilah</h4>
-                                <p class="text-[11px] text-slate-500">Masukkan bobot aktual timbangan (kg). Volume (m³) bersifat opsional.</p>
-                            </div>
-                        </div>
-
-                        @error('formItems')
-                            <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
-                                {{ $message }}
-                            </div>
-                        @enderror
-
-                        <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-                            <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                                <div class="col-span-6">Jenis Sampah</div>
-                                <div class="col-span-3 text-right">Berat (kg) <span class="text-rose-500">*</span></div>
-                                <div class="col-span-3 text-right">Volume (m³)</div>
+                                <button wire:click="closeCreateModal" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
                             </div>
 
-                            @foreach ($formItems as $index => $item)
-                                <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
-                                    <div class="col-span-6 flex items-center gap-2">
-                                        <span class="w-2 h-2 rounded-full 
-                                            {{ $item['category'] === 'Organik' ? 'bg-emerald-500' : '' }}
-                                            {{ $item['category'] === 'Anorganik' ? 'bg-sky-500' : '' }}
-                                            {{ $item['category'] === 'Residu' ? 'bg-amber-500' : '' }}">
-                                        </span>
-                                        <div>
-                                            <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
-                                            <div class="text-[10px] text-slate-400">
-                                                {{ $item['category'] }} 
-                                                @if ($item['is_sellable'])
-                                                    <span class="text-sky-600 font-medium">| Siap Jual</span>
-                                                @else
-                                                    <span class="text-amber-600 font-medium">| Residu/Kompos</span>
-                                                @endif
+                            <form wire:submit="saveWeighing" class="p-6 space-y-6">
+                                <!-- Sesi Info Grid -->
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
+                                        @if ($isSuperAdmin)
+                                            <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                                @foreach ($campuses as $c)
+                                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        @else
+                                            <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
+                                                {{ auth()->user()->campus?->name }}
                                             </div>
+                                        @endif
+                                        @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Titik Sumber</label>
+                                        <select wire:model="formSourceId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                            <option value="">-- Pilih Titik Lokasi --</option>
+                                            @foreach ($wasteSources as $s)
+                                                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('formSourceId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Timbang <span class="text-rose-500">*</span></label>
+                                        <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                        @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                    </div>
+                                </div>
+
+                                <!-- Items Matrix -->
+                                <div>
+                                    <div class="flex items-center justify-between mb-2">
+                                        <div>
+                                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Jenis Sampah Terpilah</h4>
+                                            <p class="text-[11px] text-slate-500">Masukkan bobot aktual timbangan (kg). Volume (m³) bersifat opsional.</p>
                                         </div>
                                     </div>
-                                    <div class="col-span-3">
-                                        <input type="number" step="0.01" min="0" 
-                                               wire:model="formItems.{{ $index }}.weight_kg" 
-                                               placeholder="0.0" 
-                                               class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
-                                    </div>
-                                    <div class="col-span-3">
-                                        <input type="number" step="0.001" min="0" 
-                                               wire:model="formItems.{{ $index }}.volume_m3" 
-                                               placeholder="opsional" 
-                                               class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+
+                                    @error('formItems')
+                                        <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
+                                            {{ $message }}
+                                        </div>
+                                    @enderror
+
+                                    <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                        <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                            <div class="col-span-6">Jenis Sampah</div>
+                                            <div class="col-span-3 text-right">Berat (kg) <span class="text-rose-500">*</span></div>
+                                            <div class="col-span-3 text-right">Volume (m³)</div>
+                                        </div>
+
+                                        @foreach ($formItems as $index => $item)
+                                            <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
+                                                <div class="col-span-6 flex items-center gap-2">
+                                                    <span class="w-2 h-2 rounded-full 
+                                                        {{ $item['category'] === 'Organik' ? 'bg-emerald-500' : '' }}
+                                                        {{ $item['category'] === 'Anorganik' ? 'bg-sky-500' : '' }}
+                                                        {{ $item['category'] === 'Residu' ? 'bg-amber-500' : '' }}">
+                                                    </span>
+                                                    <div>
+                                                        <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
+                                                        <div class="text-[10px] text-slate-400">
+                                                            {{ $item['category'] }} 
+                                                            @if ($item['is_sellable'])
+                                                                <span class="text-sky-600 font-medium">| Siap Jual</span>
+                                                            @else
+                                                                <span class="text-amber-600 font-medium">| Residu/Kompos</span>
+                                                            @endif
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-span-3">
+                                                    <input type="number" step="0.01" min="0" 
+                                                           wire:model="formItems.{{ $index }}.weight_kg" 
+                                                           placeholder="0.0" 
+                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                                </div>
+                                                <div class="col-span-3">
+                                                    <input type="number" step="0.001" min="0" 
+                                                           wire:model="formItems.{{ $index }}.volume_m3" 
+                                                           placeholder="opsional" 
+                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                                </div>
+                                            </div>
+                                        @endforeach
                                     </div>
                                 </div>
-                            @endforeach
+
+                                <!-- Notes Field -->
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+                                    <textarea wire:model="formNotes" rows="2" placeholder="Kondisi cuaca, shift pengangkutan, atau catatan khusus penimbangan..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                    @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Actions -->
+                                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                                    <button type="button" wire:click="closeCreateModal" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+                                        Batal
+                                    </button>
+                                    <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
+                                        Simpan Data Penimbangan
+                                    </button>
+                                </div>
+                            </form>
                         </div>
                     </div>
+                </template>
+            @endif
 
-                    <!-- Notes Field -->
-                    <div>
-                        <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
-                        <textarea wire:model="formNotes" rows="2" placeholder="Kondisi cuaca, shift pengangkutan, atau catatan khusus penimbangan..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
-                        @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+            <!-- Modal Konfirmasi Hapus (Teleported to Body) -->
+            @if ($confirmDeleteSessionId)
+                <template x-teleport="body">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
+                            <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900">Hapus Sesi Penimbangan?</h3>
+                            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                Tindakan ini akan menghapus catatan penimbangan dan seluruh rincian bobot sampah di dalamnya. Data yang dihapus tidak dapat dipulihkan.
+                            </p>
+                            <div class="flex items-center justify-center gap-3 mt-6">
+                                <button type="button" wire:click="cancelDelete" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="button" wire:click="deleteSession" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                                    Ya, Hapus Sesi
+                                </button>
+                            </div>
+                        </div>
                     </div>
+                </template>
+            @endif
 
-                    <!-- Actions -->
-                    <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                        <button type="button" wire:click="closeCreateModal" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition">
-                            Batal
-                        </button>
-                        <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95">
-                            Simpan Data Penimbangan
-                        </button>
+            <!-- Modal Detail Sesi Penimbangan (Teleported to Body) -->
+            @if ($viewSessionId && $selectedSession)
+                <template x-teleport="body">
+                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
+                         x-data
+                         @keydown.escape.window="$wire.closeViewModal()">
+                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                            <!-- Header Modal Detail -->
+                            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                                <div>
+                                    <div class="flex items-center gap-2">
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                            SESI #TIMBANG-{{ str_pad($selectedSession->id, 5, '0', STR_PAD_LEFT) }}
+                                        </span>
+                                        <span class="text-xs text-slate-400 font-medium">
+                                            {{ $selectedSession->weigh_date->translatedFormat('d F Y') }}
+                                        </span>
+                                    </div>
+                                    <h3 class="text-base font-bold text-slate-900 mt-1">Rincian Hasil Penimbangan Sampah</h3>
+                                </div>
+                                <button wire:click="closeViewModal" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+
+                            <!-- Body Modal Detail -->
+                            <div class="p-6 space-y-5">
+                                <!-- Kartu Highlight -->
+                                <div class="grid grid-cols-2 gap-3">
+                                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                                        <span class="text-[11px] font-medium text-slate-500">Total Berat Masuk</span>
+                                        <div class="font-mono text-xl font-bold text-slate-900 mt-0.5">
+                                            {{ number_format($selectedSession->total_weight, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
+                                        </div>
+                                    </div>
+                                    <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/60">
+                                        <span class="text-[11px] font-medium text-emerald-700">Jumlah Jenis Terdata</span>
+                                        <div class="font-mono text-xl font-bold text-emerald-700 mt-0.5">
+                                            {{ $selectedSession->items->count() }} <span class="text-xs font-sans font-normal text-emerald-600">Kategori</span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <!-- Info Lokasi & Petugas -->
+                                <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-xs">
+                                    <div class="px-4 py-3 flex justify-between bg-slate-50/50">
+                                        <span class="text-slate-500 font-medium">Kampus Asal</span>
+                                        <span class="font-semibold text-slate-800">{{ $selectedSession->campus->name }}</span>
+                                    </div>
+                                    <div class="px-4 py-3 flex justify-between">
+                                        <span class="text-slate-500 font-medium">Titik Sumber Pengumpulan</span>
+                                        <span class="font-semibold text-slate-800">{{ $selectedSession->wasteSource?->name ?? 'Titik Kampus Umum' }}</span>
+                                    </div>
+                                    <div class="px-4 py-3 flex justify-between bg-slate-50/50">
+                                        <span class="text-slate-500 font-medium">Petugas Pencatat</span>
+                                        <span class="text-slate-700">{{ $selectedSession->creator?->name ?? 'Sistem' }} ({{ $selectedSession->created_at->format('d/m/Y H:i') }} WIB)</span>
+                                    </div>
+                                </div>
+
+                                <!-- Tabel Granular Rincian Item Penimbangan -->
+                                <div>
+                                    <h4 class="text-xs font-bold text-slate-800 mb-2">Rincian Bobot Per Jenis Sampah</h4>
+                                    <div class="rounded-xl border border-slate-200 overflow-hidden">
+                                        <table class="w-full text-left text-xs">
+                                            <thead class="bg-slate-50 text-[10px] uppercase font-bold text-slate-500 border-b border-slate-200">
+                                                <tr>
+                                                    <th class="py-2.5 px-3">Jenis Sampah</th>
+                                                    <th class="py-2.5 px-3">Kategori</th>
+                                                    <th class="py-2.5 px-3 text-right">Berat (kg)</th>
+                                                    <th class="py-2.5 px-3 text-right">Volume (m³)</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody class="divide-y divide-slate-100 text-slate-700 font-medium">
+                                                @foreach ($selectedSession->items as $item)
+                                                    <tr class="hover:bg-slate-50/50">
+                                                        <td class="py-2.5 px-3">
+                                                            <span class="font-semibold text-slate-800">{{ $item->wasteType->name }}</span>
+                                                        </td>
+                                                        <td class="py-2.5 px-3">
+                                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold 
+                                                                {{ $item->wasteType->category === 'Organik' ? 'bg-emerald-50 text-emerald-700' : '' }}
+                                                                {{ $item->wasteType->category === 'Anorganik' ? 'bg-sky-50 text-sky-700' : '' }}
+                                                                {{ $item->wasteType->category === 'Residu' ? 'bg-amber-50 text-amber-700' : '' }}">
+                                                                {{ $item->wasteType->category }}
+                                                            </span>
+                                                        </td>
+                                                        <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
+                                                            {{ number_format($item->weight_kg, 1, ',', '.') }} kg
+                                                        </td>
+                                                        <td class="py-2.5 px-3 text-right font-mono text-slate-600">
+                                                            {{ $item->volume_m3 ? number_format($item->volume_m3, 3, ',', '.') . ' m³' : '-' }}
+                                                        </td>
+                                                    </tr>
+                                                @endforeach
+                                            </tbody>
+                                            <tfoot class="bg-slate-50 border-t border-slate-200 font-bold text-xs">
+                                                <tr>
+                                                    <td colspan="2" class="py-2.5 px-3 text-slate-700">Total Berat Masuk</td>
+                                                    <td class="py-2.5 px-3 text-right font-mono text-emerald-600">
+                                                        {{ number_format($selectedSession->total_weight, 1, ',', '.') }} kg
+                                                    </td>
+                                                    <td class="py-2.5 px-3"></td>
+                                                </tr>
+                                            </tfoot>
+                                        </table>
+                                    </div>
+                                </div>
+
+                                <!-- Catatan -->
+                                @if ($selectedSession->notes)
+                                    <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                                        <span class="text-[11px] font-semibold text-slate-600 block mb-1">Catatan Sesi Timbang:</span>
+                                        <p class="text-xs text-slate-700 italic">
+                                            {{ $selectedSession->notes }}
+                                        </p>
+                                    </div>
+                                @endif
+                            </div>
+
+                            <!-- Footer Modal Detail -->
+                            <div class="px-6 py-3 border-t border-slate-100 flex items-center justify-end bg-slate-50/50">
+                                <button wire:click="closeViewModal" type="button" class="px-4 py-2 rounded-lg border border-slate-200 bg-white text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                    Tutup
+                                </button>
+                            </div>
+                        </div>
                     </div>
-                </form>
-            </div>
-        </div>
-    @endif
+                </template>
+            @endif
 
-    <!-- Modal Konfirmasi Hapus (Dribbble Clean Consistent Modal) -->
-    @if ($confirmDeleteSessionId)
-        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-            <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
-                <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                </div>
-                <h3 class="text-base font-bold text-slate-900">Hapus Sesi Penimbangan?</h3>
-                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                    Tindakan ini akan menghapus catatan penimbangan dan seluruh rincian bobot sampah di dalamnya. Data yang dihapus tidak dapat dipulihkan.
-                </p>
-                <div class="flex items-center justify-center gap-3 mt-6">
-                    <button type="button" wire:click="cancelDelete" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
-                        Batal
-                    </button>
-                    <button type="button" wire:click="deleteSession" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95">
-                        Ya, Hapus Sesi
-                    </button>
-                </div>
-            </div>
-        </div>
-    @endif
         </div>
     </div>
 </div>
