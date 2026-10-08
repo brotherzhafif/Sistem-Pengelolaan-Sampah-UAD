@@ -200,14 +200,11 @@ new #[Layout('layouts.app')] class extends Component
                 <h2 class="font-bold text-xl text-slate-900 tracking-tight">Penimbangan Sampah Harian</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Pencatatan volume dan bobot sampah masuk dari titik sumber kampus UAD</p>
             </div>
-            <div class="flex items-center gap-2.5">
-                <button wire:click="openCreateModal"
-                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>Catat Penimbangan</span>
-                </button>
+            <div class="flex items-center gap-2">
+                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    Penimbangan Aktif
+                </span>
             </div>
         </div>
     </x-slot>
@@ -324,16 +321,30 @@ new #[Layout('layouts.app')] class extends Component
             </div>
         </div>
 
-        <div class="text-xs text-slate-500">
-            Menampilkan catatan timbangan aktif
+        <div class="flex items-center gap-2">
+            <button wire:click="openCreateModal"
+                    type="button"
+                    class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                <span>Catat Penimbangan</span>
+            </button>
         </div>
     </div>
 
     <!-- Sessions History Table -->
     <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
-            <h3 class="text-sm font-bold text-slate-800">Riwayat Sesi Penimbangan</h3>
-            <span class="text-xs text-slate-400">Total {{ $sessions->total() }} Sesi Terdata</span>
+            <div class="flex items-center gap-2">
+                <h3 class="text-sm font-bold text-slate-800">Riwayat Sesi Penimbangan</h3>
+                <span class="text-xs text-slate-400">({{ $sessions->total() }} Sesi Terdata)</span>
+            </div>
+            <button wire:click="openCreateModal"
+                    type="button"
+                    class="sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold">
+                + Timbang
+            </button>
         </div>
 
         <div class="overflow-x-auto">
@@ -417,8 +428,6 @@ new #[Layout('layouts.app')] class extends Component
             {{ $sessions->links() }}
         </div>
     </div>
-    </div>
-</div>
 
     <!-- Modal Form Catat Penimbangan -->
     @if ($showCreateModal)
@@ -575,5 +584,7 @@ new #[Layout('layouts.app')] class extends Component
             </div>
         </div>
     @endif
+        </div>
+    </div>
 </div>
 
