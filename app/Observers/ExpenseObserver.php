@@ -41,3 +41,4 @@ class ExpenseObserver
         $this->ledgerService->deleteTransactionByRef('operasional', $expense->id);
     }
 }
+
