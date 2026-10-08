@@ -43,6 +43,57 @@ new #[Layout('layouts.app')] class extends Component
     public string $categoryName = '';
     public ?int $editingCategoryId = null;
 
+    // Delete Confirmation Modal State
+    public ?string $deleteType = null; // 'source', 'type', 'vendor', 'buyer', 'category'
+    public ?int $deleteTargetId = null;
+    public string $deleteTargetName = '';
+
+    public function confirmDelete(string $type, int $id, string $name = ''): void
+    {
+        $this->deleteType = $type;
+        $this->deleteTargetId = $id;
+        $this->deleteTargetName = $name;
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->deleteType = null;
+        $this->deleteTargetId = null;
+        $this->deleteTargetName = '';
+    }
+
+    public function executeDelete(): void
+    {
+        if (!$this->deleteTargetId || !$this->deleteType) {
+            return;
+        }
+
+        switch ($this->deleteType) {
+            case 'source':
+                WasteSource::findOrFail($this->deleteTargetId)->delete();
+                session()->flash('message', 'Titik sumber sampah berhasil dihapus.');
+                break;
+            case 'type':
+                WasteType::findOrFail($this->deleteTargetId)->delete();
+                session()->flash('message', 'Jenis sampah berhasil dihapus.');
+                break;
+            case 'vendor':
+                Vendor::findOrFail($this->deleteTargetId)->delete();
+                session()->flash('message', 'Vendor pengangkut berhasil dihapus.');
+                break;
+            case 'buyer':
+                Buyer::findOrFail($this->deleteTargetId)->delete();
+                session()->flash('message', 'Pembeli/Pengepul berhasil dihapus.');
+                break;
+            case 'category':
+                ExpenseCategory::findOrFail($this->deleteTargetId)->delete();
+                session()->flash('message', 'Kategori pengeluaran berhasil dihapus.');
+                break;
+        }
+
+        $this->cancelDelete();
+    }
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -354,7 +405,7 @@ new #[Layout('layouts.app')] class extends Component
                                             <td class="py-3 px-4 text-slate-500">{{ $source->description ?? '-' }}</td>
                                             <td class="py-3 px-4 text-right space-x-2">
                                                 <button wire:click="editSource({{ $source->id }})" class="text-xs text-sky-600 hover:underline font-semibold">Edit</button>
-                                                <button wire:click="deleteSource({{ $source->id }})" wire:confirm="Yakin ingin menghapus titik sumber ini?" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
+                                                <button wire:click="confirmDelete('source', {{ $source->id }}, '{{ addslashes($source->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
                                             </td>
                                         </tr>
                                     @empty
@@ -446,7 +497,7 @@ new #[Layout('layouts.app')] class extends Component
                                             </td>
                                             <td class="py-3 px-4 text-right space-x-2">
                                                 <button wire:click="editWasteType({{ $type->id }})" class="text-xs text-sky-600 hover:underline font-semibold">Edit</button>
-                                                <button wire:click="deleteWasteType({{ $type->id }})" wire:confirm="Hapus jenis sampah ini?" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
+                                                <button wire:click="confirmDelete('type', {{ $type->id }}, '{{ addslashes($type->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
                                             </td>
                                         </tr>
                                     @endforeach
@@ -515,7 +566,7 @@ new #[Layout('layouts.app')] class extends Component
                                             <td class="py-3 px-4 text-right font-mono font-medium text-amber-700">Rp {{ number_format($vendor->cost_per_kg, 0, ',', '.') }}</td>
                                             <td class="py-3 px-4 text-right space-x-2">
                                                 <button wire:click="editVendor({{ $vendor->id }})" class="text-xs text-sky-600 hover:underline font-semibold">Edit</button>
-                                                <button wire:click="deleteVendor({{ $vendor->id }})" wire:confirm="Hapus vendor ini?" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
+                                                <button wire:click="confirmDelete('vendor', {{ $vendor->id }}, '{{ addslashes($vendor->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
                                             </td>
                                         </tr>
                                     @empty
@@ -581,7 +632,7 @@ new #[Layout('layouts.app')] class extends Component
                                             <td class="py-3 px-4 text-slate-500">{{ $buyer->contact ?? '-' }}</td>
                                             <td class="py-3 px-4 text-right space-x-2">
                                                 <button wire:click="editBuyer({{ $buyer->id }})" class="text-xs text-sky-600 hover:underline font-semibold">Edit</button>
-                                                <button wire:click="deleteBuyer({{ $buyer->id }})" wire:confirm="Hapus pengepul ini?" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
+                                                <button wire:click="confirmDelete('buyer', {{ $buyer->id }}, '{{ addslashes($buyer->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
                                             </td>
                                         </tr>
                                     @empty
@@ -625,7 +676,7 @@ new #[Layout('layouts.app')] class extends Component
                     <!-- Table -->
                     <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
                         <div class="p-4 border-b border-slate-200">
-                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Kategori Pengeluaran Operasional TPS (M5)</span>
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Kategori Pengeluaran Operasional TPS</span>
                         </div>
                         <div class="overflow-x-auto">
                             <table class="w-full text-left text-xs">
@@ -641,7 +692,7 @@ new #[Layout('layouts.app')] class extends Component
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $category->name }}</td>
                                             <td class="py-3 px-4 text-right space-x-2">
                                                 <button wire:click="editCategory({{ $category->id }})" class="text-xs text-sky-600 hover:underline font-semibold">Edit</button>
-                                                <button wire:click="deleteCategory({{ $category->id }})" wire:confirm="Hapus kategori ini?" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
+                                                <button wire:click="confirmDelete('category', {{ $category->id }}, '{{ addslashes($category->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold">Hapus</button>
                                             </td>
                                         </tr>
                                     @empty
@@ -657,5 +708,30 @@ new #[Layout('layouts.app')] class extends Component
             @endif
         </div>
     </div>
+
+    <!-- Modal Konfirmasi Hapus (Dribbble Clean Consistent Modal) -->
+    @if ($deleteTargetId)
+        <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+            <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
+                <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-base font-bold text-slate-900">Konfirmasi Hapus Data</h3>
+                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                    Apakah Anda yakin ingin menghapus <strong class="text-slate-800">"{{ $deleteTargetName }}"</strong>? Data yang dihapus tidak dapat dipulihkan kembali.
+                </p>
+                <div class="flex items-center justify-center gap-3 mt-6">
+                    <button type="button" wire:click="cancelDelete" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition">
+                        Batal
+                    </button>
+                    <button type="button" wire:click="executeDelete" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95">
+                        Ya, Hapus Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    @endif
 </div>
 
