@@ -43,6 +43,11 @@ new class extends Component
                        class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
                         Dashboard
                     </a>
+                    <a href="{{ route('master-data') }}" 
+                       wire:navigate 
+                       class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('master-data') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+                        Master Data
+                    </a>
                 </div>
             </div>
 
@@ -94,8 +99,11 @@ new class extends Component
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden border-t border-slate-200 bg-white">
         <div class="pt-2 pb-3 space-y-1 px-4">
-            <a href="{{ route('dashboard') }}" wire:navigate class="block px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 text-slate-900">
+            <a href="{{ route('dashboard') }}" wire:navigate class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-900' : 'text-slate-600' }}">
                 Dashboard
+            </a>
+            <a href="{{ route('master-data') }}" wire:navigate class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('master-data') ? 'bg-slate-100 text-slate-900' : 'text-slate-600' }}">
+                Master Data
             </a>
         </div>
 

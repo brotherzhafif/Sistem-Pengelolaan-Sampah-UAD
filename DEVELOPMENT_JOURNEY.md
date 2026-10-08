@@ -1,172 +1,138 @@
-# 🗺️ Roadmap & Development Journey: Sistem Pengelolaan Sampah UAD (PS2)
+# 🗺️ Roadmap & Development Journey: Sistem Pengelolaan Sampah UAD (PS2) v2
 
-Dokumen ini adalah panduan kerja bertahap (*step-by-step roadmap*), checklist implementasi fitur, rencana pengujian, dan riwayat progress pengerjaan proyek **Sistem Pengelolaan Sampah Kampus (PS2) & Survei Perilaku (KAP) Universitas Ahmad Dahlan**.
-
-Prinsip Pengerjaan:
-1. **Satu per Satu (Focus on Single Feature)**: Tidak menumpuk banyak fitur sekaligus. Selesaikan satu sub-fitur hingga tuntas, verifikasi/uji, lalu lanjut ke berikutnya.
-2. **Double Validation**: Validasi ganda di sisi Frontend (HTML5 / Livewire realtime constraints) dan Backend (Laravel FormRequest / validation rules, sanitasi input).
-3. **Komponen Siap Pakai**: Memanfaatkan **DaisyUI (Emerald Theme)** dan Tailwind CSS dengan subtle styling ala Dribbble.
-4. **No Premature Docker/Push**: Pembuatan kode dilakukan di file lokal, eksekusi build/push/container migration dikontrol sesuai izin user agar tidak memberatkan perangkat lokal.
+Dokumen ini adalah panduan kerja bertahap (*step-by-step roadmap*), arsitektur teknis, checklist implementasi fitur, dan rencana pengujian proyek **Sistem Pengelolaan Sampah Kampus (PS2) & Survei Perilaku (KAP) Universitas Ahmad Dahlan**.
+> **Status SRS**: Diperbarui mengacu pada **PS2 SRS New.pdf (Analisis Kebutuhan v2 — dengan Buku Kas & Buku Besar)**.
 
 ---
 
-## 🧭 Milestone & Fase Pengerjaan
+## 🎯 Prinsip Pengerjaan & Aturan Desain
+1. **Fokus Satu Per Satu (Single Feature Delivery)**: Kerjakan 1 fitur secara tuntas, verifikasi, lalu lanjut ke berikutnya.
+2. **Kepatuhan SRS v2 & Non-AI Slop**: Struktur kode mengikuti kaidah resmi Laravel (Services, Observers, FormRequests/Livewire Volt, Scopes). Prinsip **DRY (Don't Repeat Yourself)** dijaga di seluruh komponen Blade dan logika PHP.
+3. **Desain Dribbble Clean (Sesuai `ref/PS2_UAD_Prototype_UI.html`)**:
+   - Tampilan bersih, minimalis, proporsional, tanpa ornamen alay atau gelap kontras berlebihan.
+   - Menggunakan palet referensi: **Sage Green (`#3a9d6e`)**, **Sky Blue (`#3b82f6`)**, **Amber (`#e5a520`)**, **Coral (`#ef6b4a`)**, dan surface putih dengan background `#f5f7fa`.
+   - Tipografi: **DM Sans** untuk UI teks, **JetBrains Mono** untuk angka metrik finansial & timbangan.
+4. **Validasi Ganda (Double Validation)**:
+   - **Frontend**: Attribute HTML5 & realtime validation.
+   - **Backend**: Strict validation rules, sanitasi input (`strip_tags`, `trim`), casting numeric yang aman.
+5. **No Premature Docker / Push**: Kode dibuat bersih di lokal; kompilasi dan migrasi dieksekusi terencana agar tidak membebani perangkat user.
+
+---
+
+## 🧭 Milestone & Fase Pengerjaan (SRS v2 Aligned)
 
 ```mermaid
 flowchart TD
-    M0["Phase 0: Base Stack & Auth UI (DONE)"] --> M1["Phase 1: Multi-Campus & RBAC Foundation"]
-    M1 --> M2["Phase 2: Master Data Management (M7)"]
-    M2 --> M3["Phase 3: Penimbangan Sampah & Log (M2)"]
-    M3 --> M4["Phase 4: Bank Sampah & Keuangan (M4 & M5)"]
-    M4 --> M5["Phase 5: Logistik, Pengangkutan & Residu (M3)"]
-    M5 --> M6["Phase 6: Dashboard Eksekutif & Kampus (M1)"]
-    M6 --> M7["Phase 7: Survei Perilaku / KAP (M6)"]
-    M7 --> M8["Phase 8: Laporan & Audit Log (M8 & M9)"]
+    M0["Phase 0: Base Stack, Auth & Clean Theme (DONE)"] --> M1["Phase 1: Multi-Campus & RBAC Foundation (READY TO SEED)"]
+    M1 --> M2["Phase 2: Master Data Management (SRS M7)"]
+    M2 --> M3["Phase 3: Penimbangan Sampah Harian (SRS M2)"]
+    M3 --> M4["Phase 4: Penjualan Sampah & Kredit Kas (SRS M3)"]
+    M4 --> M5["Phase 5: Pengangkutan Residu & Debet Biaya Angkut (SRS M4)"]
+    M5 --> M6["Phase 6: Pengeluaran Operasional & Debet Kas (SRS M5)"]
+    M6 --> M7["Phase 7: Buku Kas & Buku Besar Keuangan (SRS M6 - MAJOR)"]
+    M7 --> M8["Phase 8: Dashboard Eksekutif & Ringkasan Kampus (SRS M1)"]
+    M8 --> M9["Phase 9: Modul Survei Perilaku / KAP (SRS M11)"]
+    M9 --> M10["Phase 10: Laporan, Ekspor PDF/Excel & Audit Log (SRS M8-M10)"]
 ```
 
 ---
 
-## 📋 Detail Tiap Fase & Checklist Pengujian
+## 🏦 Arsitektur Baru Keuangan v2 (Model Buku Kas & Buku Besar)
 
-### ✅ Phase 0: Base Stack, Branding & Authentication UI (STATUS: SELESAI)
-- [x] Inisialisasi Laravel 12, Livewire 3 + Volt, Spatie Permission, Tailwind CSS + DaisyUI.
-- [x] Setup Docker multi-container (`ps2-app`, `ps2-web`, `ps2-db`, `ps2-vite`, `ps2-dozzle`).
-- [x] Setup CI/CD Runner di VPS Oracle (`https://ps2.brotherzhafif.my.id`).
-- [x] Redesign Landing Page (`welcome.blade.php`) dengan DaisyUI hero, stats, dan cards.
-- [x] Redesign Halaman Login (`login.blade.php`) dengan validasi frontend/backend & rate limiting.
-- [x] Redesign Halaman Register (`register.blade.php`) dengan validasi ketat.
-- [x] Desain Favicon dan Logo seragam PS2 UAD (`favicon.svg`, `application-logo.blade.php`).
-
----
-
-### ⏳ Phase 1: Multi-Campus & Role-Based Access Foundation (STATUS: KODE SIAP / MENUNGGU MIGRASI & VERIFIKASI)
-Tujuan: Menyiapkan entitas Kampus (Kampus 1–6) dan hak akses (Role & Permission) agar user yang login memiliki konteks data kampus.
-
-- **Tasks**:
-  1. [x] Buat migration tabel `campuses` dan penambahan foreign key `campus_id` di tabel `users` (`2026_10_08_000001_create_campuses_and_add_to_users_table.php`).
-  2. [x] Buat Model `Campus` & relasinya di `User` (`belongsTo` Campus dan `hasMany` Users).
-  3. [x] Buat Seeder `CampusSeeder` (Kampus 1 hingga Kampus 6 UAD lengkap).
-  4. [x] Buat Seeder `RolePermissionSeeder` lengkap dengan permissions, roles (Super Admin, Operator Timbangan, Koordinator TPS3R, Pengurus Bank Sampah, Auditor/Pimpinan), dan 5 akun demo.
-  5. [x] Daftarkan seeder di `DatabaseSeeder.php`.
-  6. [x] Tambahkan dropdown pemilihan kampus pada form **Register** (`register.blade.php`) dengan validasi frontend/backend.
-  7. [x] Redesign **Dashboard** (`dashboard.blade.php`) menampilkan badge kampus & role aktif user.
-
-- **Checklist Uji / Verifikasi**:
-  - [ ] Jalankan migration & seeder (`php artisan migrate --seed`).
-  - [ ] Cek 6 data kampus UAD terisi di database.
-  - [ ] Coba registrasi user baru dengan memilih kampus di form Register.
-  - [ ] Login menggunakan akun demo (misal: `operator@uad.ac.id` / `password123`) dan pastikan nama kampus serta rolenya muncul di header dashboard.
+### Perubahan Fundamental:
+- **Dulu (v1)**: Saldo dihitung on-the-fly (`SUM(penjualan) - SUM(biaya)`). Rawan lambat dan tidak auditable.
+- **Sekarang (v2)**: 
+  1. **Tabel `keuangan` (Jurnal Buku Kas)**: Mencatat setiap mutasi keuangan dengan kolom `jenis` (K = Kredit/Pemasukan, D = Debet/Pengeluaran), `nominal`, `sumber` (`penjualan`, `pengangkutan`, `operasional`), `ref_id`, `keterangan`.
+  2. **Tabel `buku_besar` (Saldo Harian Per Kampus)**: Menyimpan `saldo_awal`, `total_kredit`, `total_debet`, dan `saldo_akhir` per hari per kampus. Formula: `Saldo Akhir = Saldo Awal + Total Kredit - Total Debet`. Saldo akhir hari X otomatis menjadi saldo awal hari X+1.
+  3. **Otomasi via Observers & `LedgerService`**:
+     - Penjualan disimpan ➔ `SaleObserver` ➔ `LedgerService::recordTransaction('K', 'penjualan')` ➔ insert `keuangan` ➔ update/create `buku_besar`.
+     - Pengangkutan disimpan ➔ `PickupObserver` ➔ hitung `volume * tarif` ➔ `LedgerService::recordTransaction('D', 'pengangkutan')` ➔ insert `keuangan` ➔ update/create `buku_besar`.
+     - Pengeluaran disimpan ➔ `ExpenseObserver` ➔ `LedgerService::recordTransaction('D', 'operasional')` ➔ insert `keuangan` ➔ update/create `buku_besar`.
 
 ---
 
-### 📌 Phase 2: Master Data Management (SRS M7)
-Tujuan: Menyediakan antarmuka CRUD master data untuk admin kampus.
+## 📋 Checklist Tiap Fase
 
-- **Fitur yang Dibuat**:
-  1. Master Kategori Sampah (`waste_categories`): Organik, Anorganik Terpilah, Residu, B3.
-  2. Master Jenis Sampah (`waste_types`): Plastik PET, Kardus, Duplek, Kaleng, Daun/Sisa Makanan, Residu Campur, dll. beserta field `is_sellable` dan `price_per_kg_default`.
-  3. Master Titik Sumber Sampah (`waste_sources`): Gedung A, Kantin, Laboratorium, Asrama, TPS Kampus.
-  4. Master Pengepul / Pihak Ketiga (`buyers`).
+### ✅ Phase 0: Base Stack, Auth & Clean Theme (STATUS: SELESAI)
+- [x] Inisialisasi Laravel 12, Livewire 3 Volt, Spatie Permission, Tailwind CSS + DaisyUI.
+- [x] Setting CI/CD runner VPS (`ps2.brotherzhafif.my.id`).
+- [x] Landing Page, Login, Register dengan validasi ganda & rate limiting.
+- [x] Tema clean light Dribbble (`#f5f7fa`, aksen Sage Green `#3a9d6e`, font DM Sans).
+- [x] Favicon & Logo terstandarisasi PS2 UAD.
+
+### ⏳ Phase 1: Multi-Campus & RBAC Foundation (STATUS: KODE SELESAI - MENUNGGU MIGRASI SERVER)
+- [x] Migration `campuses` & foreign key `users.campus_id`.
+- [x] Model `Campus` & relasi `User`.
+- [x] Seeder `CampusSeeder` (Kampus 1–6 UAD).
+- [x] Seeder `RolePermissionSeeder` (5 Roles & 5 Akun demo).
+- [x] Dropdown kampus di halaman Register.
+- [x] Header dashboard menampilkan badge unit kampus & role.
+
+### ⏳ Phase 2: Master Data Management (SRS M7) (STATUS: KODE SELESAI - MENUNGGU MIGRASI SERVER)
+- **Tabel**:
+  - `waste_sources` (Sumber sampah: Area Taman, Kantin, Asrama, Rektorat, dll. per kampus).
+  - `waste_types` (9 kategori granular: Organik Sisa Makanan, Sampah Taman, Kardus, Karton, Kertas HVS, Plastik Keras, Plastik Multilayer, Logam & Kaca, Residu; `default_price_per_kg`, `is_sellable`).
+  - `vendors` (Vendor pengangkut residu, kontak, `cost_per_kg`).
+  - `buyers` (Pengepul pembeli anorganik, kontak).
+  - `expense_categories` (Kategori pengeluaran: Upah, Makan/Minum TPS, Alat, Material, Pakan, Obat P3K).
+- **Komponen UI**:
+  - Halaman terpadu `livewire.pages.master.index` dengan navigasi tab Dribbble clean.
+  - CRUD Livewire dengan validasi ganda, sanitasi teks, dan konfirmasi hapus data.
 - **Checklist Uji**:
-  - [ ] Validasi input nama kategori/jenis (tidak boleh duplikat per kampus).
-  - [ ] Konfirmasi modal/dialog sebelum hapus data (cegah accidental deletion).
-  - [ ] Filter & pagination tabel via Livewire realtime tanpa refresh.
+  - [ ] Migration jalan tanpa error (`2026_10_08_000002_create_master_data_tables.php`).
+  - [ ] Seeder `MasterDataSeeder` mengisi data awal dengan benar.
+  - [ ] Tab navigasi berfungsi berpindah antar master data tanpa reload.
+  - [ ] Tambah & edit titik sumber sampah, jenis sampah, vendor, dan pengepul berjalan realtime.
 
----
-
-### 📌 Phase 3: Penimbangan Sampah & Logistik Harian (SRS M2)
-Tujuan: Memfasilitasi operator lapangan mencatat timbangan sampah masuk per titik sumber.
-
-- **Fitur yang Dibuat**:
-  1. Tabel `weighing_transactions` & `weighing_items`.
-  2. Form input penimbangan (pilih tanggal, shift, titik sumber, jenis sampah, berat kg, catatan).
-  3. Validasi angka berat (numerik positif, batas realistis max 5000 kg).
-  4. Log riwayat penimbangan per kampus dengan filter tanggal.
+### 📌 Phase 3: Penimbangan Sampah Harian (SRS M2)
+- **Tabel**: `weighing_sessions` & `weighing_items`.
+- **Fitur**: Form input satu lokasi per sesi, multi-row jenis sampah, input volume kg & m³ (opsional), akumulasi stok otomatis via `StockService`.
 - **Checklist Uji**:
-  - [ ] Input berat negatif atau teks ditolak oleh validasi frontend & backend.
-  - [ ] Perhitungan total timbangan harian terakumulasi akurat.
-  - [ ] Scoping data: Operator Kampus 1 hanya melihat catatan timbangan Kampus 1.
+  - [ ] Validasi numerik positif.
+  - [ ] Stok terpilah & residu terakumulasi akurat.
 
----
-
-### 📌 Phase 4: Bank Sampah & Keuangan Penjualan (SRS M4 & M5)
-Tujuan: Pencatatan penjualan anorganik terpilah ke pengepul & arus kas sirkular.
-
-- **Fitur yang Dibuat**:
-  1. Tabel `waste_sales` & `sale_items`.
-  2. Tabel pengeluaran operasional `operational_expenses`.
-  3. Kalkulasi stok terpilah: `SUM(weighing) - SUM(sales)`.
-  4. Form transaksi penjualan (pilih pembeli, jenis sampah, bobot kg, harga satuan real, total nominal).
-  5. Catatan kas masuk dan kas keluar dengan upload bukti nota/struk.
+### 📌 Phase 4: Penjualan Sampah & Kredit Kas (SRS M3)
+- **Tabel**: `sales` & `sale_items`.
+- **Fitur**: Form transaksi penjualan ke pengepul, pengecekan stok tersedia, subtotal & total otomatis.
+- **Otomasi**: Trigger `SaleObserver` ➔ buat jurnal Kredit (K) di `keuangan` ➔ update `buku_besar`.
 - **Checklist Uji**:
-  - [ ] Validasi bobot jual tidak boleh melebihi stok terpilah yang tersedia di sistem.
-  - [ ] Perhitungan total nominal rupiah (`kg * harga`) otomatis tepat.
-  - [ ] Saldo kas terhitung otomatis (`SUM(Penjualan) - SUM(Biaya Retribusi/Operasional)`).
+  - [ ] Penjualan tidak boleh melebihi stok yang ada.
+  - [ ] Jurnal Kredit dan saldo akhir bertambah otomatis.
 
----
-
-### 📌 Phase 5: Logistik, Pengangkutan & Pembuangan Residu (SRS M3)
-Tujuan: Pencatatan armada dan residu yang dibuang ke TPA Piyungan/mitra resmi.
-
-- **Fitur yang Dibuat**:
-  1. Tabel `waste_pickups` (tanggal, armada/nopol, supir, berat residu, biaya/retribusi, status).
-  2. Validasi stok residu sebelum dilakukan pencatatan pengangkutan.
+### 📌 Phase 5: Pengangkutan Residu & Debet Biaya Angkut (SRS M4)
+- **Tabel**: `pickups`.
+- **Fitur**: Pencatatan pengangkutan residu oleh vendor, hitung biaya live (`volume * tarif_per_kg`).
+- **Otomasi**: Trigger `PickupObserver` ➔ buat jurnal Debet (D) di `keuangan` ➔ update `buku_besar` (saldo berkurang).
 - **Checklist Uji**:
-  - [ ] Status armada: Dijadwalkan, Selesai, Dibatalkan.
-  - [ ] Biaya pengangkutan masuk ke pemotongan kas saldo kampus.
+  - [ ] Residu berkurang sesuai volume angkut.
+  - [ ] Biaya otomatis tercatat di jurnal Debet.
 
----
-
-### 📌 Phase 6: Dashboard Eksekutif & Ringkasan Kampus (SRS M1)
-Tujuan: Visualisasi statistik real-time untuk pimpinan dan koordinator kampus.
-
-- **Fitur yang Dibuat**:
-  1. Card KPI DaisyUI: Total Timbulan Sampah (Kg), Persentase Terpilah (%), Sampah ke TPA (Residu), Kas Bank Sampah (Rp).
-  2. Grafik tren mingguan/bulanan timbulan sampah (Chart.js / ApexCharts).
-  3. Komparasi performa antar-kampus (untuk Super Admin & Auditor).
+### 📌 Phase 6: Pengeluaran Operasional & Debet Kas (SRS M5)
+- **Tabel**: `expenses`.
+- **Fitur**: Form input biaya operasional non-angkut (plastik/karung, konsumsi pekerja TPS, upah pilah, pakan ternak, dll).
+- **Otomasi**: Trigger `ExpenseObserver` ➔ buat jurnal Debet (D) di `keuangan` ➔ update `buku_besar`.
 - **Checklist Uji**:
-  - [ ] Operator melihat ringkasan kampusnya sendiri.
-  - [ ] Super Admin melihat agregat seluruh Kampus 1–6.
+  - [ ] Biaya angkut dilarang diinput di form ini.
+  - [ ] Saldo buku besar berkurang otomatis.
 
----
-
-### 📌 Phase 7: Modul Survei Perilaku / KAP Survey (SRS M6)
-Tujuan: Pengisian kuesioner terstruktur Knowledge, Attitude, and Practice untuk civitas akademika.
-
-- **Fitur yang Dibuat**:
-  1. Tabel `kap_surveys`, `kap_questions`, `kap_responses`.
-  2. Form kuesioner dengan skala Likert 1–5 interaktif.
-  3. Algoritma kalkulasi skor otomatis:
-     - Skor Pengetahuan (Knowledge)
-     - Skor Sikap (Attitude)
-     - Skor Praktik (Practice)
-  4. Klasifikasi level (Tinggi / Sedang / Rendah).
+### 📌 Phase 7: Buku Kas & Buku Besar Keuangan (SRS M6 - MAJOR v2)
+- **Fitur**:
+  - **Tab 1: Buku Kas (Jurnal Keuangan)**: Filter tanggal/jenis/sumber, tabel jurnal K/D, nominal, saldo running, badge K (hijau) & D (merah/oranye).
+  - **Tab 2: Buku Besar (Saldo Harian)**: Tabel `Tanggal`, `Saldo Awal`, `Total Kredit (+)`, `Total Debet (-)`, `Saldo Akhir`.
+  - KPI Cards: Total Kredit, Total Debet, Saldo Akhir, Total Transaksi.
 - **Checklist Uji**:
-  - [ ] Setiap butir pertanyaan terjawab sebelum submit.
-  - [ ] Perhitungan skor akurat sesuai rumus SRS.
+  - [ ] Rekalkulasi saldo berurutan berjalan benar (`Saldo Akhir Hari X = Saldo Awal Hari X+1`).
+  - [ ] Tidak ada entri manual langsung tanpa transaksi sumber (kecuali saldo awal setup pertama).
 
----
+### 📌 Phase 8: Dashboard Eksekutif & Ringkasan Kampus (SRS M1)
+- Selector kampus di topbar (Super Admin bisa melihat semua kampus atau filter per kampus).
+- KPI: Total Berat (kg), Volume (m³), Stok Akumulasi, Saldo Kas (langsung dari `buku_besar.saldo_akhir`).
+- Chart komposisi & tren timbulan.
 
-### 📌 Phase 8: Laporan, Ekspor Data & Audit Trail (SRS M8 & M9)
-Tujuan: Pertanggungjawaban data resmi kampus.
+### 📌 Phase 9: Modul Survei Perilaku / KAP (SRS M11)
+- Form kuesioner publik (Demografi, Knowledge, Attitude, Practice, Satisfaction, Facilities/Barriers).
+- Perhitungan skor otomatis & dashboard analitik indeks KAP (0–100).
 
-- **Fitur yang Dibuat**:
-  1. Ekspor Laporan Bulanan ke PDF (DomPDF) dan Excel (.xlsx via Maatwebsite).
-  2. Tabel `audit_logs` (pencatatan aktivitas CRUD user).
-- **Checklist Uji**:
-  - [ ] File PDF ter-generate rapi dengan kop resmi UAD.
-  - [ ] File Excel berisi kolom yang sesuai tanpa corrupt.
-  - [ ] Audit log mencatat setiap perubahan data penting.
-
----
-
-## 📌 Log Perkembangan (Changelog)
-
-| Tanggal | Fase | Fitur / Komponen | Keterangan |
-| :--- | :--- | :--- | :--- |
-| **07 Okt 2026** | Phase 0 | Base Stack & Deployment Setup | Docker Compose, Livewire 3 Volt, CI/CD Runner VPS, HTTPS domain live. |
-| **07 Okt 2026** | Phase 0 | DaisyUI & Emerald Theme | Integrasi tema emerald, Plus Jakarta Sans, card & stats komponen. |
-| **07 Okt 2026** | Phase 0 | Landing Page & Auth Forms | Desain landing page, login & register dengan validasi ganda & sanitasi. |
-| **07 Okt 2026** | Phase 0 | Favicon & Branding Logo | Favicon SVG hijau daur ulang & penyeragaman logo komponen `PS2 UAD`. |
-| **08 Okt 2026** | Phase 1 | Roadmap & Journey Docs | Pembuatan dokumen perjalanan pengembangan bertahap (`DEVELOPMENT_JOURNEY.md`). |
-
+### 📌 Phase 10: Laporan, Ekspor & Audit Trail (SRS M8, M9, M10)
+- Ekspor PDF & Excel (rekap penimbangan, buku kas, buku besar).
+- Notifikasi stok & audit log.

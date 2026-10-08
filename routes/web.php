@@ -8,6 +8,10 @@ Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
+Route::view('master-data', 'livewire.pages.master.index')
+    ->middleware(['auth', 'verified'])
+    ->name('master-data');
+
 Route::view('profile', 'profile')
     ->middleware(['auth'])
     ->name('profile');
