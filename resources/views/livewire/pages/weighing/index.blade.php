@@ -85,6 +85,7 @@ new #[Layout('layouts.app')] class extends Component
     public function closeCreateModal(): void
     {
         $this->showCreateModal = false;
+        $this->dispatch('close-modal');
     }
 
     public function viewSession(int $id): void
@@ -153,6 +154,7 @@ new #[Layout('layouts.app')] class extends Component
 
         $this->showCreateModal = false;
         $this->resetForm();
+        $this->dispatch('close-modal');
         session()->flash('status', 'Data penimbangan harian berhasil disimpan dengan rapi.');
     }
 
@@ -167,6 +169,7 @@ new #[Layout('layouts.app')] class extends Component
     public function cancelDelete(): void
     {
         $this->confirmDeleteSessionId = null;
+        $this->dispatch('close-modal');
     }
 
     public function deleteSession(): void
@@ -181,11 +184,13 @@ new #[Layout('layouts.app')] class extends Component
         if (auth()->user()->campus_id && auth()->user()->campus_id !== $session->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
             session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.');
             $this->confirmDeleteSessionId = null;
+            $this->dispatch('close-modal');
             return;
         }
 
         $session->delete();
         $this->confirmDeleteSessionId = null;
+        $this->dispatch('close-modal');
         session()->flash('status', 'Data sesi penimbangan berhasil dihapus.');
     }
 
@@ -218,7 +223,12 @@ new #[Layout('layouts.app')] class extends Component
     }
 }; ?>
 
-<div>
+<div x-data="{ 
+    showModal: false, 
+    deleteModal: false 
+}"
+@close-modal.window="showModal = false; deleteModal = false"
+@open-weighing-modal.window="showModal = true">
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -347,9 +357,9 @@ new #[Layout('layouts.app')] class extends Component
         </div>
 
         <div class="flex items-center gap-2">
-            <button wire:click="openCreateModal"
+            <button @click="showModal = true; $wire.openCreateModal()"
                     type="button"
-                    class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95">
+                    class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                 </svg>
@@ -365,9 +375,9 @@ new #[Layout('layouts.app')] class extends Component
                 <h3 class="text-sm font-bold text-slate-800">Riwayat Sesi Penimbangan</h3>
                 <span class="text-xs text-slate-400">({{ $sessions->total() }} Sesi Terdata)</span>
             </div>
-            <button wire:click="openCreateModal"
+            <button @click="showModal = true; $wire.openCreateModal()"
                     type="button"
-                    class="sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold">
+                    class="sm:hidden inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 text-white text-xs font-semibold cursor-pointer">
                 + Timbang
             </button>
         </div>
@@ -424,7 +434,7 @@ new #[Layout('layouts.app')] class extends Component
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
                                             </button>
-                                            <button wire:click="confirmDelete({{ $session->id }})" 
+                                            <button @click="deleteModal = true; $wire.confirmDelete({{ $session->id }})" 
                                                     type="button"
                                                     class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                                                     title="Hapus Sesi">
@@ -454,165 +464,167 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
             </div>
 
-            <!-- Modal Form Catat Penimbangan (Teleported to Body) -->
-            @if ($showCreateModal)
-                <template x-teleport="body">
-                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-                            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                                <div>
-                                    <h3 class="text-base font-bold text-slate-900">Catat Penimbangan Sampah</h3>
-                                    <p class="text-xs text-slate-500">Input hasil timbangan harian per jenis sampah</p>
-                                </div>
-                                <button wire:click="closeCreateModal" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
+            <!-- Modal Form Catat Penimbangan (Teleported to Body for 100% Full Viewport Backdrop) -->
+            <template x-teleport="body">
+                <div x-show="showModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Catat Penimbangan Sampah</h3>
+                                <p class="text-xs text-slate-500">Input hasil timbangan harian per jenis sampah</p>
                             </div>
+                            <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
 
-                            <form wire:submit="saveWeighing" class="p-6 space-y-6">
-                                <!-- Sesi Info Grid -->
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
-                                        @if ($isSuperAdmin)
-                                            <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                                @foreach ($campuses as $c)
-                                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        @else
-                                            <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
-                                                {{ auth()->user()->campus?->name }}
-                                            </div>
-                                        @endif
-                                        @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Titik Sumber</label>
-                                        <select wire:model="formSourceId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                            <option value="">-- Pilih Titik Lokasi --</option>
-                                            @foreach ($wasteSources as $s)
-                                                <option value="{{ $s->id }}">{{ $s->name }}</option>
+                        <form wire:submit="saveWeighing" class="p-6 space-y-6">
+                            <!-- Sesi Info Grid -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
+                                    @if ($isSuperAdmin)
+                                        <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                            @foreach ($campuses as $c)
+                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
                                             @endforeach
                                         </select>
-                                        @error('formSourceId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                    </div>
+                                    @else
+                                        <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
+                                            {{ auth()->user()->campus?->name }}
+                                        </div>
+                                    @endif
+                                    @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
 
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Titik Sumber</label>
+                                    <select wire:model="formSourceId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                        <option value="">-- Pilih Titik Lokasi --</option>
+                                        @foreach ($wasteSources as $s)
+                                            <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('formSourceId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Timbang <span class="text-rose-500">*</span></label>
+                                    <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                    @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Items Matrix -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Timbang <span class="text-rose-500">*</span></label>
-                                        <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                        @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Jenis Sampah Terpilah</h4>
+                                        <p class="text-[11px] text-slate-500">Masukkan bobot aktual timbangan (kg). Volume (m³) bersifat opsional.</p>
                                     </div>
                                 </div>
 
-                                <!-- Items Matrix -->
-                                <div>
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div>
-                                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Jenis Sampah Terpilah</h4>
-                                            <p class="text-[11px] text-slate-500">Masukkan bobot aktual timbangan (kg). Volume (m³) bersifat opsional.</p>
-                                        </div>
+                                @error('formItems')
+                                    <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                                <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                    <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                        <div class="col-span-6">Jenis Sampah</div>
+                                        <div class="col-span-3 text-right">Berat (kg) <span class="text-rose-500">*</span></div>
+                                        <div class="col-span-3 text-right">Volume (m³)</div>
                                     </div>
 
-                                    @error('formItems')
-                                        <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-
-                                    <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-                                        <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                                            <div class="col-span-6">Jenis Sampah</div>
-                                            <div class="col-span-3 text-right">Berat (kg) <span class="text-rose-500">*</span></div>
-                                            <div class="col-span-3 text-right">Volume (m³)</div>
-                                        </div>
-
-                                        @foreach ($formItems as $index => $item)
-                                            <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
-                                                <div class="col-span-6 flex items-center gap-2">
-                                                    <span class="w-2 h-2 rounded-full 
-                                                        {{ $item['category'] === 'Organik' ? 'bg-emerald-500' : '' }}
-                                                        {{ $item['category'] === 'Anorganik' ? 'bg-sky-500' : '' }}
-                                                        {{ $item['category'] === 'Residu' ? 'bg-amber-500' : '' }}">
-                                                    </span>
-                                                    <div>
-                                                        <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
-                                                        <div class="text-[10px] text-slate-400">
-                                                            {{ $item['category'] }} 
-                                                            @if ($item['is_sellable'])
-                                                                <span class="text-sky-600 font-medium">| Siap Jual</span>
-                                                            @else
-                                                                <span class="text-amber-600 font-medium">| Residu/Kompos</span>
-                                                            @endif
-                                                        </div>
+                                    @foreach ($formItems as $index => $item)
+                                        <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
+                                            <div class="col-span-6 flex items-center gap-2">
+                                                <span class="w-2 h-2 rounded-full 
+                                                    {{ $item['category'] === 'Organik' ? 'bg-emerald-500' : '' }}
+                                                    {{ $item['category'] === 'Anorganik' ? 'bg-sky-500' : '' }}
+                                                    {{ $item['category'] === 'Residu' ? 'bg-amber-500' : '' }}">
+                                                </span>
+                                                <div>
+                                                    <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
+                                                    <div class="text-[10px] text-slate-400">
+                                                        {{ $item['category'] }} 
+                                                        @if ($item['is_sellable'])
+                                                            <span class="text-sky-600 font-medium">| Siap Jual</span>
+                                                        @else
+                                                            <span class="text-amber-600 font-medium">| Residu/Kompos</span>
+                                                        @endif
                                                     </div>
                                                 </div>
-                                                <div class="col-span-3">
-                                                    <input type="number" step="0.01" min="0" 
-                                                           wire:model="formItems.{{ $index }}.weight_kg" 
-                                                           placeholder="0.0" 
-                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
-                                                </div>
-                                                <div class="col-span-3">
-                                                    <input type="number" step="0.001" min="0" 
-                                                           wire:model="formItems.{{ $index }}.volume_m3" 
-                                                           placeholder="opsional" 
-                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
-                                                </div>
                                             </div>
-                                        @endforeach
-                                    </div>
+                                            <div class="col-span-3">
+                                                <input type="number" step="0.01" min="0" 
+                                                       wire:model="formItems.{{ $index }}.weight_kg" 
+                                                       placeholder="0.0" 
+                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                            </div>
+                                            <div class="col-span-3">
+                                                <input type="number" step="0.001" min="0" 
+                                                       wire:model="formItems.{{ $index }}.volume_m3" 
+                                                       placeholder="opsional" 
+                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
-
-                                <!-- Notes Field -->
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
-                                    <textarea wire:model="formNotes" rows="2" placeholder="Kondisi cuaca, shift pengangkutan, atau catatan khusus penimbangan..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
-                                    @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-
-                                <!-- Actions -->
-                                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                                    <button type="button" wire:click="closeCreateModal" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
-                                        Batal
-                                    </button>
-                                    <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
-                                        Simpan Data Penimbangan
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </template>
-            @endif
-
-            <!-- Modal Konfirmasi Hapus (Teleported to Body) -->
-            @if ($confirmDeleteSessionId)
-                <template x-teleport="body">
-                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
-                            <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
                             </div>
-                            <h3 class="text-base font-bold text-slate-900">Hapus Sesi Penimbangan?</h3>
-                            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                                Tindakan ini akan menghapus catatan penimbangan dan seluruh rincian bobot sampah di dalamnya. Data yang dihapus tidak dapat dipulihkan.
-                            </p>
-                            <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" wire:click="cancelDelete" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+
+                            <!-- Notes Field -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+                                <textarea wire:model="formNotes" rows="2" placeholder="Kondisi cuaca, shift pengangkutan, atau catatan khusus penimbangan..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                                <button type="button" @click="showModal = false; $wire.closeCreateModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="button" wire:click="deleteSession" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
-                                    Ya, Hapus Sesi
+                                <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
+                                    Simpan Data Penimbangan
                                 </button>
                             </div>
+                        </form>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Konfirmasi Hapus (Teleported to Body) -->
+            <template x-teleport="body">
+                <div x-show="deleteModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
+                        <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900">Hapus Sesi Penimbangan?</h3>
+                        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                            Tindakan ini akan menghapus catatan penimbangan dan seluruh rincian bobot sampah di dalamnya. Data yang dihapus tidak dapat dipulihkan.
+                        </p>
+                        <div class="flex items-center justify-center gap-3 mt-6">
+                            <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                Batal
+                            </button>
+                            <button type="button" wire:click="deleteSession" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                                Ya, Hapus Sesi
+                            </button>
                         </div>
                     </div>
-                </template>
-            @endif
+                </div>
+            </template>
 
             <!-- Modal Detail Sesi Penimbangan (Teleported to Body) -->
             @if ($viewSessionId && $selectedSession)

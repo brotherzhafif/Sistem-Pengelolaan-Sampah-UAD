@@ -96,6 +96,7 @@ new #[Layout('layouts.app')] class extends Component
     public function closeCreateModal(): void
     {
         $this->showCreateModal = false;
+        $this->dispatch('close-modal');
     }
 
     public function updateSubtotal(int $index): void
@@ -186,6 +187,7 @@ new #[Layout('layouts.app')] class extends Component
 
         $this->showCreateModal = false;
         $this->resetForm();
+        $this->dispatch('close-modal');
         session()->flash('status', 'Transaksi penjualan sampah berhasil dicatat & jurnal Kredit masuk ke buku kas.');
     }
 
@@ -197,6 +199,7 @@ new #[Layout('layouts.app')] class extends Component
     public function cancelDelete(): void
     {
         $this->confirmDeleteSaleId = null;
+        $this->dispatch('close-modal');
     }
 
     public function deleteSale(): void
@@ -211,11 +214,13 @@ new #[Layout('layouts.app')] class extends Component
         if (auth()->user()->campus_id && auth()->user()->campus_id !== $sale->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
             session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.');
             $this->confirmDeleteSaleId = null;
+            $this->dispatch('close-modal');
             return;
         }
 
         $sale->delete(); // Observer otomatis hapus jurnal keuangan & sinkronkan buku besar
         $this->confirmDeleteSaleId = null;
+        $this->dispatch('close-modal');
         session()->flash('status', 'Transaksi penjualan berhasil dihapus dan jurnal keuangan disesuaikan.');
     }
 
@@ -261,7 +266,12 @@ new #[Layout('layouts.app')] class extends Component
     }
 }; ?>
 
-<div>
+<div x-data="{ 
+    showModal: false, 
+    deleteModal: false 
+}"
+@close-modal.window="showModal = false; deleteModal = false"
+@open-sales-modal.window="showModal = true">
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -390,9 +400,9 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
 
                 <div class="flex items-center gap-2">
-                    <button wire:click="openCreateModal"
+                    <button @click="showModal = true; $wire.openCreateModal()"
                             type="button"
-                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95">
+                            class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                         </svg>
@@ -465,7 +475,7 @@ new #[Layout('layouts.app')] class extends Component
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
                                             </button>
-                                            <button wire:click="confirmDelete({{ $sale->id }})" 
+                                            <button @click="deleteModal = true; $wire.confirmDelete({{ $sale->id }})" 
                                                     type="button"
                                                     class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
                                                     title="Hapus Transaksi">
@@ -495,161 +505,163 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
             </div>
 
-            <!-- Modal Form Catat Penjualan (Teleported to Body) -->
-            @if ($showCreateModal)
-                <template x-teleport="body">
-                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
-                            <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
-                                <div>
-                                    <h3 class="text-base font-bold text-slate-900">Catat Penjualan Sampah Terpilah</h3>
-                                    <p class="text-xs text-slate-500">Pencatatan transaksi penjualan ke pembeli/pengepul mitra</p>
-                                </div>
-                                <button wire:click="closeCreateModal" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-                                </button>
+            <!-- Modal Form Catat Penjualan (Teleported to Body for 100% Full Viewport Backdrop) -->
+            <template x-teleport="body">
+                <div x-show="showModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Catat Penjualan Sampah Terpilah</h3>
+                                <p class="text-xs text-slate-500">Pencatatan transaksi penjualan ke pembeli/pengepul mitra</p>
                             </div>
+                            <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
 
-                            <form wire:submit="saveSale" class="p-6 space-y-6">
-                                <!-- Info Transaksi Grid -->
-                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
-                                        @if ($isSuperAdmin)
-                                            <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                                @foreach ($campuses as $c)
-                                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                                @endforeach
-                                            </select>
-                                        @else
-                                            <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
-                                                {{ auth()->user()->campus?->name }}
-                                            </div>
-                                        @endif
-                                        @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Mitra Pembeli / Pengepul <span class="text-rose-500">*</span></label>
-                                        <select wire:model="formBuyerId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                            @foreach ($buyers as $b)
-                                                <option value="{{ $b->id }}">{{ $b->name }}</option>
+                        <form wire:submit="saveSale" class="p-6 space-y-6">
+                            <!-- Info Transaksi Grid -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
+                                    @if ($isSuperAdmin)
+                                        <select wire:model.live="formCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                            @foreach ($campuses as $c)
+                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
                                             @endforeach
                                         </select>
-                                        @error('formBuyerId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                    </div>
-
-                                    <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
-                                        <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                        @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                    </div>
+                                    @else
+                                        <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
+                                            {{ auth()->user()->campus?->name }}
+                                        </div>
+                                    @endif
+                                    @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                                 </div>
 
-                                <!-- Items Matrix -->
                                 <div>
-                                    <div class="flex items-center justify-between mb-2">
-                                        <div>
-                                            <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Jenis Sampah Terjual</h4>
-                                            <p class="text-[11px] text-slate-500">Masukkan bobot aktual terjual (kg) dan harga kesepakatan per kg.</p>
-                                        </div>
-                                        <div class="text-right">
-                                            <span class="text-xs font-bold text-slate-700">Total Nilai: </span>
-                                            <span class="font-mono text-sm font-bold text-emerald-600">Rp {{ number_format($this->totalSaleAmount, 0, ',', '.') }}</span>
-                                        </div>
-                                    </div>
-
-                                    @error('saleItems')
-                                        <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
-                                            {{ $message }}
-                                        </div>
-                                    @enderror
-
-                                    <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-                                        <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                                            <div class="col-span-4">Jenis Sampah</div>
-                                            <div class="col-span-3 text-right">Berat Terjual (kg)</div>
-                                            <div class="col-span-2 text-right">Harga / kg (Rp)</div>
-                                            <div class="col-span-3 text-right">Subtotal (Rp)</div>
-                                        </div>
-
-                                        @foreach ($saleItems as $index => $item)
-                                            <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
-                                                <div class="col-span-4">
-                                                    <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
-                                                </div>
-                                                <div class="col-span-3">
-                                                    <input type="number" step="0.01" min="0" 
-                                                           wire:model="saleItems.{{ $index }}.weight_kg" 
-                                                           wire:input="updateSubtotal({{ $index }})"
-                                                           placeholder="0.0" 
-                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
-                                                    @error("saleItems.{$index}.weight_kg")
-                                                        <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
-                                                    @enderror
-                                                </div>
-                                                <div class="col-span-2">
-                                                    <input type="number" step="100" min="0" 
-                                                           wire:model="saleItems.{{ $index }}.price_per_kg" 
-                                                           wire:input="updateSubtotal({{ $index }})"
-                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
-                                                </div>
-                                                <div class="col-span-3 text-right font-mono font-bold text-xs text-slate-800">
-                                                    Rp {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }}
-                                                </div>
-                                            </div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mitra Pembeli / Pengepul <span class="text-rose-500">*</span></label>
+                                    <select wire:model="formBuyerId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                        @foreach ($buyers as $b)
+                                            <option value="{{ $b->id }}">{{ $b->name }}</option>
                                         @endforeach
+                                    </select>
+                                    @error('formBuyerId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
+                                    <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                    @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Items Matrix -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div>
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Jenis Sampah Terjual</h4>
+                                        <p class="text-[11px] text-slate-500">Masukkan bobot aktual terjual (kg) dan harga kesepakatan per kg.</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-bold text-slate-700">Total Nilai: </span>
+                                        <span class="font-mono text-sm font-bold text-emerald-600">Rp {{ number_format($this->totalSaleAmount, 0, ',', '.') }}</span>
                                     </div>
                                 </div>
 
-                                <!-- Notes Field -->
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Transaksi (Opsional)</label>
-                                    <textarea wire:model="formNotes" rows="2" placeholder="Nomor nota, keterangan pembayaran tunai/transfer, catatan armada pengepul..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
-                                    @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
+                                @error('saleItems')
+                                    <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
 
-                                <!-- Actions -->
-                                <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
-                                    <button type="button" wire:click="closeCreateModal" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
-                                        Batal
-                                    </button>
-                                    <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
-                                        Simpan Transaksi & Kredit Kas
-                                    </button>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                </template>
-            @endif
+                                <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                    <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                        <div class="col-span-4">Jenis Sampah</div>
+                                        <div class="col-span-3 text-right">Berat Terjual (kg)</div>
+                                        <div class="col-span-2 text-right">Harga / kg (Rp)</div>
+                                        <div class="col-span-3 text-right">Subtotal (Rp)</div>
+                                    </div>
 
-            <!-- Modal Konfirmasi Hapus Transaksi (Teleported to Body) -->
-            @if ($confirmDeleteSaleId)
-                <template x-teleport="body">
-                    <div class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
-                        <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
-                            <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
+                                    @foreach ($saleItems as $index => $item)
+                                        <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
+                                            <div class="col-span-4">
+                                                <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
+                                            </div>
+                                            <div class="col-span-3">
+                                                <input type="number" step="0.01" min="0" 
+                                                       wire:model="saleItems.{{ $index }}.weight_kg" 
+                                                       wire:input="updateSubtotal({{ $index }})"
+                                                       placeholder="0.0" 
+                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                                @error("saleItems.{$index}.weight_kg")
+                                                    <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
+                                                @enderror
+                                            </div>
+                                            <div class="col-span-2">
+                                                <input type="number" step="100" min="0" 
+                                                       wire:model="saleItems.{{ $index }}.price_per_kg" 
+                                                       wire:input="updateSubtotal({{ $index }})"
+                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                            </div>
+                                            <div class="col-span-3 text-right font-mono font-bold text-xs text-slate-800">
+                                                Rp {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }}
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
                             </div>
-                            <h3 class="text-base font-bold text-slate-900">Hapus Transaksi Penjualan?</h3>
-                            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                                Tindakan ini akan membatalkan penjualan, mengembalikan kuota stok sampah di TPS, dan menghapus pencatatan jurnal Kredit di buku kas kampus.
-                            </p>
-                            <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" wire:click="cancelDelete" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+
+                            <!-- Notes Field -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Transaksi (Opsional)</label>
+                                <textarea wire:model="formNotes" rows="2" placeholder="Nomor nota, keterangan pembayaran tunai/transfer, catatan armada pengepul..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                                <button type="button" @click="showModal = false; $wire.closeCreateModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="button" wire:click="deleteSale" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
-                                    Ya, Hapus Transaksi
+                                <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
+                                    Simpan Transaksi & Kredit Kas
                                 </button>
                             </div>
+                        </form>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Konfirmasi Hapus Transaksi (Teleported to Body) -->
+            <template x-teleport="body">
+                <div x-show="deleteModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
+                        <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900">Hapus Transaksi Penjualan?</h3>
+                        <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                            Tindakan ini akan membatalkan penjualan, mengembalikan kuota stok sampah di TPS, dan menghapus pencatatan jurnal Kredit di buku kas kampus.
+                        </p>
+                        <div class="flex items-center justify-center gap-3 mt-6">
+                            <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                Batal
+                            </button>
+                            <button type="button" wire:click="deleteSale" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                                Ya, Hapus Transaksi
+                            </button>
                         </div>
                     </div>
-                </template>
-            @endif
+                </div>
+            </template>
 
             <!-- Modal Detail Transaksi Penjualan (Teleported to Body) -->
             @if ($viewSaleId && $selectedSale)
