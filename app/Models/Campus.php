@@ -28,5 +28,13 @@ class Campus extends Model
     {
         return $this->hasMany(User::class);
     }
+
+    /**
+     * Get all weighing sessions for this campus.
+     */
+    public function weighingSessions(): HasMany
+    {
+        return $this->hasMany(WeighingSession::class);
+    }
 }
 

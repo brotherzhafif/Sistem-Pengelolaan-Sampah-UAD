@@ -66,10 +66,11 @@ jobs:
             echo "Menunggu artisan siap (${count}s)..."
           done
 
-          echo "📦 Menjalankan migrasi database, key generate, dan cache..."
+          echo "📦 Menjalankan migrasi database, key generate, seeder, dan cache..."
           # Pastikan APP_KEY sudah digenerate jika masih kosong
           docker compose exec -T app php artisan key:generate --force || true
           docker compose exec -T app php artisan migrate --force
+          docker compose exec -T app php artisan db:seed --force
 
           echo "🎨 Membangun frontend assets (Vite build)..."
           docker compose exec -T app bash -c "if [ ! -d node_modules ]; then npm install; fi && npm run build"

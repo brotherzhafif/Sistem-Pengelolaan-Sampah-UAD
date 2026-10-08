@@ -85,12 +85,22 @@ flowchart TD
   - [ ] Tab navigasi berfungsi berpindah antar master data tanpa reload.
   - [ ] Tambah & edit titik sumber sampah, jenis sampah, vendor, dan pengepul berjalan realtime.
 
-### 📌 Phase 3: Penimbangan Sampah Harian (SRS M2)
+### ⏳ Phase 3: Penimbangan Sampah Harian (SRS M2) (STATUS: KODE SELESAI - MENUNGGU MIGRASI SERVER)
 - **Tabel**: `weighing_sessions` & `weighing_items`.
-- **Fitur**: Form input satu lokasi per sesi, multi-row jenis sampah, input volume kg & m³ (opsional), akumulasi stok otomatis via `StockService`.
+- **Fitur**:
+  - Form input penimbangan harian per kampus dan titik sumber lokasi.
+  - Multi-row granular untuk seluruh 9 jenis sampah (Organik, Anorganik Terpilah, Residu).
+  - Bobot timbangan (kg) & estimasi volume kubik (m³ opsional).
+  - Validasi ganda: numeric positif, max limit, proteksi field kosong.
+  - Dribbble Clean metric cards: Total timbang kg, stok terpilah siap jual, dan stok residu via `StockService`.
+  - Riwayat sesi penimbangan dengan pagination, filter rentang tanggal, filter kampus, dan delete session.
 - **Checklist Uji**:
-  - [ ] Validasi numerik positif.
-  - [ ] Stok terpilah & residu terakumulasi akurat.
+  - [x] Migration `2026_10_08_000003_create_weighing_tables.php` dibuat rapi.
+  - [x] Model `WeighingSession` & `WeighingItem` dengan relasi lengkap.
+  - [x] Service `StockService` untuk agregasi stok sampah terpilah vs residu.
+  - [x] Komponen Livewire `pages.weighing.index` & integrasi route `weighing`.
+  - [x] Sidebar menu penimbangan aktif dan tersinkronisasi.
+  - [x] Seeder `WeighingSeeder` dibuat dan didaftarkan ke `DatabaseSeeder`.
 
 ### 📌 Phase 4: Penjualan Sampah & Kredit Kas (SRS M3)
 - **Tabel**: `sales` & `sale_items`.
