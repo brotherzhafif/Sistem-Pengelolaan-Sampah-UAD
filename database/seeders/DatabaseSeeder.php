@@ -19,6 +19,7 @@ class DatabaseSeeder extends Seeder
             SaleSeeder::class,
             PickupSeeder::class,
             ExpenseSeeder::class,
+            KapSurveySeeder::class,
         ]);
     }
 }

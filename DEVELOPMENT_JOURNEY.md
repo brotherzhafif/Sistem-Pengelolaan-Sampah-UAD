@@ -205,9 +205,27 @@ flowchart TD
   - [x] Tampilan Dribbble light tokens konsisten tanpa dark-mode clash.
   - [x] Seluruh link navigasi native bebas wire:navigate freeze.
 
-### 📌 Phase 9: Modul Survei Perilaku / KAP (SRS M11)
-- Form kuesioner publik (Demografi, Knowledge, Attitude, Practice, Satisfaction, Facilities/Barriers).
-- Perhitungan skor otomatis & dashboard analitik indeks KAP (0–100).
+### ✅ Phase 9: Modul Survei Perilaku / KAP (SRS M11) (STATUS: SELESAI & TERUJI)
+- **Fitur**:
+  - Migration `2026_10_08_000007_create_kap_surveys_table.php` & Model `KapSurvey`.
+  - Form Publik Kuesioner Interaktif (`/survei-kap`) untuk seluruh civitas akademika (Mahasiswa, Dosen, Tendik).
+  - Algoritma scoring otomatis:
+    - Normalisasi dimensi: Knowledge Score, Attitude Score, Practice Score (0–100%).
+    - Indeks KAP Keseluruhan & klasifikasi kategori: Sangat Baik (>=80), Cukup/Sedang (60-79.9), Kurang (<60).
+  - Layar hasil skor instan bagi responden dengan breakdown dimensi dan apresiasi zero-waste.
+  - Dashboard Analitik Internal (`/kap`):
+    - 5 KPI Cards: Total Responden, Indeks KAP Kampus, Rata-rata Pengetahuan (K), Sikap (A), Perilaku (P).
+    - Grafik Gap Dimensi Komparatif & Distribusi Tingkat Kesadaran.
+    - Filter Unit Kampus, Peran Responden, Kategori, dan Rentang Tanggal.
+    - Tabel Responden Terpadu: Independent in-place pagination, dibatasi tepat 8 baris per halaman (`paginate(8)`).
+    - Modal Detail Rincian Jawaban Responden dengan `<template x-teleport="body">` dan full backdrop blur 100%.
+    - Tombol Salin Tautan Survei & Buka Form Publik.
+  - Seeder `KapSurveySeeder` dengan responden realistis lintas kampus UAD.
+- **Checklist Uji**:
+  - [x] Migration, Model, Seeder `KapSurvey` dibuat dan terdaftar.
+  - [x] Route publik `survei-kap` & route internal `kap`.
+  - [x] Komponen Livewire `pages.kap.survey` & `pages.kap.index`.
+  - [x] Menu sidebar & quick card dashboard terhubung.
 
 ### 📌 Phase 10: Laporan, Ekspor & Audit Trail (SRS M8, M9, M10)
 - Ekspor PDF & Excel (rekap penimbangan, buku kas, buku besar).

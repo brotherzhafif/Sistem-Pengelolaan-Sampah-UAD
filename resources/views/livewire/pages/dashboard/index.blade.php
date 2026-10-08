@@ -531,7 +531,7 @@ new #[Layout('layouts.app')] class extends Component
                     </div>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3">
                     <a href="{{ route('weighing') }}" class="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-emerald-400 hover:shadow-xs transition duration-150 block group">
                         <div class="flex items-center justify-between">
                             <span class="font-semibold text-xs text-slate-800 group-hover:text-emerald-700">Penimbangan</span>
@@ -580,6 +580,16 @@ new #[Layout('layouts.app')] class extends Component
                             </span>
                         </div>
                         <p class="text-[11px] text-slate-500 mt-1 leading-snug">Jurnal mutasi & saldo harian per kampus.</p>
+                    </a>
+
+                    <a href="{{ route('kap') }}" class="p-3.5 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-indigo-400 hover:shadow-xs transition duration-150 block group">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-xs text-slate-800 group-hover:text-indigo-700">Survei Perilaku (KAP)</span>
+                            <span class="w-5 h-5 rounded-md bg-indigo-100 text-indigo-800 flex items-center justify-center text-[10px] font-bold">
+                                &rarr;
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1 leading-snug">Indeks kesadaran & evaluasi pemilahan civitas.</p>
                     </a>
                 </div>
             </div>
