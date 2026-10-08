@@ -20,10 +20,19 @@ class User extends Authenticatable
      * @var list<string>
      */
     protected $fillable = [
+        'campus_id',
         'name',
         'email',
         'password',
     ];
+
+    /**
+     * Get the campus that the user belongs to.
+     */
+    public function campus(): \Illuminate\Database\Eloquent\Relations\BelongsTo
+    {
+        return $this->belongsTo(Campus::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

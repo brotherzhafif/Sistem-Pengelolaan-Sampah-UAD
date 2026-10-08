@@ -1,5 +1,6 @@
 <?php
 
+use App\Models\Campus;
 use App\Models\User;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Support\Facades\Auth;
@@ -12,8 +13,19 @@ new #[Layout('layouts.guest')] class extends Component
 {
     public string $name = '';
     public string $email = '';
+    public ?int $campus_id = null;
     public string $password = '';
     public string $password_confirmation = '';
+
+    /**
+     * Provide list of active campuses for selection dropdown.
+     */
+    public function with(): array
+    {
+        return [
+            'campuses' => Campus::where('is_active', true)->orderBy('id')->get(),
+        ];
+    }
 
     /**
      * Handle an incoming registration request.
@@ -23,6 +35,7 @@ new #[Layout('layouts.guest')] class extends Component
         $validated = $this->validate([
             'name' => ['required', 'string', 'min:3', 'max:100'],
             'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:255', 'unique:'.User::class],
+            'campus_id' => ['required', 'integer', 'exists:campuses,id'],
             'password' => ['required', 'string', 'min:8', 'max:100', 'confirmed', Rules\Password::defaults()],
         ], [
             'name.required' => 'Nama lengkap wajib diisi.',
@@ -32,6 +45,8 @@ new #[Layout('layouts.guest')] class extends Component
             'email.email' => 'Format alamat email tidak valid.',
             'email.max' => 'Alamat email maksimal 255 karakter.',
             'email.unique' => 'Alamat email sudah terdaftar di sistem.',
+            'campus_id.required' => 'Silakan pilih lokasi kampus Anda.',
+            'campus_id.exists' => 'Pilihan kampus tidak valid.',
             'password.required' => 'Kata sandi wajib diisi.',
             'password.min' => 'Kata sandi minimal 8 karakter.',
             'password.max' => 'Kata sandi maksimal 100 karakter.',
@@ -104,6 +119,31 @@ new #[Layout('layouts.guest')] class extends Component
                        class="input input-bordered w-full pl-10 focus:input-primary transition-all duration-200 @error('email') input-error @enderror" />
             </div>
             <x-input-error :messages="$errors->get('email')" class="mt-1" />
+        </div>
+
+        <!-- Campus Selection -->
+        <div class="form-control">
+            <label class="label" for="campus_id">
+                <span class="label-text font-semibold text-neutral">Lokasi Kampus UAD</span>
+            </label>
+            <div class="relative">
+                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-base-content/40">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                    </svg>
+                </div>
+                <select wire:model="campus_id" 
+                        id="campus_id" 
+                        name="campus_id" 
+                        required 
+                        class="select select-bordered w-full pl-10 focus:select-primary transition-all duration-200 @error('campus_id') select-error @enderror">
+                    <option value="">-- Pilih Kampus Penempatan --</option>
+                    @foreach($campuses as $campus)
+                        <option value="{{ $campus->id }}">{{ $campus->name }}</option>
+                    @endforeach
+                </select>
+            </div>
+            <x-input-error :messages="$errors->get('campus_id')" class="mt-1" />
         </div>
 
         <!-- Password -->
