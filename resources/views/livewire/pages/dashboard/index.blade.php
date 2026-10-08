@@ -204,7 +204,7 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
 
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                    <a href="{{ route('weighing') }}" wire:navigate class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-emerald-400 hover:shadow-sm transition duration-150 block group">
+                    <a href="{{ route('weighing') }}" class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-emerald-400 hover:shadow-sm transition duration-150 block group">
                         <div class="flex items-center justify-between">
                             <span class="font-semibold text-xs text-slate-800 group-hover:text-emerald-700">Penimbangan Sampah</span>
                             <span class="w-6 h-6 rounded-md bg-emerald-100 text-emerald-800 flex items-center justify-center text-xs font-bold">
@@ -214,7 +214,7 @@ new #[Layout('layouts.app')] class extends Component
                         <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">Pencatatan harian sampah masuk per titik sumber (Gedung, Kantin, TPS).</p>
                     </a>
 
-                    <a href="{{ route('sales') }}" wire:navigate class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-sky-400 hover:shadow-sm transition duration-150 block group">
+                    <a href="{{ route('sales') }}" class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-sky-400 hover:shadow-sm transition duration-150 block group">
                         <div class="flex items-center justify-between">
                             <span class="font-semibold text-xs text-slate-800 group-hover:text-sky-700">Bank Sampah & Penjualan</span>
                             <span class="w-6 h-6 rounded-md bg-sky-100 text-sky-800 flex items-center justify-center text-xs font-bold">
@@ -224,7 +224,7 @@ new #[Layout('layouts.app')] class extends Component
                         <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">Catat penjualan anorganik terpilah ke pengepul & penerimaan kas sirkular.</p>
                     </a>
 
-                    <a href="{{ route('pickups') }}" wire:navigate class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-amber-400 hover:shadow-sm transition duration-150 block group">
+                    <a href="{{ route('pickups') }}" class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-amber-400 hover:shadow-sm transition duration-150 block group">
                         <div class="flex items-center justify-between">
                             <span class="font-semibold text-xs text-slate-800 group-hover:text-amber-700">Pengangkutan Residu</span>
                             <span class="w-6 h-6 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-bold">
@@ -255,7 +255,7 @@ new #[Layout('layouts.app')] class extends Component
                             <h4 class="font-bold text-xs text-slate-900">Sesi Penimbangan Terbaru</h4>
                             <p class="text-[11px] text-slate-500">Pencatatan timbangan sampah terkini</p>
                         </div>
-                        <a href="{{ route('weighing') }}" wire:navigate class="text-xs font-medium text-emerald-600 hover:text-emerald-700">
+                        <a href="{{ route('weighing') }}" class="text-xs font-medium text-emerald-600 hover:text-emerald-700">
                             Lihat Semua &rarr;
                         </a>
                     </div>
@@ -293,7 +293,7 @@ new #[Layout('layouts.app')] class extends Component
                             <h4 class="font-bold text-xs text-slate-900">Transaksi Penjualan Terbaru</h4>
                             <p class="text-[11px] text-slate-500">Penyaluran anorganik ke mitra pengepul</p>
                         </div>
-                        <a href="{{ route('sales') }}" wire:navigate class="text-xs font-medium text-sky-600 hover:text-sky-700">
+                        <a href="{{ route('sales') }}" class="text-xs font-medium text-sky-600 hover:text-sky-700">
                             Lihat Semua &rarr;
                         </a>
                     </div>
