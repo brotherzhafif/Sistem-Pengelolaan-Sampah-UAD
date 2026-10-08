@@ -255,7 +255,7 @@ new #[Layout('layouts.app')] class extends Component
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::orderBy('id')->get(),
             'buyers' => Buyer::orderBy('name')->get(),
-            'sales' => $salesQuery->paginate(10),
+            'sales' => $salesQuery->paginate(8),
             'selectedSale' => $this->viewSaleId 
                 ? Sale::with(['campus', 'buyer', 'creator', 'items.wasteType'])->find($this->viewSaleId) 
                 : null,

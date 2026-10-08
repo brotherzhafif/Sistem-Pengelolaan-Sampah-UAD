@@ -149,7 +149,7 @@ new #[Layout('layouts.app')] class extends Component
             ->orderBy('expense_date', 'desc')
             ->orderBy('id', 'desc');
 
-        $expenses = $query->paginate(10);
+        $expenses = $query->paginate(8);
 
         // Agregasi Ringkasan
         $statsQuery = Expense::query()

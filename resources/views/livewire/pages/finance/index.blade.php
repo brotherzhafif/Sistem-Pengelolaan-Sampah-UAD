@@ -149,7 +149,7 @@ new #[Layout('layouts.app')] class extends Component
             ->orderBy('tanggal', 'desc')
             ->orderBy('id', 'desc');
 
-        $cashbookEntries = $cashbookQuery->paginate(15, ['*'], 'cashbook_page');
+        $cashbookEntries = $cashbookQuery->paginate(8, ['*'], 'cashbook_page');
 
         // 2. Data Saldo Harian Buku Besar (Tabel buku_besar)
         $ledgerQuery = BukuBesar::with('campus')
@@ -158,7 +158,7 @@ new #[Layout('layouts.app')] class extends Component
             ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo))
             ->orderBy('tanggal', 'desc');
 
-        $ledgerEntries = $ledgerQuery->paginate(15, ['*'], 'ledger_page');
+        $ledgerEntries = $ledgerQuery->paginate(8, ['*'], 'ledger_page');
 
         $detailedTransaction = $this->viewKeuanganId
             ? Keuangan::with(['campus', 'creator'])->find($this->viewKeuanganId)

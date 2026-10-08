@@ -214,7 +214,7 @@ new #[Layout('layouts.app')] class extends Component
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::orderBy('id')->get(),
             'wasteSources' => WasteSource::where('campus_id', $this->formCampusId)->get(),
-            'sessions' => $sessionsQuery->paginate(10),
+            'sessions' => $sessionsQuery->paginate(8),
             'selectedSession' => $this->viewSessionId 
                 ? WeighingSession::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])->find($this->viewSessionId) 
                 : null,

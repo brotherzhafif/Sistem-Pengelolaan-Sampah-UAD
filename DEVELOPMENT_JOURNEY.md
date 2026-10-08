@@ -53,6 +53,10 @@ Seluruh implementasi fitur dan komponen wajib selalu mematuhi panduan spesifik i
    - Super Admin & Auditor/Pimpinan memiliki filter fleksibel untuk melihat "Semua Kampus" atau memilih unit kampus tertentu.
    - Operator Lapangan / Petugas TPS terkunci otomatis (*strictly scoped*) pada unit kampusnya sendiri, baik pada form input, tabel ringkasan, maupun agregat data.
 
+7. **Batas Jumlah Baris Tabel Ringkas (Tepat 8 Data Per Halaman)**:
+   - Seluruh halaman yang menampilkan list data view (Penimbangan, Penjualan, Pengangkutan, Pengeluaran, Buku Kas & Buku Besar) **wajib dibatasi tepat 8 data per halaman** (`paginate(8)`).
+   - Dilarang menampilkan 10 atau 15 baris per halaman guna menjaga proporsi tinggi layar tetap ergonomis, mencegah scrolling berlebih, dan menjaga tampilan tetap rapi serta seimbang di berbagai resolusi layar.
+
 ---
 
 ## 🧭 Milestone & Fase Pengerjaan (SRS v2 Aligned)
@@ -186,10 +190,20 @@ flowchart TD
   - [x] Navigasi menu Buku Kas di sidebar aktif dan quick card dashboard terhubung.
   - [x] Rekalkulasi saldo berurutan berjalan benar (`Saldo Akhir Hari X = Saldo Awal Hari X+1`).
 
-### 📌 Phase 8: Dashboard Eksekutif & Ringkasan Kampus (SRS M1)
-- Selector kampus di topbar (Super Admin bisa melihat semua kampus atau filter per kampus).
-- KPI: Total Berat (kg), Volume (m³), Stok Akumulasi, Saldo Kas (langsung dari `buku_besar.saldo_akhir`).
-- Chart komposisi & tren timbulan.
+### ✅ Phase 8: Dashboard Eksekutif & Ringkasan Kampus (SRS M1) (STATUS: SELESAI & TERINTEGRASI)
+- **Fitur**:
+  - Selector kampus terintegrasi di header (Super Admin & Auditor fleksibel memilih Semua Kampus atau per unit cabang; Operator terkunci otomatis).
+  - 6 KPI Cards Primer: Timbangan Hari Ini (kg), Total Akumulasi (kg & m³), Stok Terpilah Anorganik (kg), Stok Residu TPA (kg), Diversion Rate (% pengalihan dari TPA), Saldo Kas Sirkular Realtime (Rp).
+  - Visual Histogram Bar: Tren Timbulan Sampah Masuk 7 Hari Terakhir (clean SVG/CSS responsif dengan indikator hari ini & tooltip hover kg).
+  - Stacked Segmented Composition Bar: Rasio Organik vs Anorganik vs Residu dengan persentase & kg breakdown.
+  - Kartu Neraca Sirkular Keuangan TPS: Penjualan vs Biaya Angkut vs Biaya Operasional vs Saldo Kas Bersih.
+  - Unified Tabbed Feed Aktivitas Operasional: Tab Timbangan, Penjualan, Pengangkutan, dan Pengeluaran terkini dengan shortcut tautan ke masing-masing modul.
+  - Quick Action Hub: 5 kartu akses cepat modul operasional.
+- **Checklist Uji**:
+  - [x] Komponen Livewire `pages.dashboard.index` diperbarui penuh.
+  - [x] Filter kampus reaktif dengan state Livewire.
+  - [x] Tampilan Dribbble light tokens konsisten tanpa dark-mode clash.
+  - [x] Seluruh link navigasi native bebas wire:navigate freeze.
 
 ### 📌 Phase 9: Modul Survei Perilaku / KAP (SRS M11)
 - Form kuesioner publik (Demografi, Knowledge, Attitude, Practice, Satisfaction, Facilities/Barriers).

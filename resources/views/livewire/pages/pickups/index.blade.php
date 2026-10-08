@@ -242,7 +242,7 @@ new #[Layout('layouts.app')] class extends Component
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::orderBy('id')->get(),
             'vendors' => Vendor::where('is_active', true)->orderBy('name')->get(),
-            'pickups' => $pickupsQuery->paginate(10),
+            'pickups' => $pickupsQuery->paginate(8),
             'selectedPickup' => $this->viewPickupId ? Pickup::with(['campus', 'vendor', 'creator'])->find($this->viewPickupId) : null,
             'stockSummary' => $stockSummary,
             'totalCostFiltered' => (float) $totalCostFiltered,
