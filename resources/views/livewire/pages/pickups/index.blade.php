@@ -398,7 +398,19 @@ new #[Layout('layouts.app')] class extends Component
             </div>
 
             <!-- Table Riwayat Pengangkutan Residu -->
-            <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+            <div class="relative bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" id="pickups-table-container">
+                <!-- Independent Table Loading State Indicator -->
+                <div wire:loading wire:target="previousPage, nextPage, gotoPage, setPage, filterDateFrom, filterDateTo, selectedCampusId" 
+                     class="absolute inset-0 bg-white/70 backdrop-blur-[1px] z-20 flex items-center justify-center transition-all duration-150">
+                    <div class="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-900/90 text-white text-xs font-semibold shadow-lg border border-slate-800">
+                        <svg class="animate-spin w-4 h-4 text-emerald-400" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        <span>Memperbarui log pengangkutan...</span>
+                    </div>
+                </div>
+
                 <div class="p-4 border-b border-slate-100 flex items-center justify-between">
                     <div>
                         <h3 class="font-bold text-sm text-slate-900">Riwayat Pengangkutan Residu</h3>
@@ -490,8 +502,8 @@ new #[Layout('layouts.app')] class extends Component
                     </table>
                 </div>
 
-                <div class="px-4 py-3 border-t border-slate-100">
-                    {{ $pickups->links() }}
+                <div class="px-4 py-3 border-t border-slate-100 bg-slate-50/30">
+                    {{ $pickups->links(data: ['scrollTo' => false]) }}
                 </div>
             </div>
 

@@ -20,6 +20,41 @@ Dokumen ini adalah panduan kerja bertahap (*step-by-step roadmap*), arsitektur t
 
 ---
 
+## 📜 Catatan Preferensi & Kontrak Desain Spesifik Pengguna (User Specific Notes & Contracts)
+
+Seluruh implementasi fitur dan komponen wajib selalu mematuhi panduan spesifik ini:
+
+1. **Modal Form Input & Backdrop Blur Viewport Penuh**:
+   - Latar belakang gelap ber-efek blur modal (`backdrop-blur-sm`) wajib menutupi **100% viewport layar secara penuh** tanpa adanya rongga/celah bolong di bagian atas (`fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-sm`).
+   - Modal dibungkus menggunakan `<template x-teleport="body">` yang tidak bersyarat (*unconditional template*) dengan `x-show="showModal"`, `x-cloak`, dan `style="display: none;"` agar *reactivity lifecycle* Alpine.js tetap terjaga.
+   - Tombol pembuka modal (`+ Catat ...`) wajib merespons instan 0ms melalui event Alpine langsung: `@click="showModal = true; $wire.openCreateModal()"`.
+
+2. **Stabilitas Navigasi Antar Halaman (Anti-Freeze / Anti-Hang)**:
+   - Dilarang keras menggunakan `wire:navigate` pada menu navigasi sidebar maupun tautan kartu aksi cepat (*quick action cards*) dashboard jika menyebabkan putusnya koneksi Alpine/Livewire morphdom yang berujung pada halaman membeku (*freeze*).
+   - Gunakan navigasi tautan browser standar yang bersih, cepat, dan reliabel.
+
+3. **Penyelarasan Warna & Komponen (Dribbble Clean Light Tokens)**:
+   - Seluruh halaman dan komponen wajib konsisten mengadopsi tema terang bersih (*clean light*): latar belakang `#f5f7fa`, card putih berbingkai `border-slate-200`, aksen Sage Green (`#3a9d6e` / emerald), Sky Blue, dan Amber.
+   - Dilarang memuat elemen bertema gelap (*dark mode clash* seperti `dark:bg-gray-800` pada pagination atau dropdown) agar antarmuka tidak belang.
+   - Komponen nomor halaman aktif menggunakan aksen kontras yang jelas, sedangkan tombol nomor tidak aktif berlatar putih dengan border slate halus.
+
+4. **Desain Tabel Ringkas & Modal Detail Interaktif (Anti-Scrolling Tinggi)**:
+   - Tabel riwayat data (Penimbangan, Penjualan, Pengangkutan) dilarang memiliki tinggi baris yang berlebihan (*excessive row height*) yang memaksa pengguna melakukan scroll terlalu jauh ke bawah.
+   - Kolom yang memuat banyak rincian multi-item diringkas menjadi *compact summary badge* (contoh: `3 Jenis Tervalidasi`, `2 Jenis Terpilah`).
+   - Rincian komprehensif data dibuka melalui Pop-up Modal Detail Interaktif yang rapi dengan mengklik tombol aksi ikon mata (*eye button*).
+
+5. **Navigasi Pagination Independen In-Place (Anti Full-Reload)**:
+   - Perpindahan nomor halaman (halaman 1, 2, 3 atau panah kiri/kanan) **dilarang me-reload halaman browser atau melompat/scroll paksa ke atas layar** (`scrollTo => false`).
+   - Tabel data harus bertindak sebagai objek independen yang me-refresh datanya sendiri di tempat secara *in-place*.
+   - Disediakan *smooth loading overlay* lokal di atas tabel (`Memperbarui data...`) dengan `wire:loading` agar pengguna mendapat umpan balik visual bahwa proses pembaruan data sedang berlangsung cepat dan hanya fokus pada tabel tersebut.
+   - Seluruh tombol pagination (panah dan nomor numerik) wajib memiliki proteksi `wire:loading.attr="disabled"` untuk mencegah *race condition* atau klik berulang saat data sedang dimuat.
+
+6. **Otorisasi Multi-Role & Scoping Cabang Kampus**:
+   - Super Admin & Auditor/Pimpinan memiliki filter fleksibel untuk melihat "Semua Kampus" atau memilih unit kampus tertentu.
+   - Operator Lapangan / Petugas TPS terkunci otomatis (*strictly scoped*) pada unit kampusnya sendiri, baik pada form input, tabel ringkasan, maupun agregat data.
+
+---
+
 ## 🧭 Milestone & Fase Pengerjaan (SRS v2 Aligned)
 
 ```mermaid
