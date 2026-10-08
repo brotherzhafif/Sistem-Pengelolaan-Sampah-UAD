@@ -20,6 +20,7 @@ class DatabaseSeeder extends Seeder
             MasterDataSeeder::class,
             WeighingSeeder::class,
             SaleSeeder::class,
+            PickupSeeder::class,
         ]);
     }
 }

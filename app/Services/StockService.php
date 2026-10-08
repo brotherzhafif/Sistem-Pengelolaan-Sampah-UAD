@@ -50,14 +50,21 @@ class StockService
 
         $soldByType = $soldQuery->pluck('total_sold_kg', 'waste_type_id')->toArray();
 
-        // 3. Gabungkan dengan data waste_types
+        // 3. Agregasi total pengangkutan residu (Pickups)
+        $pickupQuery = \App\Models\Pickup::query();
+        if ($campusId) {
+            $pickupQuery->where('campus_id', $campusId);
+        }
+        $totalPickedUp = (float) $pickupQuery->sum('volume_kg');
+
+        // 4. Gabungkan dengan data waste_types
         $allWasteTypes = WasteType::where('is_active', true)->orderBy('category')->orderBy('name')->get();
 
         $itemsBreakdown = [];
         $totalWeighed = 0.0;
         $totalSold = 0.0;
         $sellableStock = 0.0;
-        $residualStock = 0.0;
+        $grossResidualStock = 0.0;
 
         foreach ($allWasteTypes as $type) {
             $weighed = (float) ($weighedByType[$type->id] ?? 0.0);
@@ -71,7 +78,7 @@ class StockService
             if ($type->is_sellable) {
                 $sellableStock += $available;
             } else {
-                $residualStock += $available;
+                $grossResidualStock += $available;
             }
 
             $itemsBreakdown[] = [
@@ -87,11 +94,15 @@ class StockService
             ];
         }
 
+        // Sisa stok residu setelah dikurangi yang sudah diangkut vendor
+        $netResidualStock = max(0.0, $grossResidualStock - $totalPickedUp);
+
         return [
             'total_weighed_kg' => $totalWeighed,
             'total_sold_kg' => $totalSold,
+            'total_picked_up_kg' => $totalPickedUp,
             'sellable_stock_kg' => $sellableStock,
-            'residual_stock_kg' => $residualStock,
+            'residual_stock_kg' => $netResidualStock,
             'items_breakdown' => collect($itemsBreakdown),
         ];
     }

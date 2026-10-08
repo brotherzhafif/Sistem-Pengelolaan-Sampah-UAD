@@ -203,7 +203,7 @@ new #[Layout('layouts.app')] class extends Component
                     <p class="text-xs text-slate-500 mt-0.5">Akses cepat menu pengelolaan sampah kampus</p>
                 </div>
 
-                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <a href="{{ route('weighing') }}" wire:navigate class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-emerald-400 hover:shadow-sm transition duration-150 block group">
                         <div class="flex items-center justify-between">
                             <span class="font-semibold text-xs text-slate-800 group-hover:text-emerald-700">Penimbangan Sampah</span>
@@ -222,6 +222,16 @@ new #[Layout('layouts.app')] class extends Component
                             </span>
                         </div>
                         <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">Catat penjualan anorganik terpilah ke pengepul & penerimaan kas sirkular.</p>
+                    </a>
+
+                    <a href="{{ route('pickups') }}" wire:navigate class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 hover:bg-white hover:border-amber-400 hover:shadow-sm transition duration-150 block group">
+                        <div class="flex items-center justify-between">
+                            <span class="font-semibold text-xs text-slate-800 group-hover:text-amber-700">Pengangkutan Residu</span>
+                            <span class="w-6 h-6 rounded-md bg-amber-100 text-amber-800 flex items-center justify-center text-xs font-bold">
+                                &rarr;
+                            </span>
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1.5 leading-relaxed">Pencatatan pengangkutan sisa residu ke TPA oleh vendor & debet kas.</p>
                     </a>
 
                     <div class="p-4 rounded-lg border border-slate-200 bg-slate-50/60 transition duration-150 block opacity-75">

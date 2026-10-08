@@ -20,5 +20,6 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         \App\Models\Sale::observe(\App\Observers\SaleObserver::class);
+        \App\Models\Pickup::observe(\App\Observers\PickupObserver::class);
     }
 }
