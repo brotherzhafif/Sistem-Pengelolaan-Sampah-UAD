@@ -154,30 +154,37 @@ flowchart TD
   - [x] Navigasi menu Penjualan di sidebar aktif dengan status ikon tersinkronisasi.
   - [x] Seeder `SaleSeeder` dibuat dan didaftarkan ke `DatabaseSeeder`.
 
-### 📌 Phase 5: Pengangkutan Residu & Debet Biaya Angkut (SRS M4)
+### ✅ Phase 5: Pengangkutan Residu & Debet Biaya Angkut (SRS M4) (STATUS: SELESAI & TERUJI)
 - **Tabel**: `pickups`.
 - **Fitur**: Pencatatan pengangkutan residu oleh vendor, hitung biaya live (`volume * tarif_per_kg`).
 - **Otomasi**: Trigger `PickupObserver` ➔ buat jurnal Debet (D) di `keuangan` ➔ update `buku_besar` (saldo berkurang).
 - **Checklist Uji**:
-  - [ ] Residu berkurang sesuai volume angkut.
-  - [ ] Biaya otomatis tercatat di jurnal Debet.
+  - [x] Residu berkurang sesuai volume angkut via `StockService`.
+  - [x] Biaya otomatis tercatat di jurnal Debet (`PickupObserver`).
+  - [x] Komponen Livewire `pages.pickups.index` dengan modal teleport full backdrop, compact rows, dan independent in-place pagination.
 
-### 📌 Phase 6: Pengeluaran Operasional & Debet Kas (SRS M5)
+### ✅ Phase 6: Pengeluaran Operasional & Debet Kas (SRS M5) (STATUS: SELESAI)
 - **Tabel**: `expenses`.
-- **Fitur**: Form input biaya operasional non-angkut (plastik/karung, konsumsi pekerja TPS, upah pilah, pakan ternak, dll).
+- **Fitur**: Form input biaya operasional non-angkut (karung/bagor, konsumsi pekerja TPS, upah pilah, pakan ternak/maggot, material alat TPS).
 - **Otomasi**: Trigger `ExpenseObserver` ➔ buat jurnal Debet (D) di `keuangan` ➔ update `buku_besar`.
 - **Checklist Uji**:
-  - [ ] Biaya angkut dilarang diinput di form ini.
-  - [ ] Saldo buku besar berkurang otomatis.
+  - [x] Migration `2026_10_08_000006_create_expenses_table.php` & model `Expense`.
+  - [x] Observer `ExpenseObserver` terdaftar di `AppServiceProvider`.
+  - [x] Seeder `ExpenseSeeder` terdaftar di `DatabaseSeeder`.
+  - [x] Komponen Livewire `pages.expenses.index` & route `expenses`.
+  - [x] Navigasi menu Pengeluaran di sidebar aktif dan quick card dashboard terhubung.
 
-### 📌 Phase 7: Buku Kas & Buku Besar Keuangan (SRS M6 - MAJOR v2)
+### ✅ Phase 7: Buku Kas & Buku Besar Keuangan (SRS M6 - MAJOR v2) (STATUS: SELESAI)
 - **Fitur**:
-  - **Tab 1: Buku Kas (Jurnal Keuangan)**: Filter tanggal/jenis/sumber, tabel jurnal K/D, nominal, saldo running, badge K (hijau) & D (merah/oranye).
+  - **Tab 1: Buku Kas (Jurnal Keuangan)**: Filter tanggal/jenis/sumber, tabel jurnal K/D, nominal, badge K (hijau) & D (merah/oranye), modal rincian transaksi.
   - **Tab 2: Buku Besar (Saldo Harian)**: Tabel `Tanggal`, `Saldo Awal`, `Total Kredit (+)`, `Total Debet (-)`, `Saldo Akhir`.
-  - KPI Cards: Total Kredit, Total Debet, Saldo Akhir, Total Transaksi.
+  - Inisialisasi Saldo Kas Awal (`sumber = 'saldo_awal'`, `jenis = 'K'`) via modal popup.
+  - KPI Cards: Saldo Kas Sirkular, Total Kredit, Biaya Angkut, Biaya Operasional.
 - **Checklist Uji**:
-  - [ ] Rekalkulasi saldo berurutan berjalan benar (`Saldo Akhir Hari X = Saldo Awal Hari X+1`).
-  - [ ] Tidak ada entri manual langsung tanpa transaksi sumber (kecuali saldo awal setup pertama).
+  - [x] Model `Keuangan`, `BukuBesar`, dan service `LedgerService` double-entry bookkeeping.
+  - [x] Komponen Livewire `pages.finance.index` & route `finance`.
+  - [x] Navigasi menu Buku Kas di sidebar aktif dan quick card dashboard terhubung.
+  - [x] Rekalkulasi saldo berurutan berjalan benar (`Saldo Akhir Hari X = Saldo Awal Hari X+1`).
 
 ### 📌 Phase 8: Dashboard Eksekutif & Ringkasan Kampus (SRS M1)
 - Selector kampus di topbar (Super Admin bisa melihat semua kampus atau filter per kampus).

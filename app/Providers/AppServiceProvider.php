@@ -21,5 +21,6 @@ class AppServiceProvider extends ServiceProvider
     {
         \App\Models\Sale::observe(\App\Observers\SaleObserver::class);
         \App\Models\Pickup::observe(\App\Observers\PickupObserver::class);
+        \App\Models\Expense::observe(\App\Observers\ExpenseObserver::class);
     }
 }

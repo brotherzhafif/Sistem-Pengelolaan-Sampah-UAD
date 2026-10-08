@@ -20,6 +20,14 @@ Volt::route('pickups', 'pages.pickups.index')
     ->middleware(['auth', 'verified'])
     ->name('pickups');
 
+Volt::route('expenses', 'pages.expenses.index')
+    ->middleware(['auth', 'verified'])
+    ->name('expenses');
+
+Volt::route('finance', 'pages.finance.index')
+    ->middleware(['auth', 'verified'])
+    ->name('finance');
+
 Volt::route('master-data', 'pages.master.index')
     ->middleware(['auth', 'verified'])
     ->name('master-data');
