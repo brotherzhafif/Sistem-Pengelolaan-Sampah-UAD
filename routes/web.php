@@ -1,6 +1,6 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
+use Livewire\Volt\Volt;
 
 Route::view('/', 'welcome');
 
@@ -8,7 +8,7 @@ Route::view('dashboard', 'dashboard')
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Route::view('master-data', 'livewire.pages.master.index')
+Volt::route('master-data', 'pages.master.index')
     ->middleware(['auth', 'verified'])
     ->name('master-data');
 

@@ -17,22 +17,26 @@
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
     <body class="font-sans antialiased bg-[#f5f7fa] text-slate-900">
-        <div class="min-h-screen">
-            <livewire:layout.navigation />
+        <div class="flex min-h-screen">
+            <!-- Left Sidebar Navigation -->
+            <livewire:layout.sidebar />
 
-            <!-- Page Heading -->
-            @if (isset($header))
-                <header class="bg-white border-b border-slate-200">
-                    <div class="max-w-7xl mx-auto py-5 px-4 sm:px-6 lg:px-8">
-                        {{ $header }}
-                    </div>
-                </header>
-            @endif
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+                <!-- Page Top Header (If Provided) -->
+                @if (isset($header))
+                    <header class="bg-white border-b border-slate-200 shrink-0 sticky top-0 z-20">
+                        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                            {{ $header }}
+                        </div>
+                    </header>
+                @endif
 
-            <!-- Page Content -->
-            <main>
-                {{ $slot }}
-            </main>
+                <!-- Page Main Body -->
+                <main class="flex-1">
+                    {{ $slot }}
+                </main>
+            </div>
         </div>
     </body>
 </html>

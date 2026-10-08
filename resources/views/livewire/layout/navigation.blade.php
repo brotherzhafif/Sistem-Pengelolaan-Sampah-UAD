@@ -39,12 +39,10 @@ new class extends Component
                 <!-- Navigation Links -->
                 <div class="hidden sm:flex sm:space-x-2">
                     <a href="{{ route('dashboard') }}" 
-                       wire:navigate 
                        class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
                         Dashboard
                     </a>
                     <a href="{{ route('master-data') }}" 
-                       wire:navigate 
                        class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold transition {{ request()->routeIs('master-data') ? 'bg-slate-100 text-slate-900' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
                         Master Data
                     </a>
@@ -70,7 +68,7 @@ new class extends Component
                         <div class="px-4 py-2 border-b border-slate-100 text-[11px] text-slate-400">
                             Masuk sebagai <strong>{{ auth()->user()->email }}</strong>
                         </div>
-                        <x-dropdown-link :href="route('profile')" wire:navigate class="text-xs">
+                        <x-dropdown-link :href="route('profile')" class="text-xs">
                             {{ __('Profil Akun') }}
                         </x-dropdown-link>
 
@@ -99,10 +97,10 @@ new class extends Component
     <!-- Responsive Navigation Menu -->
     <div :class="{'block': open, 'hidden': ! open}" class="hidden sm:hidden border-t border-slate-200 bg-white">
         <div class="pt-2 pb-3 space-y-1 px-4">
-            <a href="{{ route('dashboard') }}" wire:navigate class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-900' : 'text-slate-600' }}">
+            <a href="{{ route('dashboard') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('dashboard') ? 'bg-slate-100 text-slate-900' : 'text-slate-600' }}">
                 Dashboard
             </a>
-            <a href="{{ route('master-data') }}" wire:navigate class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('master-data') ? 'bg-slate-100 text-slate-900' : 'text-slate-600' }}">
+            <a href="{{ route('master-data') }}" class="block px-3 py-2 rounded-lg text-xs font-semibold {{ request()->routeIs('master-data') ? 'bg-slate-100 text-slate-900' : 'text-slate-600' }}">
                 Master Data
             </a>
         </div>
@@ -113,7 +111,7 @@ new class extends Component
             <div class="text-[11px] text-slate-500">{{ auth()->user()->email }}</div>
 
             <div class="mt-3 space-y-1">
-                <a href="{{ route('profile') }}" wire:navigate class="block px-3 py-1.5 rounded-md text-xs text-slate-600 hover:bg-slate-50">
+                <a href="{{ route('profile') }}" class="block px-3 py-1.5 rounded-md text-xs text-slate-600 hover:bg-slate-50">
                     {{ __('Profil Akun') }}
                 </a>
                 <button wire:click="logout" class="w-full text-start px-3 py-1.5 rounded-md text-xs text-rose-600 hover:bg-rose-50">
