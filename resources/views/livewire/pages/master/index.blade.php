@@ -254,7 +254,7 @@ new #[Layout('layouts.app')] class extends Component
             <div class="flex items-center gap-2">
                 <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Modul M7
+                    Master Data
                 </span>
             </div>
         </div>

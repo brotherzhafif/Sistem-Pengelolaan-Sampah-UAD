@@ -174,31 +174,27 @@ new #[Layout('layouts.app')] class extends Component
     }
 }; ?>
 
-<div class="space-y-6">
-    <!-- Header Section -->
-    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 pb-2 border-b border-slate-200">
-        <div>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-bold tracking-wide uppercase bg-emerald-50 text-emerald-700 border border-emerald-200">
-                    Pencatatan Masuk
-                </span>
-                <span class="text-xs text-slate-400">|</span>
-                <span class="text-xs text-slate-500 font-medium">Buku Kas & Stok Kampus</span>
+<div>
+    <x-slot name="header">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="font-bold text-xl text-slate-900 tracking-tight">Penimbangan Sampah Harian</h2>
+                <p class="text-xs text-slate-500 mt-0.5">Pencatatan volume dan bobot sampah masuk dari titik sumber kampus UAD</p>
             </div>
-            <h1 class="text-2xl font-bold text-slate-900 tracking-tight mt-1">Penimbangan Sampah Harian</h1>
-            <p class="text-sm text-slate-500">Pencatatan volume dan bobot sampah masuk dari titik sumber kampus UAD</p>
+            <div class="flex items-center gap-2.5">
+                <button wire:click="openCreateModal"
+                        class="inline-flex items-center gap-2 px-3.5 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                    <span>Catat Penimbangan</span>
+                </button>
+            </div>
         </div>
+    </x-slot>
 
-        <div class="flex items-center gap-2.5">
-            <button wire:click="openCreateModal"
-                    class="inline-flex items-center gap-2 px-4 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95">
-                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                </svg>
-                <span>Catat Penimbangan</span>
-            </button>
-        </div>
-    </div>
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
 
     <!-- Alert Status -->
     @if (session('status'))
@@ -229,54 +225,60 @@ new #[Layout('layouts.app')] class extends Component
         </div>
     @endif
 
-    <!-- Stock Summary Metric Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <!-- Stock Summary Metric Cards (Clean Dribbble style matching dashboard) -->
+    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <!-- Total Masuk -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
-            <div>
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Akumulasi Timbang</div>
-                <div class="text-2xl font-bold text-slate-900 mt-1 font-mono">
-                    {{ number_format($stockSummary['total_weighed_kg'], 1) }} <span class="text-xs font-sans text-slate-500 font-normal">kg</span>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Akumulasi Timbang</span>
+                <div class="w-7 h-7 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                    </svg>
                 </div>
-                <div class="text-[11px] text-slate-400 mt-0.5">Semua jenis sampah terdata</div>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                </svg>
+            <div class="mt-3 flex items-baseline gap-1.5">
+                <span class="font-mono text-2xl font-bold text-slate-900">{{ number_format($stockSummary['total_weighed_kg'], 1) }}</span>
+                <span class="text-xs text-slate-500 font-medium">kg</span>
             </div>
+            <p class="text-[11px] text-slate-400 mt-1">Semua jenis sampah terdata</p>
         </div>
 
         <!-- Terpilah Siap Jual -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
-            <div>
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Terpilah (Siap Jual)</div>
-                <div class="text-2xl font-bold text-sky-600 mt-1 font-mono">
-                    {{ number_format($stockSummary['sellable_stock_kg'], 1) }} <span class="text-xs font-sans text-slate-500 font-normal">kg</span>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Terpilah (Siap Jual)</span>
+                <div class="w-7 h-7 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
                 </div>
-                <div class="text-[11px] text-sky-600 mt-0.5">Potensi pendapatan kas kampus</div>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-sky-50 border border-sky-100 flex items-center justify-center text-sky-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div class="mt-3 flex items-baseline gap-1.5">
+                <span class="font-mono text-2xl font-bold text-sky-600">{{ number_format($stockSummary['sellable_stock_kg'], 1) }}</span>
+                <span class="text-xs text-slate-500 font-medium">kg</span>
             </div>
+            <p class="text-[11px] text-slate-400 mt-1">Potensi pendapatan kas kampus</p>
         </div>
 
         <!-- Residu -->
-        <div class="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex items-center justify-between">
-            <div>
-                <div class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Residu (Perlu Angkut)</div>
-                <div class="text-2xl font-bold text-amber-600 mt-1 font-mono">
-                    {{ number_format($stockSummary['residual_stock_kg'], 1) }} <span class="text-xs font-sans text-slate-500 font-normal">kg</span>
+        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
+            <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+            <div class="flex items-center justify-between">
+                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Residu (Perlu Angkut)</span>
+                <div class="w-7 h-7 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
                 </div>
-                <div class="text-[11px] text-amber-600 mt-0.5">Residu & sisa organik ke vendor</div>
             </div>
-            <div class="w-10 h-10 rounded-lg bg-amber-50 border border-amber-100 flex items-center justify-center text-amber-600">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                </svg>
+            <div class="mt-3 flex items-baseline gap-1.5">
+                <span class="font-mono text-2xl font-bold text-amber-600">{{ number_format($stockSummary['residual_stock_kg'], 1) }}</span>
+                <span class="text-xs text-slate-500 font-medium">kg</span>
             </div>
+            <p class="text-[11px] text-slate-400 mt-1">Residu & sisa organik ke vendor</p>
         </div>
     </div>
 
@@ -397,6 +399,8 @@ new #[Layout('layouts.app')] class extends Component
             {{ $sessions->links() }}
         </div>
     </div>
+    </div>
+</div>
 
     <!-- Modal Form Catat Penimbangan -->
     @if ($showCreateModal)
