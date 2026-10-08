@@ -76,3 +76,4 @@ class SaleSeeder extends Seeder
         }
     }
 }
+

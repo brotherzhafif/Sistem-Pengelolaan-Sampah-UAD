@@ -34,3 +34,4 @@ class SaleItem extends Model
         return $this->belongsTo(WasteType::class);
     }
 }
+

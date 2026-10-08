@@ -35,7 +35,11 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        $this->selectedCampusId = $user->campus_id ?? Campus::first()?->id;
+        if ($user->hasRole('Super Admin') || $user->hasRole('Auditor / Pimpinan') || !$user->campus_id) {
+            $this->selectedCampusId = session('active_campus_id') ?? $user->campus_id ?? null;
+        } else {
+            $this->selectedCampusId = $user->campus_id;
+        }
         $this->filterDateFrom = Carbon::now()->subDays(30)->format('Y-m-d');
         $this->filterDateTo = Carbon::today()->format('Y-m-d');
 
@@ -615,3 +619,4 @@ new #[Layout('layouts.app')] class extends Component
         </div>
     </div>
 </div>
+

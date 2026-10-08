@@ -25,26 +25,6 @@
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-            <!-- Alert Info Unit (Clean card) -->
-            <div class="bg-white border border-slate-200 rounded-xl p-4 flex items-center justify-between shadow-sm">
-                <div class="flex items-center gap-3">
-                    <div class="w-9 h-9 rounded-lg bg-emerald-50 text-emerald-700 flex items-center justify-center shrink-0">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    </div>
-                    <div>
-                        <h4 class="font-semibold text-slate-900 text-sm">Status Akun Terverifikasi</h4>
-                        <p class="text-xs text-slate-500">Unit operasional: <span class="font-medium text-slate-700">{{ Auth::user()->campus?->name ?? 'Semua Kampus UAD (Super Admin)' }}</span></p>
-                    </div>
-                </div>
-                <div class="hidden sm:block">
-                    <span class="text-xs font-medium text-emerald-700 bg-emerald-50 px-2.5 py-1 rounded-md border border-emerald-100">
-                        Zero Waste UAD
-                    </span>
-                </div>
-            </div>
-
             <!-- Metric Cards (Clean Dribbble style matching ref tokens) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Card 1: Sage Accent -->

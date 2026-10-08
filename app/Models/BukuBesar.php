@@ -34,3 +34,4 @@ class BukuBesar extends Model
         return $this->belongsTo(Campus::class);
     }
 }
+

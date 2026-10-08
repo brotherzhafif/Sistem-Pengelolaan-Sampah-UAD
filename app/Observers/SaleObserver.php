@@ -41,3 +41,4 @@ class SaleObserver
         $this->ledgerService->deleteTransactionByRef('penjualan', $sale->id);
     }
 }
+

@@ -50,3 +50,4 @@ class Sale extends Model
         return (float) $this->items->sum('weight_kg');
     }
 }
+
