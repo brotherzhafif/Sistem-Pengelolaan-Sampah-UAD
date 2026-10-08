@@ -5,17 +5,18 @@ Dokumen ini adalah panduan kerja bertahap (*step-by-step roadmap*), arsitektur t
 
 ---
 
-## 🎯 Prinsip Pengerjaan & Aturan Desain
-1. **Fokus Satu Per Satu (Single Feature Delivery)**: Kerjakan 1 fitur secara tuntas, verifikasi, lalu lanjut ke berikutnya.
-2. **Kepatuhan SRS v2 & Non-AI Slop**: Struktur kode mengikuti kaidah resmi Laravel (Services, Observers, FormRequests/Livewire Volt, Scopes). Prinsip **DRY (Don't Repeat Yourself)** dijaga di seluruh komponen Blade dan logika PHP.
-3. **Desain Dribbble Clean (Sesuai `ref/PS2_UAD_Prototype_UI.html`)**:
-   - Tampilan bersih, minimalis, proporsional, tanpa ornamen alay atau gelap kontras berlebihan.
-   - Menggunakan palet referensi: **Sage Green (`#3a9d6e`)**, **Sky Blue (`#3b82f6`)**, **Amber (`#e5a520`)**, **Coral (`#ef6b4a`)**, dan surface putih dengan background `#f5f7fa`.
-   - Tipografi: **DM Sans** untuk UI teks, **JetBrains Mono** untuk angka metrik finansial & timbangan.
+## 🎯 Prinsip Pengerjaan & Aturan Desain (GOLDEN RULES)
+1. ⭐ **DRIBBLE CLEAN STYLE (WAJIB & UTAMA)**:
+   - Desain minimalis, lapang (*spacious*), proporsional, tanpa ornamen alay atau elemen bertumpuk-tumpuk.
+   - **NO EMOJI** pada antarmuka profesional (gunakan vektor SVG line/monokrom presisi tinggi).
+   - Palet warna konsisten mengacu pada `ref/PS2_UAD_Prototype_UI.html`: **Sage Green (`#3a9d6e`)**, **Sky Blue (`#3b82f6`)**, **Amber (`#e5a520`)**, **Coral (`#ef6b4a`)**, cards putih (`#ffffff`), border halus (`border-slate-200`), dan background halaman bersih (`#f5f7fa`).
+   - Tipografi terstandarisasi: **DM Sans** untuk teks antarmuka, **JetBrains Mono** untuk angka nominal uang & timbangan kg.
+2. **Fokus Satu Per Satu (Single Feature Delivery)**: Selesaikan 1 fitur hingga tuntas, verifikasi/uji, baru pindah ke fitur selanjutnya.
+3. **Kepatuhan SRS v2 & Non-AI Slop**: Struktur kode bersih mengikuti standar arsitektur resmi Laravel (Services, Observers, Scopes, Volt). Terapkan **DRY (Don't Repeat Yourself)** pada setiap komponen Blade dan PHP.
 4. **Validasi Ganda (Double Validation)**:
-   - **Frontend**: Attribute HTML5 & realtime validation.
-   - **Backend**: Strict validation rules, sanitasi input (`strip_tags`, `trim`), casting numeric yang aman.
-5. **No Premature Docker / Push**: Kode dibuat bersih di lokal; kompilasi dan migrasi dieksekusi terencana agar tidak membebani perangkat user.
+   - **Frontend**: HTML5 attributes (`min`, `max`, `maxlength`, `required`) & responsif.
+   - **Backend**: Strict Laravel validation rules, sanitasi input (`strip_tags`, `trim`), casting numerik aman.
+5. **No Premature Docker / Push**: Eksekusi docker/migrasi/push dikendalikan manual oleh user agar tidak membebani perangkat lokal.
 
 ---
 

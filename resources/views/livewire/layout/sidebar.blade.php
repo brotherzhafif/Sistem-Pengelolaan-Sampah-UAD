@@ -26,103 +26,169 @@ new class extends Component
         </div>
         <div class="leading-tight">
             <span class="text-base font-bold tracking-tight text-white">PS2 <span class="text-emerald-400">UAD</span></span>
-            <span class="block text-[10px] text-slate-400 font-medium">Zero Waste Campus</span>
+            <span class="block text-[10px] text-slate-500 font-medium">Zero Waste Campus</span>
         </div>
     </div>
 
-    <!-- Active Campus Badge -->
+    <!-- Active Campus Selector Badge -->
     <div class="mx-3.5 my-3 p-2.5 rounded-lg bg-white/5 border border-white/10 flex items-center justify-between text-xs font-semibold text-emerald-400">
         <div class="flex items-center gap-2 truncate">
-            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 shrink-0"></span>
-            <span class="truncate">{{ auth()->user()->campus?->name ?? 'Pusat / Seluruh Kampus' }}</span>
+            <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+            </svg>
+            <span class="truncate font-semibold">{{ auth()->user()->campus?->name ?? 'Pusat / Seluruh Kampus' }}</span>
         </div>
-        <span class="text-[10px] text-slate-400">▾</span>
+        <svg class="w-3 h-3 text-slate-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+        </svg>
     </div>
 
-    <!-- Navigation Menu Items -->
-    <div class="flex-1 px-3 py-2 space-y-5 overflow-y-auto">
+    <!-- Navigation Menu Items (Clean SVG Icons ala Dribbble) -->
+    <div class="flex-1 px-3 py-2 space-y-4 overflow-y-auto">
         <!-- Section: PENCATATAN -->
         <div>
-            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
+            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Pencatatan
             </div>
             <div class="space-y-0.5">
+                <!-- Dashboard -->
                 <a href="{{ route('dashboard') }}" 
                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ request()->routeIs('dashboard') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                    <svg class="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
                     </svg>
                     <span>Dashboard</span>
                 </a>
 
+                <!-- Penimbangan (M2) -->
                 <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-80 cursor-not-allowed" 
-                   title="Tersedia di Phase 3">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed" 
+                   title="Penimbangan Harian (M2)">
+                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
                     </svg>
-                    <span>Penimbangan (M2)</span>
+                    <span>Penimbangan</span>
                 </a>
 
+                <!-- Penjualan (M3) -->
                 <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-80 cursor-not-allowed"
-                   title="Tersedia di Phase 4">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                   title="Penjualan Sampah (M3)">
+                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
-                    <span>Penjualan (M3)</span>
+                    <span>Penjualan</span>
                 </a>
 
+                <!-- Pengangkutan (M4) -->
                 <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-80 cursor-not-allowed"
-                   title="Tersedia di Phase 5">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                   title="Pengangkutan Residu (M4)">
+                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
                     </svg>
-                    <span>Pengangkutan (M4)</span>
+                    <span>Pengangkutan</span>
                 </a>
             </div>
         </div>
 
         <!-- Section: KEUANGAN (SRS v2 Buku Kas & Buku Besar) -->
         <div>
-            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                Keuangan (v2)
+            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Keuangan
             </div>
             <div class="space-y-0.5">
+                <!-- Pengeluaran (M5) -->
                 <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-80 cursor-not-allowed"
-                   title="Tersedia di Phase 6">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 14l6-6m-5.5.5h.01m4.99 5h.01M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2z" />
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                   title="Pengeluaran Operasional (M5)">
+                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                     </svg>
-                    <span>Pengeluaran (M5)</span>
+                    <span>Pengeluaran</span>
                 </a>
 
+                <!-- Buku Kas & Buku Besar (M6) -->
                 <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-80 cursor-not-allowed"
-                   title="Tersedia di Phase 7">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                   title="Buku Kas & Buku Besar (M6)">
+                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                     </svg>
-                    <span>Buku Kas & Besar (M6)</span>
+                    <span>Buku Kas</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Section: ANALITIK -->
+        <div>
+            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Analitik
+            </div>
+            <div class="space-y-0.5">
+                <!-- Survei KAP (M11) -->
+                <a href="{{ route('dashboard') }}" 
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                   title="Survei KAP (M11)">
+                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 14l9-5-9-5-9 5 9 5z" />
+                        <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222" />
+                    </svg>
+                    <span>Survei KAP</span>
+                </a>
+
+                <!-- Laporan (M8) -->
+                <a href="{{ route('dashboard') }}" 
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                   title="Laporan & Ekspor (M8)">
+                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Laporan</span>
                 </a>
             </div>
         </div>
 
         <!-- Section: SISTEM -->
         <div>
-            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-500 mb-1.5">
-                Sistem & Master
+            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Sistem
             </div>
             <div class="space-y-0.5">
+                <!-- Master Data (M7) -->
                 <a href="{{ route('master-data') }}" 
                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ request()->routeIs('master-data') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
-                    <svg class="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg class="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     </svg>
-                    <span>Master Data (M7)</span>
+                    <span>Master Data</span>
+                </a>
+
+                <!-- Pengguna (M9) -->
+                <a href="{{ route('dashboard') }}" 
+                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                   title="Manajemen Pengguna (M9)">
+                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                    <span>Pengguna</span>
+                </a>
+
+                <!-- Notifikasi (M10) -->
+                <a href="{{ route('dashboard') }}" 
+                   class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                   title="Notifikasi & Alerts (M10)">
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span>Notifikasi</span>
+                    </div>
+                    <span class="bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">3</span>
                 </a>
             </div>
         </div>
@@ -146,4 +212,3 @@ new class extends Component
         </button>
     </div>
 </aside>
-
