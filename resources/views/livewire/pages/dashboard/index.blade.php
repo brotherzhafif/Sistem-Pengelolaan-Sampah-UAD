@@ -3,11 +3,13 @@
 use App\Models\BukuBesar;
 use App\Models\Campus;
 use App\Models\Expense;
+use App\Models\KapSurvey;
 use App\Models\Keuangan;
 use App\Models\Pickup;
 use App\Models\Sale;
 use App\Models\WeighingItem;
 use App\Models\WeighingSession;
+use App\Services\LedgerService;
 use App\Services\StockService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -17,6 +19,7 @@ use Livewire\Volt\Component;
 new #[Layout('layouts.app')] class extends Component
 {
     public ?int $selectedCampusId = null;
+    public string $dashboardMode = 'technical'; // 'technical' (Dashboard Teknis) or 'kap' (Dashboard KAP)
     public string $activeActivityTab = 'weighing'; // weighing, sales, pickups, expenses
 
     public function mount(): void
@@ -36,12 +39,17 @@ new #[Layout('layouts.app')] class extends Component
         session(['active_campus_id' => $campusId]);
     }
 
+    public function setDashboardMode(string $mode): void
+    {
+        $this->dashboardMode = $mode;
+    }
+
     public function setActivityTab(string $tab): void
     {
         $this->activeActivityTab = $tab;
     }
 
-    public function with(StockService $stockService): array
+    public function with(StockService $stockService, LedgerService $ledgerService): array
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
@@ -146,7 +154,77 @@ new #[Layout('layouts.app')] class extends Component
 
         $totalKredit = (float) (clone $finQuery)->where('jenis', 'K')->sum('nominal');
         $totalDebet = (float) (clone $finQuery)->where('jenis', 'D')->sum('nominal');
-        $saldoKas = max(0.0, $totalKredit - $totalDebet);
+        
+        // SRS M1 & REV-04: Saldo Kas Sirkular diambil dari saldo_akhir buku besar
+        $saldoKas = $ledgerService->getLatestBalance($campusQueryId);
+
+        // SRS M10 — Sistem Notifikasi & Peringatan Otomatis (Alerts)
+        $alerts = [];
+        if ($todayWeighedKg == 0) {
+            $alerts[] = [
+                'type' => 'info',
+                'title' => 'Reminder Input Harian',
+                'message' => 'Belum ada catatan penimbangan sampah yang diinput hari ini (' . Carbon::today()->translatedFormat('l, d F Y') . ').',
+                'action_url' => route('weighing'),
+                'action_label' => 'Input Timbangan',
+            ];
+        }
+        if (($stockSummary['sellable_stock_kg'] ?? 0) >= 500) {
+            $alerts[] = [
+                'type' => 'warning',
+                'title' => 'Alert Stok Menumpuk',
+                'message' => 'Akumulasi sampah terpilah siap jual mencapai ' . number_format($stockSummary['sellable_stock_kg'], 1, ',', '.') . ' kg. Segera jadwalkan penjualan ke pengepul.',
+                'action_url' => route('sales'),
+                'action_label' => 'Catat Penjualan',
+            ];
+        }
+        if (($stockSummary['residual_stock_kg'] ?? 0) >= 1000) {
+            $alerts[] = [
+                'type' => 'danger',
+                'title' => 'Alert Akumulasi Residu Tinggi',
+                'message' => 'Akumulasi residu TPS mencapai ' . number_format($stockSummary['residual_stock_kg'], 1, ',', '.') . ' kg. Segera jadwalkan pengangkutan armada ke TPA Piyungan.',
+                'action_url' => route('pickups'),
+                'action_label' => 'Jadwalkan Angkut',
+            ];
+        }
+        if ($saldoKas < 500000 && $saldoKas > 0) {
+            $alerts[] = [
+                'type' => 'warning',
+                'title' => 'Alert Saldo Menipis',
+                'message' => 'Saldo kas operasional kampus tersisa Rp ' . number_format($saldoKas, 0, ',', '.') . '. Pantau pengeluaran operasional.',
+                'action_url' => route('finance'),
+                'action_label' => 'Lihat Buku Kas',
+            ];
+        }
+
+        // SRS M1 (b) & M11: Dashboard KAP Metrics
+        $kapQuery = KapSurvey::when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId));
+        $kapTotal = (clone $kapQuery)->count();
+        $kapAvgKnowledge = $kapTotal > 0 ? round((float) (clone $kapQuery)->avg('knowledge_score'), 1) : 0.0;
+        $kapAvgAttitude = $kapTotal > 0 ? round((float) (clone $kapQuery)->avg('attitude_score'), 1) : 0.0;
+        $kapAvgPractice = $kapTotal > 0 ? round((float) (clone $kapQuery)->avg('practice_score'), 1) : 0.0;
+        $kapAvgSatisfaction = $kapTotal > 0 ? round((float) (clone $kapQuery)->avg('satisfaction_score'), 1) : 0.0;
+        $kapAvgOverall = $kapTotal > 0 ? round((float) (clone $kapQuery)->avg('overall_score'), 1) : 0.0;
+        $kapVolunteerPct = $kapTotal > 0 ? round(((clone $kapQuery)->where('is_willing_volunteer', true)->count() / $kapTotal) * 100, 1) : 0.0;
+        $kapTrainingPct = $kapTotal > 0 ? round(((clone $kapQuery)->where('has_attended_training', true)->count() / $kapTotal) * 100, 1) : 0.0;
+
+        // Perbandingan Antar Kampus untuk Dashboard KAP (saat Semua Kampus dipilih)
+        $campusKapComparison = [];
+        if (!$campusQueryId) {
+            foreach ($campuses as $c) {
+                $cSurveys = KapSurvey::where('campus_id', $c->id)->get();
+                $cCount = $cSurveys->count();
+                $campusKapComparison[] = [
+                    'campus' => $c->name,
+                    'count' => $cCount,
+                    'overall' => $cCount > 0 ? round($cSurveys->avg('overall_score'), 1) : 0.0,
+                    'knowledge' => $cCount > 0 ? round($cSurveys->avg('knowledge_score'), 1) : 0.0,
+                    'attitude' => $cCount > 0 ? round($cSurveys->avg('attitude_score'), 1) : 0.0,
+                    'practice' => $cCount > 0 ? round($cSurveys->avg('practice_score'), 1) : 0.0,
+                    'satisfaction' => $cCount > 0 ? round($cSurveys->avg('satisfaction_score'), 1) : 0.0,
+                ];
+            }
+        }
 
         // 6. Aktivitas Terbaru (Per Modul)
         $recentSessions = WeighingSession::with(['campus', 'wasteSource', 'creator', 'items'])
@@ -200,6 +278,16 @@ new #[Layout('layouts.app')] class extends Component
             'pickupExpense' => $pickupExpense,
             'operationalExpense' => $operationalExpense,
             'saldoKas' => $saldoKas,
+            'alerts' => $alerts,
+            'kapTotal' => $kapTotal,
+            'kapAvgKnowledge' => $kapAvgKnowledge,
+            'kapAvgAttitude' => $kapAvgAttitude,
+            'kapAvgPractice' => $kapAvgPractice,
+            'kapAvgSatisfaction' => $kapAvgSatisfaction,
+            'kapAvgOverall' => $kapAvgOverall,
+            'kapVolunteerPct' => $kapVolunteerPct,
+            'kapTrainingPct' => $kapTrainingPct,
+            'campusKapComparison' => $campusKapComparison,
             'recentSessions' => $recentSessions,
             'recentSales' => $recentSales,
             'recentPickups' => $recentPickups,
@@ -254,11 +342,67 @@ new #[Layout('layouts.app')] class extends Component
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
 
-            <!-- 1. Executive Primary KPI Grid (6 Cards Clean Dribbble Style) -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
-                
-                <!-- KPI 1: Timbangan Hari Ini -->
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+            <!-- Switcher: (a) Dashboard Teknis vs (b) Dashboard KAP (SRS M1) -->
+            <div class="bg-white rounded-2xl p-1.5 border border-slate-200 shadow-2xs flex flex-wrap items-center justify-between gap-3">
+                <div class="flex items-center gap-1.5">
+                    <button type="button" 
+                            wire:click="setDashboardMode('technical')" 
+                            class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer {{ $dashboardMode === 'technical' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                        </svg>
+                        <span>(a) Dashboard Teknis Operasional</span>
+                    </button>
+
+                    <button type="button" 
+                            wire:click="setDashboardMode('kap')" 
+                            class="px-4 py-2 rounded-xl text-xs font-bold transition flex items-center gap-2 cursor-pointer {{ $dashboardMode === 'kap' ? 'bg-emerald-600 text-white shadow-2xs' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100' }}">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span>(b) Dashboard Survei KAP</span>
+                    </button>
+                </div>
+
+                <div class="px-3 text-[11px] text-slate-500 font-medium">
+                    {{ $activeCampus ? $activeCampus->name : 'Semua Kampus UAD (Pusat)' }}
+                </div>
+            </div>
+
+            @if($dashboardMode === 'technical')
+                <!-- M10 — Alerts & Notification Banners -->
+                @if(!empty($alerts))
+                    <div class="space-y-2.5">
+                        @foreach($alerts as $alert)
+                            <div class="p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-2xs {{ $alert['type'] === 'danger' ? 'bg-rose-50/70 border-rose-200 text-rose-900' : ($alert['type'] === 'warning' ? 'bg-amber-50/70 border-amber-200 text-amber-900' : 'bg-emerald-50/70 border-emerald-200 text-emerald-900') }}">
+                                <div class="flex items-center gap-3">
+                                    <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 {{ $alert['type'] === 'danger' ? 'bg-rose-100 text-rose-700' : ($alert['type'] === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700') }}">
+                                        @if($alert['type'] === 'danger')
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        @elseif($alert['type'] === 'warning')
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        @else
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        @endif
+                                    </div>
+                                    <div>
+                                        <h4 class="text-xs font-bold">{{ $alert['title'] }}</h4>
+                                        <p class="text-[11px] opacity-90">{{ $alert['message'] }}</p>
+                                    </div>
+                                </div>
+                                <a href="{{ $alert['action_url'] }}" class="px-3.5 py-1.5 rounded-xl bg-white text-xs font-bold border border-slate-200 hover:bg-slate-50 transition shrink-0 text-center shadow-2xs">
+                                    {{ $alert['action_label'] }} &rarr;
+                                </a>
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+
+                <!-- 1. Executive Primary KPI Grid (6 Cards Clean Dribbble Style) -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
+                    
+                    <!-- KPI 1: Timbangan Hari Ini -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
                     <div class="flex items-center justify-between">
                         <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Timbang Hari Ini</span>
@@ -751,6 +895,284 @@ new #[Layout('layouts.app')] class extends Component
                 @endif
 
             </div>
+
+            @endif {{-- end dashboardMode === 'technical' --}}
+
+            @if($dashboardMode === 'kap')
+                <!-- (b) Dashboard Survei KAP (Knowledge, Attitude, Practice) — SRS M1 & M11 -->
+                
+                <!-- KAP Header & Quick Action -->
+                <div class="bg-gradient-to-r from-emerald-800 to-teal-900 rounded-2xl p-6 text-white shadow-xs relative overflow-hidden flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div class="relative z-10 max-w-2xl">
+                        <div class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full bg-emerald-500/20 text-emerald-300 text-[11px] font-bold tracking-wide uppercase mb-2 border border-emerald-400/20">
+                            <span>Modul M11 — Survei KAP Civitas Akademika</span>
+                        </div>
+                        <h3 class="text-xl font-bold tracking-tight text-white">Indeks Perilaku Pemilahan Sampah Kampus UAD</h3>
+                        <p class="text-xs text-emerald-100/90 mt-1">
+                            Monitoring komprehensif tingkat pengetahuan, sikap, praktik nyata pemilahan, dan kepuasan fasilitas persampahan seluruh civitas akademika Universitas Ahmad Dahlan.
+                        </p>
+                    </div>
+                    <div class="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
+                        <a href="{{ route('public.survey') }}" target="_blank" class="px-4 py-2.5 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-bold transition shadow-xs flex items-center gap-2">
+                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+                            <span>Buka Form Kuesioner</span>
+                        </a>
+                        <a href="{{ route('kap') }}" class="px-4 py-2.5 rounded-xl bg-emerald-700/60 hover:bg-emerald-700 text-white text-xs font-bold transition border border-emerald-500/30 flex items-center gap-2">
+                            <span>Modul Analisis KAP &rarr;</span>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- KAP 6 Primary KPI Cards -->
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
+                    
+                    <!-- KPI 1: Total Responden -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Responden</span>
+                            <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($kapTotal, 0, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">orang</span>
+                        </div>
+                        <p class="text-[10px] text-slate-400 mt-1 truncate">Partisipasi civitas</p>
+                    </div>
+
+                    <!-- KPI 2: Indeks Rata-rata KAP -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-teal-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Indeks Skor KAP</span>
+                            <div class="w-6 h-6 rounded-md bg-teal-50 text-teal-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($kapAvgOverall, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">/ 100</span>
+                        </div>
+                        <p class="text-[10px] text-teal-600 font-medium mt-1 truncate">
+                            {{ $kapAvgOverall >= 80 ? 'Sangat Baik' : ($kapAvgOverall >= 60 ? 'Cukup / Sedang' : 'Perlu Peningkatan') }}
+                        </p>
+                    </div>
+
+                    <!-- KPI 3: Pengetahuan (Knowledge) -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pengetahuan</span>
+                            <div class="w-6 h-6 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"/></svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($kapAvgKnowledge, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">/ 100</span>
+                        </div>
+                        <p class="text-[10px] text-sky-600 font-medium mt-1 truncate">Dimensi Knowledge</p>
+                    </div>
+
+                    <!-- KPI 4: Sikap (Attitude) -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-violet-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sikap</span>
+                            <div class="w-6 h-6 rounded-md bg-violet-50 text-violet-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($kapAvgAttitude, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">/ 100</span>
+                        </div>
+                        <p class="text-[10px] text-violet-600 font-medium mt-1 truncate">Dimensi Attitude</p>
+                    </div>
+
+                    <!-- KPI 5: Perilaku (Practice) -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Perilaku Nyata</span>
+                            <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"/></svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($kapAvgPractice, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">/ 100</span>
+                        </div>
+                        <p class="text-[10px] text-emerald-600 font-medium mt-1 truncate">Dimensi Practice</p>
+                    </div>
+
+                    <!-- KPI 6: Kepuasan Fasilitas -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+                        <div class="flex items-center justify-between">
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Kepuasan Fasilitas</span>
+                            <div class="w-6 h-6 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($kapAvgSatisfaction, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">/ 100</span>
+                        </div>
+                        <p class="text-[10px] text-amber-600 font-medium mt-1 truncate">Evaluasi TPS3R</p>
+                    </div>
+
+                </div>
+
+                <!-- 2-Column Section: 4 Dimensions Breakdown & Campus Comparison -->
+                <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+
+                    <!-- Col 1: Analisis 4 Dimensi & Keterlibatan -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs space-y-5">
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">Pencapaian 4 Dimensi KAP</h3>
+                                <p class="text-xs text-slate-400">Evaluasi rata-rata skor per pilar kuesioner</p>
+                            </div>
+                            <span class="text-xs font-mono font-bold text-emerald-600">{{ number_format($kapAvgOverall, 1) }}%</span>
+                        </div>
+
+                        <!-- Progress Bars -->
+                        <div class="space-y-4 pt-1">
+                            <!-- Knowledge -->
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-700 flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-sky-500"></span>
+                                        Pengetahuan (Knowledge)
+                                    </span>
+                                    <span class="font-mono text-slate-900">{{ number_format($kapAvgKnowledge, 1) }}%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                    <div class="bg-sky-500 h-2 rounded-full transition-all duration-500" style="width: {{ min(100, $kapAvgKnowledge) }}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Attitude -->
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-700 flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-violet-500"></span>
+                                        Sikap (Attitude)
+                                    </span>
+                                    <span class="font-mono text-slate-900">{{ number_format($kapAvgAttitude, 1) }}%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                    <div class="bg-violet-500 h-2 rounded-full transition-all duration-500" style="width: {{ min(100, $kapAvgAttitude) }}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Practice -->
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-700 flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                        Perilaku Praktik (Practice)
+                                    </span>
+                                    <span class="font-mono text-slate-900">{{ number_format($kapAvgPractice, 1) }}%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                    <div class="bg-emerald-500 h-2 rounded-full transition-all duration-500" style="width: {{ min(100, $kapAvgPractice) }}%"></div>
+                                </div>
+                            </div>
+
+                            <!-- Satisfaction -->
+                            <div>
+                                <div class="flex justify-between text-xs font-semibold mb-1.5">
+                                    <span class="text-slate-700 flex items-center gap-1.5">
+                                        <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                        Kepuasan Fasilitas (Satisfaction)
+                                    </span>
+                                    <span class="font-mono text-slate-900">{{ number_format($kapAvgSatisfaction, 1) }}%</span>
+                                </div>
+                                <div class="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                                    <div class="bg-amber-500 h-2 rounded-full transition-all duration-500" style="width: {{ min(100, $kapAvgSatisfaction) }}%"></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Keterlibatan Civitas (SRS M11: % Relawan & % Sosialisasi) -->
+                        <div class="pt-3 border-t border-slate-100 grid grid-cols-2 gap-3">
+                            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Kesediaan Relawan</p>
+                                <p class="text-lg font-mono font-bold text-emerald-700 mt-0.5">{{ number_format($kapVolunteerPct, 1) }}%</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Siap menjadi kader pemilahan</p>
+                            </div>
+                            <div class="bg-slate-50 rounded-xl p-3 border border-slate-100">
+                                <p class="text-[10px] uppercase font-bold text-slate-400">Pernah Sosialisasi</p>
+                                <p class="text-lg font-mono font-bold text-teal-700 mt-0.5">{{ number_format($kapTrainingPct, 1) }}%</p>
+                                <p class="text-[11px] text-slate-500 mt-0.5">Telah teredukasi program TPS</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Col 2: Perbandingan Antar Kampus (SRS M1 & M11) -->
+                    <div class="bg-white rounded-2xl border border-slate-200 p-5 shadow-2xs flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center justify-between mb-4">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900">Perbandingan Indeks Antar Kampus</h3>
+                                    <p class="text-xs text-slate-400">Distribusi skor KAP per unit lokasi kampus UAD</p>
+                                </div>
+                                <span class="text-[11px] px-2.5 py-1 rounded-md bg-slate-100 text-slate-600 font-medium">
+                                    {{ count($campusKapComparison) }} Kampus
+                                </span>
+                            </div>
+
+                            @if(!empty($campusKapComparison))
+                                <div class="overflow-x-auto">
+                                    <table class="w-full text-xs text-left">
+                                        <thead>
+                                            <tr class="border-b border-slate-200 text-slate-400 font-bold uppercase text-[10px]">
+                                                <th class="pb-2.5">Kampus</th>
+                                                <th class="pb-2.5 text-center">Responden</th>
+                                                <th class="pb-2.5 text-right">Skor Total</th>
+                                                <th class="pb-2.5 text-right">Kategori</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody class="divide-y divide-slate-100">
+                                            @foreach($campusKapComparison as $row)
+                                                <tr class="hover:bg-slate-50/80 transition">
+                                                    <td class="py-2.5 font-semibold text-slate-800">{{ $row['campus'] }}</td>
+                                                    <td class="py-2.5 text-center font-mono text-slate-600">{{ $row['count'] }}</td>
+                                                    <td class="py-2.5 text-right font-mono font-bold {{ $row['overall'] >= 80 ? 'text-emerald-600' : ($row['overall'] >= 60 ? 'text-amber-600' : 'text-rose-600') }}">
+                                                        {{ number_format($row['overall'], 1) }}
+                                                    </td>
+                                                    <td class="py-2.5 text-right">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold {{ $row['overall'] >= 80 ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : ($row['overall'] >= 60 ? 'bg-amber-50 text-amber-700 border border-amber-200' : 'bg-rose-50 text-rose-700 border border-rose-200') }}">
+                                                            {{ $row['overall'] >= 80 ? 'Tinggi' : ($row['overall'] >= 60 ? 'Sedang' : 'Rendah') }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            @endforeach
+                                        </tbody>
+                                    </table>
+                                </div>
+                            @else
+                                <div class="p-8 text-center text-xs text-slate-400">
+                                    Pilih filter "Semua Kampus" di bagian atas untuk melihat komparasi matriks 6 kampus UAD secara serentak.
+                                </div>
+                            @endif
+                        </div>
+
+                        <div class="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs">
+                            <span class="text-slate-400 text-[11px]">Formula KAP terkalibrasi Standar BSI UAD</span>
+                            <a href="{{ route('kap') }}" class="font-bold text-emerald-600 hover:text-emerald-700 transition">
+                                Buka Detail Responden &rarr;
+                            </a>
+                        </div>
+                    </div>
+
+                </div>
+
+            @endif {{-- end dashboardMode === 'kap' --}}
 
         </div>
     </div>

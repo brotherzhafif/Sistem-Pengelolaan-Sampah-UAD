@@ -62,21 +62,13 @@ class RolePermissionSeeder extends Seeder
         }
 
         // 2. Define Roles and Assign Permissions
-        // Role: Super Admin (Lembaga/Pusat UAD)
+        // Role: Super Admin (Lembaga/Pusat UAD - SRS M9)
         $superAdmin = Role::firstOrCreate(['name' => 'super_admin']);
         $superAdmin->syncPermissions(Permission::all());
 
-        // Role: Operator Timbangan (Petugas penimbangan sampah lapangan)
-        $operator = Role::firstOrCreate(['name' => 'operator_timbangan']);
-        $operator->syncPermissions([
-            'weighing.view',
-            'weighing.create',
-            'master.view',
-        ]);
-
-        // Role: Koordinator TPS3R (Pengelola TPS3R Kampus)
-        $koordinator = Role::firstOrCreate(['name' => 'koordinator_tps3r']);
-        $koordinator->syncPermissions([
+        // Role: Admin Kampus (SRS M9)
+        $adminKampus = Role::firstOrCreate(['name' => 'admin_kampus']);
+        $adminKampus->syncPermissions([
             'weighing.view',
             'weighing.create',
             'weighing.update',
@@ -84,34 +76,68 @@ class RolePermissionSeeder extends Seeder
             'logistics.create',
             'logistics.update',
             'bank_sampah.view',
-            'master.view',
-            'report.view',
-            'report.export',
-        ]);
-
-        // Role: Pengurus Bank Sampah (Pengelola penjualan anorganik & kas)
-        $bankSampah = Role::firstOrCreate(['name' => 'pengurus_bank_sampah']);
-        $bankSampah->syncPermissions([
-            'weighing.view',
-            'bank_sampah.view',
             'bank_sampah.sale.create',
             'bank_sampah.expense.create',
+            'kap.survey.view',
             'master.view',
             'report.view',
             'report.export',
+            'user.view',
         ]);
 
-        // Role: Auditor / Pimpinan (Melihat analitik, perbandingan antar kampus & laporan)
-        $auditor = Role::firstOrCreate(['name' => 'auditor_pimpinan']);
-        $auditor->syncPermissions([
+        // Role: Petugas TPS (Timbang & Angkut - SRS M9)
+        $petugasTps = Role::firstOrCreate(['name' => 'petugas_tps']);
+        $petugasTps->syncPermissions([
+            'weighing.view',
+            'weighing.create',
+            'weighing.update',
+            'logistics.view',
+            'logistics.create',
+            'logistics.update',
+            'master.view',
+        ]);
+
+        // Role: Petugas Penjualan (SRS M9)
+        $petugasPenjualan = Role::firstOrCreate(['name' => 'petugas_penjualan']);
+        $petugasPenjualan->syncPermissions([
+            'bank_sampah.view',
+            'bank_sampah.sale.create',
+            'weighing.view',
+            'master.view',
+        ]);
+
+        // Role: Keuangan (Pengeluaran - SRS M9)
+        $keuanganRole = Role::firstOrCreate(['name' => 'keuangan']);
+        $keuanganRole->syncPermissions([
+            'bank_sampah.view',
+            'bank_sampah.expense.create',
+            'report.view',
+            'master.view',
+        ]);
+
+        // Role: Viewer (Audit & Monitoring - SRS M9)
+        $viewerRole = Role::firstOrCreate(['name' => 'viewer']);
+        $viewerRole->syncPermissions([
             'weighing.view',
             'logistics.view',
             'bank_sampah.view',
             'kap.survey.view',
             'report.view',
-            'report.export',
             'audit.view',
         ]);
+
+        // Aliases untuk kompatibilitas data existing
+        $operator = Role::firstOrCreate(['name' => 'operator_timbangan']);
+        $operator->syncPermissions(['weighing.view', 'weighing.create', 'master.view']);
+
+        $koordinator = Role::firstOrCreate(['name' => 'koordinator_tps3r']);
+        $koordinator->syncPermissions($adminKampus->permissions);
+
+        $bankSampah = Role::firstOrCreate(['name' => 'pengurus_bank_sampah']);
+        $bankSampah->syncPermissions(['weighing.view', 'bank_sampah.view', 'bank_sampah.sale.create', 'bank_sampah.expense.create', 'master.view', 'report.view', 'report.export']);
+
+        $auditor = Role::firstOrCreate(['name' => 'auditor_pimpinan']);
+        $auditor->syncPermissions($viewerRole->permissions);
 
         // 3. Create Default Demo Users
         $kampus4 = Campus::where('code', 'KAMPUS-4')->first();

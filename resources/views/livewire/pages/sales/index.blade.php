@@ -5,6 +5,7 @@ use App\Models\Campus;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\WasteType;
+use App\Services\LedgerService;
 use App\Services\StockService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
@@ -119,7 +120,7 @@ new #[Layout('layouts.app')] class extends Component
         return round($total, 2);
     }
 
-    public function saveSale(StockService $stockService): void
+    public function saveSale(StockService $stockService, LedgerService $ledgerService): void
     {
         $this->validate([
             'formCampusId' => ['required', 'exists:campuses,id'],
@@ -185,11 +186,14 @@ new #[Layout('layouts.app')] class extends Component
             ]);
         }
 
+        $newBalance = $ledgerService->getLatestBalance((int) $this->formCampusId);
+        $toastMsg = "Penjualan Rp " . number_format($totalAmount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
+
         $this->showCreateModal = false;
         $this->resetForm();
         $this->dispatch('close-modal');
-        $this->dispatch('toast', message: 'Transaksi penjualan sampah berhasil dicatat & jurnal Kredit masuk ke buku kas.', type: 'success');
-        session()->flash('status', 'Transaksi penjualan sampah berhasil dicatat & jurnal Kredit masuk ke buku kas.');
+        $this->dispatch('toast', message: $toastMsg, type: 'success');
+        session()->flash('status', $toastMsg);
     }
 
     public function confirmDelete(int $id): void

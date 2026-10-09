@@ -3,6 +3,7 @@
 use App\Models\Campus;
 use App\Models\Pickup;
 use App\Models\Vendor;
+use App\Services\LedgerService;
 use App\Services\StockService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
@@ -123,7 +124,7 @@ new #[Layout('layouts.app')] class extends Component
         $this->formTotalCost = (string) round($volume * $cost, 2);
     }
 
-    public function savePickup(StockService $stockService): void
+    public function savePickup(StockService $stockService, LedgerService $ledgerService): void
     {
         $this->validate([
             'formCampusId' => ['required', 'exists:campuses,id'],
@@ -171,11 +172,14 @@ new #[Layout('layouts.app')] class extends Component
             'notes' => $this->formNotes ? strip_tags(trim($this->formNotes)) : null,
         ]);
 
+        $newBalance = $ledgerService->getLatestBalance($campusId);
+        $toastMsg = "Pengangkutan " . number_format($volume, 1, ',', '.') . " kg tersimpan → Biaya Rp " . number_format($totalCost, 0, ',', '.') . " → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
+
         $this->showCreateModal = false;
         $this->resetForm();
         $this->dispatch('close-modal');
-        $this->dispatch('toast', message: 'Pencatatan pengangkutan residu berhasil disimpan & jurnal Debet kas otomatis dicatat.', type: 'success');
-        session()->flash('status', 'Pencatatan pengangkutan residu berhasil disimpan & jurnal Debet kas otomatis dicatat.');
+        $this->dispatch('toast', message: $toastMsg, type: 'success');
+        session()->flash('status', $toastMsg);
     }
 
     public function confirmDelete(int $id): void

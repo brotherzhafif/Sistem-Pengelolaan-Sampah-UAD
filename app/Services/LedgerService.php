@@ -137,5 +137,35 @@ class LedgerService
             $runningSaldo = $saldoAkhir;
         }
     }
+
+    /**
+     * Dapatkan saldo kas operasional terbaru dari buku besar per kampus atau agregat.
+     */
+    public function getLatestBalance(?int $campusId = null): float
+    {
+        if ($campusId) {
+            $ledger = BukuBesar::where('campus_id', $campusId)
+                ->orderBy('tanggal', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            return $ledger ? (float) $ledger->saldo_akhir : 0.00;
+        }
+
+        // Jika semua kampus (Pusat), agregasikan saldo_akhir terakhir dari masing-masing kampus
+        $campuses = \App\Models\Campus::where('is_active', true)->pluck('id');
+        $totalBalance = 0.00;
+        foreach ($campuses as $cId) {
+            $cLedger = BukuBesar::where('campus_id', $cId)
+                ->orderBy('tanggal', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+            if ($cLedger) {
+                $totalBalance += (float) $cLedger->saldo_akhir;
+            }
+        }
+
+        return $totalBalance;
+    }
 }
 

@@ -3,6 +3,7 @@
 use App\Models\Campus;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Services\LedgerService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
@@ -74,7 +75,7 @@ new #[Layout('layouts.app')] class extends Component
         $this->resetForm();
     }
 
-    public function saveExpense(): void
+    public function saveExpense(LedgerService $ledgerService): void
     {
         $this->validate([
             'formCampusId' => ['required', 'exists:campuses,id'],
@@ -91,19 +92,25 @@ new #[Layout('layouts.app')] class extends Component
             'formDescription.required' => 'Keterangan pengeluaran wajib diisi.',
         ]);
 
+        $campusId = (int) $this->formCampusId;
+        $amount = (float) $this->formAmount;
+
         Expense::create([
-            'campus_id' => (int) $this->formCampusId,
+            'campus_id' => $campusId,
             'expense_category_id' => (int) $this->formCategoryId,
             'expense_date' => $this->formDate,
-            'amount' => (float) $this->formAmount,
+            'amount' => $amount,
             'description' => strip_tags(trim($this->formDescription)),
             'created_by' => auth()->id(),
         ]);
 
+        $newBalance = $ledgerService->getLatestBalance($campusId);
+        $toastMsg = "Pengeluaran Rp " . number_format($amount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
+
         $this->closeCreateModal();
         $this->dispatch('close-modal');
-        $this->dispatch('toast', message: 'Biaya operasional berhasil dicatat dan terbukukan ke Buku Kas.', type: 'success');
-        session()->flash('message', 'Biaya operasional berhasil dicatat dan terbukukan ke Buku Kas.');
+        $this->dispatch('toast', message: $toastMsg, type: 'success');
+        session()->flash('status', $toastMsg);
     }
 
     public function viewExpense(int $id): void
