@@ -694,26 +694,28 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
 
-                    <!-- Export CTA inside filter toolbar -->
-                    <div class="flex items-center gap-2 pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-                        <span class="text-xs text-slate-400 hidden xl:inline">Unduh data tab aktif:</span>
-                        <a href="{{ route('reports.export.excel', ['type' => $activeTab, 'campus_id' => $filterCampusId, 'date_from' => $filterDateFrom, 'date_to' => $filterDateTo]) }}"
-                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition active:scale-95 cursor-pointer"
-                           title="Unduh Excel">
-                            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                            </svg>
-                            <span>Excel</span>
-                        </a>
-                        <a href="{{ route('reports.export.pdf', ['type' => $activeTab, 'campus_id' => $filterCampusId, 'date_from' => $filterDateFrom, 'date_to' => $filterDateTo]) }}"
-                           target="_blank"
-                           class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition active:scale-95 cursor-pointer"
-                           title="Unduh PDF Resmi">
-                            <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                            </svg>
-                            <span>PDF</span>
-                        </a>
+                    <!-- Export CTA inside filter toolbar (Vertically Centered Top-Down) -->
+                    <div class="flex flex-col justify-center self-stretch pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
+                        <div class="flex items-center gap-2 my-auto">
+                            <span class="text-xs text-slate-400 hidden xl:inline self-center">Unduh data tab aktif:</span>
+                            <a href="{{ route('reports.export.excel', ['type' => $activeTab, 'campus_id' => $filterCampusId, 'date_from' => $filterDateFrom, 'date_to' => $filterDateTo]) }}"
+                               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition active:scale-95 cursor-pointer"
+                               title="Unduh Excel">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                </svg>
+                                <span>Excel</span>
+                            </a>
+                            <a href="{{ route('reports.export.pdf', ['type' => $activeTab, 'campus_id' => $filterCampusId, 'date_from' => $filterDateFrom, 'date_to' => $filterDateTo]) }}"
+                               target="_blank"
+                               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition active:scale-95 cursor-pointer"
+                               title="Unduh PDF Resmi">
+                                <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                </svg>
+                                <span>PDF</span>
+                            </a>
+                        </div>
                     </div>
                 </div>
 
