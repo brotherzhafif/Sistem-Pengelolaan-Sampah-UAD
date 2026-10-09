@@ -8,18 +8,17 @@ use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Models\User;
 use App\Models\WasteType;
-use App\Services\StockService;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
 class SaleSeeder extends Seeder
 {
     /**
-     * Run the database seeds for initial realistic sales transactions.
+     * Run the database seeds for realistic sales transactions (SRS M3 & Prototype UI alignment).
      */
     public function run(): void
     {
-        $campuses = Campus::all();
+        $campuses = Campus::orderBy('id')->get();
         $buyers = Buyer::all();
         $sellableTypes = WasteType::where('is_sellable', true)->get();
         $user = User::first();
@@ -28,19 +27,30 @@ class SaleSeeder extends Seeder
             return;
         }
 
-        // Buat data transaksi contoh untuk 2 hari terakhir di 2 kampus pertama
-        foreach ($campuses->take(2) as $campus) {
-            $buyer = $buyers->first();
+        // Delete existing sales through Eloquent so SaleObserver cleans ledger entries properly
+        SaleItem::query()->delete();
+        foreach (Sale::all() as $oldSale) {
+            $oldSale->delete();
+        }
 
-            for ($i = 2; $i >= 1; $i--) {
-                $date = Carbon::now()->subDays($i)->format('Y-m-d');
+        $today = Carbon::today();
 
-                // Siapkan item penjualan
+        // Seed across campuses over the past 30 days
+        foreach ($campuses as $campus) {
+            $isMainCampus = ($campus->id == 4);
+            $saleIntervals = $isMainCampus ? [28, 25, 21, 18, 14, 11, 7, 4, 1] : [26, 19, 12, 5];
+
+            foreach ($saleIntervals as $idx => $dayOffset) {
+                $date = $today->copy()->subDays($dayOffset)->format('Y-m-d');
+                $buyer = $buyers->get(($campus->id + $idx) % $buyers->count());
+
+                // Select 2 to 5 sellable waste types
                 $itemsToCreate = [];
                 $totalAmount = 0.0;
+                $typesToSell = $sellableTypes->shuffle()->take(rand(3, min(5, $sellableTypes->count())));
 
-                foreach ($sellableTypes->take(3) as $type) {
-                    $weight = rand(15, 30);
+                foreach ($typesToSell as $type) {
+                    $weight = $isMainCampus ? rand(45, 120) : rand(25, 60);
                     $price = (float) $type->default_price_per_kg;
                     $subtotal = round($weight * $price, 2);
                     $totalAmount += $subtotal;
@@ -53,14 +63,13 @@ class SaleSeeder extends Seeder
                     ];
                 }
 
-                // Create Sale (Trigger SaleObserver -> insert Keuangan Kredit & Buku Besar)
                 $sale = Sale::create([
                     'campus_id' => $campus->id,
                     'buyer_id' => $buyer->id,
                     'sale_date' => $date,
                     'total_amount' => $totalAmount,
                     'created_by' => $user->id,
-                    'notes' => 'Penyaluran berkala sampah anorganik terpilah ke mitra pengepul ' . $buyer->name,
+                    'notes' => 'Penyaluran berkala sampah anorganik terpilah ke mitra pengepul ' . $buyer->name . ' (' . $campus->name . ')',
                 ]);
 
                 foreach ($itemsToCreate as $itemData) {
@@ -76,4 +85,3 @@ class SaleSeeder extends Seeder
         }
     }
 }
-

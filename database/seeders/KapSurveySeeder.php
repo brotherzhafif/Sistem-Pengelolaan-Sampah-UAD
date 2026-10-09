@@ -310,6 +310,84 @@ class KapSurveySeeder extends Seeder
             ],
         ];
 
+        // Delete existing surveys to avoid duplication on repeated seed
+        KapSurvey::query()->delete();
+
+        // Generate additional realistic respondents across all campuses (total ~55 respondents)
+        $names = [
+            'Rizky Pratama', 'Siti Nurhaliza', 'Budi Utomo', 'Dewi Lestari', 'Ahmad Fauzi',
+            'Mega Suryani', 'Eko Prasetyo', 'Nurfadilah', 'Hendra Setiawan', 'Anisa Rahmawati',
+            'Ilham Kurniawan', 'Dina Mariana', 'Agus Supriyanto', 'Rina Wulandari', 'Dimas Anggara',
+            'Tri Wahyuni', 'Danang Prasetya', 'Sri Wahyuningsih', 'Bambang Pamungkas', 'Lestari Handayani',
+            'Fajar Hidayat', 'Maya Safitri', 'Bayu Aji', 'Ratna Sari', 'Yusuf Maulana',
+            'Nurul Hidayah', 'Indra Gunawan', 'Fitri Handayani', 'Adi Nugroho', 'Endang Susilowati',
+            'Wawan Setiawan', 'Retno Palupi', 'Wahyu Pratama', 'Haryanto', 'Tuti Alawiyah',
+            'Surya Darma', 'Ika Nuraini', 'Gugun Gunawan', 'Kartika Putri', 'Joko Susilo',
+            'Rudi Hartono', 'Sri Rahayu', 'Dwi Santoso'
+        ];
+
+        $faculties = [
+            'Fakultas Teknologi Industri',
+            'Fakultas Farmasi',
+            'Fakultas Kedokteran',
+            'Fakultas Keguruan dan Ilmu Pendidikan',
+            'Fakultas Ekonomi dan Bisnis',
+            'Fakultas Hukum',
+            'Fakultas Sastra, Budaya, dan Komunikasi',
+            'Fakultas Sains dan Teknologi Terapan',
+            'Fakultas Kesehatan Masyarakat',
+            'Fakultas Agama Islam',
+            'Fakultas Psikologi',
+            'Biro Administrasi Umum & Sarpras',
+        ];
+
+        foreach ($names as $idx => $name) {
+            $campus = $campuses->get($idx % $campuses->count());
+            $roleRand = rand(1, 100);
+            $role = $roleRand <= 60 ? 'mahasiswa' : ($roleRand <= 75 ? 'dosen' : ($roleRand <= 90 ? 'tendik' : 'outsourcing'));
+            $gender = ($idx % 2 === 0) ? 'Laki-laki' : 'Perempuan';
+            $training = (rand(1, 10) <= 6);
+            $volunteer = (rand(1, 10) <= 7);
+
+            $kResponses = [];
+            foreach ($knowledgeKeys as $qId => $expected) {
+                // ~80% chance of answering correctly
+                $kResponses[$qId] = (rand(1, 10) <= 8) ? $expected : !$expected;
+            }
+
+            // Attitude 1-5 (mostly positive 3-5)
+            $aResponses = [rand(3, 5), rand(3, 5), rand(4, 5), rand(3, 5), rand(3, 5), rand(4, 5)];
+
+            // Practice 1-5
+            $pResponses = [rand(3, 5), rand(2, 5), rand(3, 5), rand(3, 5), rand(3, 5), rand(3, 5)];
+
+            // Satisfaction 1-5
+            $sResponses = [rand(3, 5), rand(3, 5), rand(3, 5), rand(3, 5), rand(3, 5)];
+
+            $sampleRespondents[] = [
+                'campus_code' => $campus->code,
+                'name' => $name,
+                'nim' => $role === 'mahasiswa' ? ('2' . rand(1, 3) . '000' . rand(10000, 99999)) : null,
+                'role' => $role,
+                'faculty' => $faculties[array_rand($faculties)],
+                'gender' => $gender,
+                'has_attended_training' => $training,
+                'is_willing_volunteer' => $volunteer,
+                'residence' => 'kos',
+                'k' => $kResponses,
+                'a' => $aResponses,
+                'p' => $pResponses,
+                's' => $sResponses,
+                'f' => ['Tempat sampah terpilah (organik/anorganik)'],
+                'b' => [
+                    'barriers' => ['Kurangnya tempat sampah terpilah di titik tertentu'],
+                    'motivations' => ['Kesadaran lingkungan'],
+                ],
+                'feedback' => 'Perbanyak tempat sampah terpilah di lorong kelas dan dekat kantin.',
+                'days_ago' => rand(1, 28),
+            ];
+        }
+
         foreach ($sampleRespondents as $item) {
             $campus = Campus::where('code', $item['campus_code'])->first() ?? $campuses->first();
 
@@ -362,3 +440,4 @@ class KapSurveySeeder extends Seeder
         }
     }
 }
+

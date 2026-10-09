@@ -12,16 +12,21 @@ use Illuminate\Database\Seeder;
 class ExpenseSeeder extends Seeder
 {
     /**
-     * Run the database seeds for Realistic Operational Expenses (SRS M5).
+     * Run the database seeds for Realistic Operational Expenses (SRS M5 & Prototype UI alignment).
      */
     public function run(): void
     {
-        $campuses = Campus::all();
+        $campuses = Campus::orderBy('id')->get();
         $categories = ExpenseCategory::all();
         $user = User::first();
 
         if ($campuses->isEmpty() || $categories->isEmpty() || !$user) {
             return;
+        }
+
+        // Clean previous expenses through Eloquent so ExpenseObserver cleans ledger entries properly
+        foreach (Expense::all() as $oldExpense) {
+            $oldExpense->delete();
         }
 
         $sampleExpenses = [
@@ -33,7 +38,7 @@ class ExpenseSeeder extends Seeder
             [
                 'category' => 'Makan Minum Tenaga TPS',
                 'amount' => 60000.00,
-                'description' => 'Snack dan konsumsi air minum 4 petugas pilah sampah TPS',
+                'description' => 'Snack dan konsumsi air minum petugas pilah sampah TPS',
             ],
             [
                 'category' => 'Pembelian Alat (Sekop, Cangkul, Sarung Tangan)',
@@ -50,13 +55,22 @@ class ExpenseSeeder extends Seeder
                 'amount' => 50000.00,
                 'description' => 'Pertalite 5 liter untuk mesin perajang daun dan pencacah organik',
             ],
+            [
+                'category' => 'Pakan Ternak / Maggot',
+                'amount' => 93000.00,
+                'description' => 'Dedak / Polar 10kg + konsentrat pengembang biak larva BSF',
+            ],
         ];
 
-        // Seed data pengeluaran realistis pada beberapa kampus
-        foreach ($campuses->take(3) as $cIndex => $campus) {
-            for ($i = 3; $i >= 1; $i--) {
-                $expenseDate = Carbon::now()->subDays($i)->format('Y-m-d');
-                $sample = $sampleExpenses[($cIndex + $i) % count($sampleExpenses)];
+        $today = Carbon::today();
+
+        foreach ($campuses as $campus) {
+            $isMainCampus = ($campus->id == 4);
+            $expenseDays = $isMainCampus ? [27, 24, 20, 17, 14, 11, 7, 3, 1] : [25, 17, 9, 2];
+
+            foreach ($expenseDays as $idx => $dayOffset) {
+                $expenseDate = $today->copy()->subDays($dayOffset)->format('Y-m-d');
+                $sample = $sampleExpenses[($campus->id + $idx) % count($sampleExpenses)];
                 $category = $categories->firstWhere('name', $sample['category']) ?? $categories->first();
 
                 Expense::create([
@@ -71,4 +85,3 @@ class ExpenseSeeder extends Seeder
         }
     }
 }
-

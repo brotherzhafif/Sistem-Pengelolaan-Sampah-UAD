@@ -12,11 +12,11 @@ use Illuminate\Database\Seeder;
 class PickupSeeder extends Seeder
 {
     /**
-     * Run the database seeds for Realistic Residual Waste Pickups (SRS M4).
+     * Run the database seeds for Realistic Residual Waste Pickups (SRS M4 & Prototype UI alignment).
      */
     public function run(): void
     {
-        $campuses = Campus::all();
+        $campuses = Campus::orderBy('id')->get();
         $vendors = Vendor::where('is_active', true)->get();
         $user = User::first();
 
@@ -24,17 +24,26 @@ class PickupSeeder extends Seeder
             return;
         }
 
-        $drivers = ['Pak Mulyono', 'Pak Sukirno', 'Pak Agus Santoso', 'Mas Rian'];
-        $plates = ['AB 8234 QF', 'AB 9102 ZA', 'AB 7711 YK', 'AD 8122 EF'];
+        // Clean previous pickups through Eloquent so PickupObserver cleans ledger entries properly
+        foreach (Pickup::all() as $oldPickup) {
+            $oldPickup->delete();
+        }
 
-        // Seed realistis untuk 3 kampus dalam beberapa hari terakhir
-        foreach ($campuses->take(3) as $cIndex => $campus) {
-            $vendor = $vendors->get($cIndex % $vendors->count());
-            $costPerKg = (float) $vendor->cost_per_kg;
+        $drivers = ['Pak Mulyono', 'Pak Sukirno', 'Pak Agus Santoso', 'Mas Rian', 'Pak Budi Hartono'];
+        $plates = ['AB 8234 QF', 'AB 9102 ZA', 'AB 7711 YK', 'AD 8122 EF', 'AB 6643 PN'];
 
-            for ($i = 3; $i >= 1; $i--) {
-                $pickupDate = Carbon::now()->subDays($i)->format('Y-m-d');
-                $volumeKg = rand(150, 350) + (rand(0, 9) / 10);
+        $today = Carbon::today();
+
+        foreach ($campuses as $campus) {
+            $isMainCampus = ($campus->id == 4);
+            $pickupIntervals = $isMainCampus ? [28, 24, 20, 16, 12, 8, 4, 1] : [26, 18, 10, 2];
+
+            foreach ($pickupIntervals as $idx => $dayOffset) {
+                $pickupDate = $today->copy()->subDays($dayOffset)->format('Y-m-d');
+                $vendor = $vendors->get(($campus->id + $idx) % $vendors->count());
+                $costPerKg = (float) $vendor->cost_per_kg;
+
+                $volumeKg = $isMainCampus ? (rand(280, 420) + (rand(0, 9) / 10)) : (rand(140, 260) + (rand(0, 9) / 10));
                 $totalCost = round($volumeKg * $costPerKg, 2);
 
                 Pickup::create([
@@ -44,8 +53,8 @@ class PickupSeeder extends Seeder
                     'volume_kg' => $volumeKg,
                     'cost_per_kg' => $costPerKg,
                     'total_cost' => $totalCost,
-                    'driver_name' => $drivers[array_rand($drivers)],
-                    'vehicle_plate' => $plates[array_rand($plates)],
+                    'driver_name' => $drivers[$idx % count($drivers)],
+                    'vehicle_plate' => $plates[$idx % count($plates)],
                     'created_by' => $user->id,
                     'notes' => 'Pengangkutan residu non-daur ulang ritase reguler ' . $campus->name . ' ke TPA Piyungan/Bawuran',
                 ]);
