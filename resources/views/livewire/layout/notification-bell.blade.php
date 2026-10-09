@@ -21,40 +21,40 @@ new class extends Component
     }
 }; ?>
 
-<div class="fixed top-3.5 right-4 sm:right-6 md:right-8 z-40" 
+<div class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40" 
      x-data="{ notifOpen: false }" 
      @click.outside="notifOpen = false"
      @keydown.escape.window="notifOpen = false">
     
-    <!-- Floating Notification Bell Button ("Melayang vibes") -->
+    <!-- Floating Notification Bell Button ("Melayang vibes & agak gede di kanan bawah") -->
     <button @click="notifOpen = !notifOpen" 
             type="button" 
-            class="relative p-2.5 rounded-xl bg-white/95 backdrop-blur-md border border-slate-200/90 hover:border-emerald-300 hover:bg-white text-slate-600 hover:text-slate-900 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center group"
+            class="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-white/95 backdrop-blur-md border border-slate-200/90 hover:border-emerald-400 hover:bg-white text-slate-700 hover:text-emerald-700 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 active:scale-95 cursor-pointer flex items-center justify-center group"
             title="Notifikasi & Peringatan Operasional (SRS M10)">
-        <svg class="w-4 h-4 text-slate-600 group-hover:text-emerald-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg class="w-6 h-6 sm:w-7 sm:h-7 text-slate-700 group-hover:text-emerald-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
 
         @if(!empty($alerts))
-            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+            <span class="absolute -top-1.5 -right-1.5 flex h-5 w-5 sm:h-6 sm:w-6">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span class="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-rose-600 text-[9px] font-bold text-white leading-none shadow-xs">
+                <span class="relative inline-flex items-center justify-center rounded-full h-5 w-5 sm:h-6 sm:w-6 bg-rose-600 text-[10px] sm:text-xs font-bold text-white leading-none shadow-md ring-2 ring-white">
                     {{ count($alerts) }}
                 </span>
             </span>
         @endif
     </button>
 
-    <!-- Floating Dropdown Popup Card -->
+    <!-- Floating Dropdown Popup Card (Opens UPWARDS above the button) -->
     <div x-show="notifOpen" 
          x-cloak
          x-transition:enter="transition ease-out duration-200"
-         x-transition:enter-start="opacity-0 scale-95 translate-y-1.5"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-2"
          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
          x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-         x-transition:leave-end="opacity-0 scale-95 translate-y-1.5"
-         class="absolute right-0 mt-2.5 w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl border border-slate-200/90 z-50 overflow-hidden divide-y divide-slate-100">
+         x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+         class="absolute right-0 bottom-full mb-3 w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl border border-slate-200/90 z-50 overflow-hidden divide-y divide-slate-100">
         
         <!-- Header Popup -->
         <div class="p-3.5 bg-slate-50/90 flex items-center justify-between border-b border-slate-100">

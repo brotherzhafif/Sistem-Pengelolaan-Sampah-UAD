@@ -36,6 +36,11 @@ new #[Layout('layouts.app')] class extends Component
 
     public function mount(): void
     {
+        $requestedTab = request()->query('tab');
+        if ($requestedTab && in_array($requestedTab, ['weighing', 'sales', 'pickups', 'finance', 'persen', 'kap'])) {
+            $this->activeTab = $requestedTab;
+        }
+
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
 
@@ -629,13 +634,82 @@ new #[Layout('layouts.app')] class extends Component
             $trainingCount = $allSurveys->where('has_attended_training', true)->count();
             $volunteerCount = $allSurveys->where('is_willing_volunteer', true)->count();
 
-            // Konstruk KAP
-            $constructs = [
-                ['name' => 'Knowledge (Pengetahuan)', 'score' => $avgK, 'desc' => 'Pemahaman pemilahan sampah di kampus'],
-                ['name' => 'Attitude (Sikap)', 'score' => $avgA, 'desc' => 'Kepedulian dan motivasi zero waste'],
-                ['name' => 'Practice (Perilaku)', 'score' => $avgP, 'desc' => 'Kebiasaan memilah dalam aktivitas harian'],
-                ['name' => 'Satisfaction (Kepuasan Sarana)', 'score' => $avgS, 'desc' => 'Evaluasi fasilitas & program TPS3R'],
+            // Konstruk KAP (SRS M11 & Prototype UI)
+            $rawConstructs = [
+                [
+                    'key' => 'knowledge',
+                    'name' => 'Knowledge',
+                    'sub' => 'Pengetahuan',
+                    'score' => $avgK,
+                    'scale_orig' => '% benar',
+                    'orig_val' => number_format($avgK, 1) . '%',
+                    'desc' => 'Pemahaman klasifikasi & sistem pemilahan sampah',
+                    'interpretation' => $avgK >= 70 ? 'Baik' : ($avgK >= 50 ? 'Cukup' : 'Kurang'),
+                    'tag_class' => $avgK >= 70 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ($avgK >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'),
+                    'grad_id' => 'barGradKnowledge',
+                    'color_from' => '#10b981',
+                    'color_to' => '#059669',
+                    'bar_x' => 150,
+                ],
+                [
+                    'key' => 'attitude',
+                    'name' => 'Attitude',
+                    'sub' => 'Sikap',
+                    'score' => $avgA,
+                    'scale_orig' => '1–5',
+                    'orig_val' => number_format(1 + ($avgA / 100) * 4, 2),
+                    'desc' => 'Kepedulian dan motivasi penerapan zero waste kampus',
+                    'interpretation' => $avgA >= 70 ? 'Baik' : ($avgA >= 50 ? 'Cukup' : 'Kurang'),
+                    'tag_class' => $avgA >= 70 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ($avgA >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'),
+                    'grad_id' => 'barGradAttitude',
+                    'color_from' => '#0ea5e9',
+                    'color_to' => '#0284c7',
+                    'bar_x' => 365,
+                ],
+                [
+                    'key' => 'practice',
+                    'name' => 'Practice',
+                    'sub' => 'Perilaku',
+                    'score' => $avgP,
+                    'scale_orig' => '1–5',
+                    'orig_val' => number_format(1 + ($avgP / 100) * 4, 2),
+                    'desc' => 'Kebiasaan nyata memilah sampah pada aktivitas harian',
+                    'interpretation' => $avgP >= 70 ? 'Baik' : ($avgP >= 50 ? 'Cukup' : 'Kurang'),
+                    'tag_class' => $avgP >= 70 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ($avgP >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'),
+                    'grad_id' => 'barGradPractice',
+                    'color_from' => '#f59e0b',
+                    'color_to' => '#d97706',
+                    'bar_x' => 580,
+                ],
+                [
+                    'key' => 'satisfaction',
+                    'name' => 'Satisfaction',
+                    'sub' => 'Kepuasan',
+                    'score' => $avgS,
+                    'scale_orig' => '1–5',
+                    'orig_val' => number_format(1 + ($avgS / 100) * 4, 2),
+                    'desc' => 'Evaluasi kepuasan sarana & fasilitas persampahan kampus',
+                    'interpretation' => $avgS >= 70 ? 'Baik' : ($avgS >= 50 ? 'Cukup' : 'Kurang'),
+                    'tag_class' => $avgS >= 70 ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : ($avgS >= 50 ? 'bg-amber-50 text-amber-700 border-amber-200' : 'bg-rose-50 text-rose-700 border-rose-200'),
+                    'grad_id' => 'barGradSatisfaction',
+                    'color_from' => '#14b8a6',
+                    'color_to' => '#0d9488',
+                    'bar_x' => 795,
+                ],
             ];
+
+            $barWidth = 105;
+            $baselineY = 190;
+            $maxBarHeight = 150; // height for score 100
+
+            $constructs = array_map(function ($c) use ($barWidth, $baselineY, $maxBarHeight) {
+                $height = max(4, round(($c['score'] / 100) * $maxBarHeight, 1));
+                $c['bar_width'] = $barWidth;
+                $c['bar_height'] = $height;
+                $c['bar_y'] = $baselineY - $height;
+                $c['center_x'] = $c['bar_x'] + ($barWidth / 2);
+                return $c;
+            }, $rawConstructs);
 
             // Detail Item Knowledge K1-K6
             $kItems = [
@@ -1909,40 +1983,195 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
 
+                    <!-- Responsive Full-Width SVG Bar Chart: Indeks per Konstruk Perilaku (Skala 0 - 100) -->
+                    <div class="bg-white border border-slate-200 rounded-2xl p-5 sm:p-6 shadow-sm">
+                        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-5">
+                            <div>
+                                <h3 class="text-sm font-bold text-slate-900">Grafik Indeks per Konstruk Perilaku</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">Indeks Komposit 4 Konstruk Sikap &amp; Perilaku Pemilahan (Skala 0–100) • {{ $selectedPeriodLabel }} &bull; {{ $selectedCampusName }}</p>
+                            </div>
+                            <div class="flex flex-wrap items-center gap-3 text-xs">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-3 h-2 rounded bg-gradient-to-r from-emerald-500 to-teal-600"></span>
+                                    <span class="text-slate-600 font-medium">Indeks (0–100)</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-3 h-0.5 bg-emerald-500 border-b border-dashed border-emerald-600"></span>
+                                    <span class="text-slate-500">Target Minimum (≥ 70)</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    <span class="text-emerald-700 font-semibold">Baik (≥70)</span>
+                                </div>
+                                <div class="flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                    <span class="text-amber-700 font-semibold">Cukup (50-69)</span>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div x-data="{
+                            activeBar: null
+                        }"
+                        class="w-full relative overflow-visible"
+                        @mouseleave="activeBar = null">
+
+                            <!-- Floating Interactive Tooltip for Construct Bar -->
+                            <div x-show="activeBar !== null" 
+                                 x-cloak
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 -translate-y-1 scale-95"
+                                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute z-30 pointer-events-none -translate-x-1/2 -translate-y-full mb-3 pb-2"
+                                 :style="activeBar ? `left: ${activeBar.center_x / 10}%; top: ${(activeBar.bar_y / 240) * 100}%;` : ''">
+                                <div class="relative bg-slate-900/95 backdrop-blur-sm text-white rounded-xl shadow-xl px-4 py-2.5 text-xs border border-slate-700/80 whitespace-nowrap min-w-[210px]">
+                                    <div class="flex items-center justify-between gap-3 border-b border-slate-800 pb-1.5 mb-1.5">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="w-2 h-2 rounded-full" :style="`background-color: ${activeBar ? activeBar.color_from : '#10b981'}`"></span>
+                                            <span class="font-bold text-slate-200" x-text="activeBar ? `${activeBar.name} (${activeBar.sub})` : ''"></span>
+                                        </div>
+                                        <span class="px-2 py-0.5 rounded text-[10px] font-bold"
+                                              :class="activeBar && activeBar.score >= 70 ? 'bg-emerald-950 text-emerald-300 border border-emerald-700/60' : (activeBar && activeBar.score >= 50 ? 'bg-amber-950 text-amber-300 border border-amber-700/60' : 'bg-rose-950 text-rose-300 border border-rose-700/60')"
+                                              x-text="activeBar ? activeBar.interpretation : ''"></span>
+                                    </div>
+                                    <div class="flex items-baseline gap-2">
+                                        <span class="text-white font-bold font-mono text-xl" x-text="activeBar ? Number(activeBar.score).toFixed(1) : ''"></span>
+                                        <span class="text-slate-400 text-xs">/ 100</span>
+                                        <span class="text-slate-400 text-[11px] ml-auto font-mono" x-text="activeBar ? `(Skor asli: ${activeBar.orig_val} [${activeBar.scale_orig}])` : ''"></span>
+                                    </div>
+                                    <p class="text-[11px] text-slate-300 mt-1 max-w-[240px] whitespace-normal leading-tight" x-text="activeBar ? activeBar.desc : ''"></p>
+                                    <div class="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 bg-slate-900/95 rotate-45 border-r border-b border-slate-700/80"></div>
+                                </div>
+                            </div>
+
+                            <svg viewBox="0 0 1000 240" class="w-full h-60 sm:h-72" preserveAspectRatio="none">
+                                <defs>
+                                    @foreach($tabData['constructs'] ?? [] as $c)
+                                        <linearGradient id="{{ $c['grad_id'] }}" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="0%" stop-color="{{ $c['color_from'] }}" stop-opacity="1" />
+                                            <stop offset="100%" stop-color="{{ $c['color_to'] }}" stop-opacity="0.85" />
+                                        </linearGradient>
+                                    @endforeach
+                                </defs>
+
+                                <!-- Grid Lines & Threshold (Skala 0 - 100) -->
+                                <g stroke="#f1f5f9" stroke-width="1">
+                                    <line x1="70" y1="40" x2="960" y2="40" stroke-dasharray="3" />
+                                    <line x1="70" y1="77.5" x2="960" y2="77.5" stroke-dasharray="3" />
+                                    <line x1="70" y1="115" x2="960" y2="115" stroke-dasharray="3" />
+                                    <line x1="70" y1="152.5" x2="960" y2="152.5" stroke-dasharray="3" />
+                                    <line x1="70" y1="190" x2="960" y2="190" stroke="#cbd5e1" stroke-width="1.5" />
+                                </g>
+
+                                <!-- Target Minimum Kampus Lestari (>= 70) Line -->
+                                <line x1="70" y1="85" x2="960" y2="85" stroke="#10b981" stroke-width="1.5" stroke-dasharray="4" opacity="0.65" />
+                                <text x="955" y="80" font-size="10" fill="#059669" font-family="sans-serif" text-anchor="end" font-weight="600">
+                                    Target Minimum Kampus Lestari ≥ 70
+                                </text>
+
+                                <!-- Y-Axis Scale Labels -->
+                                <g font-size="10" fill="#94a3b8" font-family="monospace" text-anchor="end">
+                                    <text x="58" y="44">100</text>
+                                    <text x="58" y="81">75</text>
+                                    <text x="58" y="119">50</text>
+                                    <text x="58" y="156">25</text>
+                                    <text x="58" y="193">0</text>
+                                </g>
+
+                                <!-- SVG Bars & Interactive Overlays -->
+                                @foreach($tabData['constructs'] ?? [] as $c)
+                                    <!-- Background Bar Track -->
+                                    <rect x="{{ $c['bar_x'] }}" y="40" width="{{ $c['bar_width'] }}" height="150" rx="8" fill="#f8fafc" stroke="#f1f5f9" stroke-width="1" />
+
+                                    <!-- Value Bar with Gradient & Rounded Corners -->
+                                    <rect x="{{ $c['bar_x'] }}" y="{{ $c['bar_y'] }}" width="{{ $c['bar_width'] }}" height="{{ $c['bar_height'] }}" rx="8" fill="url(#{{ $c['grad_id'] }})" class="transition-all duration-300 filter drop-shadow-sm hover:brightness-105" />
+
+                                    <!-- Top Numeric Label -->
+                                    <text x="{{ $c['center_x'] }}" y="{{ max(28, $c['bar_y'] - 8) }}" text-anchor="middle" font-size="13" font-weight="bold" fill="#0f172a" font-family="monospace">
+                                        {{ number_format($c['score'], 1) }}
+                                    </text>
+
+                                    <!-- Interpretation Tag on Bar Top if space permits -->
+                                    <text x="{{ $c['center_x'] }}" y="{{ min(182, $c['bar_y'] + 16) }}" text-anchor="middle" font-size="9" font-weight="bold" fill="#ffffff" opacity="0.95">
+                                        {{ $c['interpretation'] }}
+                                    </text>
+
+                                    <!-- X-Axis Labels Below Baseline -->
+                                    <text x="{{ $c['center_x'] }}" y="208" text-anchor="middle" font-size="12" font-weight="bold" fill="#1e293b">
+                                        {{ $c['name'] }}
+                                    </text>
+                                    <text x="{{ $c['center_x'] }}" y="224" text-anchor="middle" font-size="10" fill="#64748b">
+                                        ({{ $c['sub'] }})
+                                    </text>
+
+                                    <!-- Transparent Hover Rect for Easy Trigger -->
+                                    <rect x="{{ $c['bar_x'] - 15 }}" y="30" width="{{ $c['bar_width'] + 30 }}" height="170" fill="transparent" class="cursor-pointer" @mouseenter="activeBar = {{ json_encode($c) }}" />
+                                @endforeach
+                            </svg>
+                        </div>
+                    </div>
+
                     <!-- Indeks per Konstruk & Detail K1-K6 Grid -->
                     <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <!-- Indeks per Konstruk -->
+                        <!-- Indeks per Konstruk (Prototype UI Table) -->
                         <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                             <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-                                <h3 class="text-sm font-bold text-slate-900">Indeks per Konstruk Perilaku</h3>
-                                <span class="text-xs text-slate-400">Skala 0 - 100</span>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900">Indeks per Konstruk</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Rincian skor dan skala pengukuran perilaku civitas</p>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Skala 0–100</span>
                             </div>
-                            <div class="p-4 sm:p-5 space-y-4">
-                                @foreach($tabData['constructs'] ?? [] as $c)
-                                    <div>
-                                        <div class="flex items-center justify-between text-xs mb-1.5">
-                                            <div>
-                                                <span class="font-bold text-slate-800">{{ $c['name'] }}</span>
-                                                <span class="text-slate-400 text-[11px] ml-1">({{ $c['desc'] }})</span>
-                                            </div>
-                                            <div class="text-right">
-                                                <span class="font-mono text-sm font-bold text-emerald-600">{{ number_format($c['score'], 1) }}</span>
-                                                <span class="text-[10px] text-slate-400">/ 100</span>
-                                            </div>
-                                        </div>
-                                        <div class="w-full bg-slate-100 rounded-lg h-3 overflow-hidden border border-slate-200/60 p-0.5">
-                                            <div class="bg-gradient-to-r from-emerald-500 to-teal-500 h-full rounded-md transition-all duration-500" style="width: {{ min(100, max(0, $c['score'])) }}%"></div>
-                                        </div>
-                                    </div>
-                                @endforeach
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs table-fixed">
+                                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-100">
+                                        <tr>
+                                            <th class="py-3 px-3.5 w-[30%]">Konstruk</th>
+                                            <th class="py-3 px-3.5 text-right w-[18%]">Skor</th>
+                                            <th class="py-3 px-3.5 text-right w-[18%]">Skala Asli</th>
+                                            <th class="py-3 px-3.5 text-right w-[18%]">Indeks</th>
+                                            <th class="py-3 px-3.5 text-center w-[16%]">Interpretasi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        @foreach($tabData['constructs'] ?? [] as $c)
+                                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                                <td class="py-3 px-3.5">
+                                                    <div class="font-bold text-slate-900">{{ $c['name'] }}</div>
+                                                    <div class="text-[11px] text-slate-400">{{ $c['sub'] }} &bull; {{ $c['desc'] }}</div>
+                                                </td>
+                                                <td class="py-3 px-3.5 text-right font-mono font-medium text-slate-700">
+                                                    {{ $c['orig_val'] }}
+                                                </td>
+                                                <td class="py-3 px-3.5 text-right text-slate-500 text-[11px]">
+                                                    {{ $c['scale_orig'] }}
+                                                </td>
+                                                <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-900">
+                                                    {{ number_format($c['score'], 1) }}
+                                                </td>
+                                                <td class="py-3 px-3.5 text-center">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border {{ $c['tag_class'] }}">
+                                                        {{ $c['interpretation'] }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
                             </div>
                         </div>
 
                         <!-- Detail Item Knowledge (K1 - K6) -->
                         <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                             <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-                                <h3 class="text-sm font-bold text-slate-900">Tingkat Ketepatan Jawaban Pengetahuan (K1-K6)</h3>
-                                <span class="text-xs text-slate-400">Akurasi (%)</span>
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900">Detail per Item Knowledge</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Tingkat ketepatan jawaban pernyataan pengetahuan (K1–K6)</p>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Akurasi (%)</span>
                             </div>
                             <div class="p-4 sm:p-5 space-y-3.5">
                                 @foreach($tabData['k_items'] ?? [] as $k)

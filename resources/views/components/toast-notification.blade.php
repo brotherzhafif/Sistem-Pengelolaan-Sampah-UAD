@@ -33,7 +33,7 @@ x-init="
     @if (session('warning')) add(@js(session('warning')), 'warning'); @endif
 "
 @toast.window="handleEvent($event.detail)"
-class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+class="fixed bottom-24 sm:bottom-28 right-5 sm:right-8 z-[99999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0">
     <template x-for="t in toasts" :key="t.id">
         <div x-show="true"
              x-transition:enter="transition ease-out duration-300"
