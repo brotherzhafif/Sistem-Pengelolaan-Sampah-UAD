@@ -499,6 +499,7 @@ new #[Layout('layouts.app')] class extends Component
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => $campuses,
             'activeCampus' => $activeCampus,
+            'campusId' => $campusId,
             'selectedPeriodLabel' => $periodLabel,
             'items' => $pagedData,
             'tabData' => $tabData,
