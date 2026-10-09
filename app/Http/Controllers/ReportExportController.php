@@ -256,6 +256,77 @@ class ReportExportController extends Controller
                     'Indeks KAP Kampus' => number_format($avgOverall, 1) . '%',
                 ];
                 break;
+
+            case 'persen':
+                $data['title'] = 'LAPORAN ANALISIS PERSENTASE & KOMPOSISI SAMPAH KAMPUS UAD';
+                $campusesList = Campus::where('is_active', true)->orderBy('id')->get();
+                $rows = [];
+                $univKg = 0;
+                $univResiduKg = 0;
+                $univTerjualKg = 0;
+                $univOrganikKg = 0;
+                $univSaldo = 0;
+
+                foreach ($campusesList as $c) {
+                    $cWeightQuery = WeighingSession::with('items.wasteType')
+                        ->where('campus_id', $c->id)
+                        ->when($dateFrom, fn($q) => $q->whereDate('weigh_date', '>=', $dateFrom))
+                        ->when($dateTo, fn($q) => $q->whereDate('weigh_date', '<=', $dateTo))
+                        ->get();
+
+                    $cTotalKg = 0;
+                    $cResiduKg = 0;
+                    $cTerjualKg = 0;
+                    $cOrganikKg = 0;
+
+                    foreach ($cWeightQuery as $sess) {
+                        foreach ($sess->items as $item) {
+                            $w = (float) $item->weight_kg;
+                            $cTotalKg += $w;
+                            $name = strtolower($item->wasteType?->name ?? '');
+                            if (str_contains($name, 'residu')) {
+                                $cResiduKg += $w;
+                            } elseif (str_contains($name, 'organik') || str_contains($name, 'taman') || str_contains($name, 'makanan')) {
+                                $cOrganikKg += $w;
+                            } else {
+                                $cTerjualKg += $w;
+                            }
+                        }
+                    }
+
+                    $cSaldo = (float) Keuangan::where('campus_id', $c->id)->where('jenis', 'K')->sum('nominal') - (float) Keuangan::where('campus_id', $c->id)->where('jenis', 'D')->sum('nominal');
+
+                    $univKg += $cTotalKg;
+                    $univResiduKg += $cResiduKg;
+                    $univTerjualKg += $cTerjualKg;
+                    $univOrganikKg += $cOrganikKg;
+                    $univSaldo += $cSaldo;
+
+                    $rows[] = [
+                        'campus' => $c->name,
+                        'total_kg' => $cTotalKg,
+                        'pct_residu' => $cTotalKg > 0 ? round(($cResiduKg / $cTotalKg) * 100, 1) : 0,
+                        'pct_terjual' => $cTotalKg > 0 ? round(($cTerjualKg / $cTotalKg) * 100, 1) : 0,
+                        'pct_organik' => $cTotalKg > 0 ? round(($cOrganikKg / $cTotalKg) * 100, 1) : 0,
+                        'saldo' => $cSaldo,
+                    ];
+                }
+
+                $data['rows'] = $rows;
+                $data['univSummary'] = [
+                    'total_kg' => $univKg,
+                    'pct_residu' => $univKg > 0 ? round(($univResiduKg / $univKg) * 100, 1) : 0,
+                    'pct_terjual' => $univKg > 0 ? round(($univTerjualKg / $univKg) * 100, 1) : 0,
+                    'pct_organik' => $univKg > 0 ? round(($univOrganikKg / $univKg) * 100, 1) : 0,
+                    'saldo' => $univSaldo,
+                ];
+                $data['metrics'] = [
+                    '% Rerata Residu' => ($univKg > 0 ? round(($univResiduKg / $univKg) * 100, 1) : 0) . '%',
+                    '% Rerata Terjual' => ($univKg > 0 ? round(($univTerjualKg / $univKg) * 100, 1) : 0) . '%',
+                    '% Rerata Organik' => ($univKg > 0 ? round(($univOrganikKg / $univKg) * 100, 1) : 0) . '%',
+                    'Total Residu Masuk' => number_format($univResiduKg, 1, ',', '.') . ' kg',
+                ];
+                break;
         }
 
         $pdf = Pdf::loadView('exports.pdf.report', $data)
@@ -481,6 +552,78 @@ class ReportExportController extends Controller
                             $surv->category,
                         ]);
                     }
+                    break;
+
+                case 'persen':
+                    fputcsv($handle, ['LAPORAN ANALISIS PERSENTASE & KOMPOSISI SAMPAH KAMPUS UAD']);
+                    fputcsv($handle, ['Waktu Ekspor', Carbon::now()->format('d/m/Y H:i:s')]);
+                    fputcsv($handle, []);
+                    fputcsv($handle, ['No', 'Unit Kampus', 'Total Masuk (kg)', '% Residu', '% Terjual', '% Organik', 'Saldo Kas (Rp)']);
+
+                    $campusesList = Campus::where('is_active', true)->orderBy('id')->get();
+                    $no = 1;
+                    $univKg = 0;
+                    $univResiduKg = 0;
+                    $univTerjualKg = 0;
+                    $univOrganikKg = 0;
+                    $univSaldo = 0;
+
+                    foreach ($campusesList as $c) {
+                        $cWeightQuery = WeighingSession::with('items.wasteType')
+                            ->where('campus_id', $c->id)
+                            ->when($dateFrom, fn($q) => $q->whereDate('weigh_date', '>=', $dateFrom))
+                            ->when($dateTo, fn($q) => $q->whereDate('weigh_date', '<=', $dateTo))
+                            ->get();
+
+                        $cTotalKg = 0;
+                        $cResiduKg = 0;
+                        $cTerjualKg = 0;
+                        $cOrganikKg = 0;
+
+                        foreach ($cWeightQuery as $sess) {
+                            foreach ($sess->items as $item) {
+                                $w = (float) $item->weight_kg;
+                                $cTotalKg += $w;
+                                $name = strtolower($item->wasteType?->name ?? '');
+                                if (str_contains($name, 'residu')) {
+                                    $cResiduKg += $w;
+                                } elseif (str_contains($name, 'organik') || str_contains($name, 'taman') || str_contains($name, 'makanan')) {
+                                    $cOrganikKg += $w;
+                                } else {
+                                    $cTerjualKg += $w;
+                                }
+                            }
+                        }
+
+                        $cSaldo = (float) Keuangan::where('campus_id', $c->id)->where('jenis', 'K')->sum('nominal') - (float) Keuangan::where('campus_id', $c->id)->where('jenis', 'D')->sum('nominal');
+
+                        $univKg += $cTotalKg;
+                        $univResiduKg += $cResiduKg;
+                        $univTerjualKg += $cTerjualKg;
+                        $univOrganikKg += $cOrganikKg;
+                        $univSaldo += $cSaldo;
+
+                        fputcsv($handle, [
+                            $no++,
+                            $c->name,
+                            $cTotalKg,
+                            ($cTotalKg > 0 ? round(($cResiduKg / $cTotalKg) * 100, 1) : 0) . '%',
+                            ($cTotalKg > 0 ? round(($cTerjualKg / $cTotalKg) * 100, 1) : 0) . '%',
+                            ($cTotalKg > 0 ? round(($cOrganikKg / $cTotalKg) * 100, 1) : 0) . '%',
+                            $cSaldo,
+                        ]);
+                    }
+
+                    fputcsv($handle, []);
+                    fputcsv($handle, [
+                        'TOTAL UNIVERSITAS (AGREGAT)',
+                        '',
+                        $univKg,
+                        ($univKg > 0 ? round(($univResiduKg / $univKg) * 100, 1) : 0) . '%',
+                        ($univKg > 0 ? round(($univTerjualKg / $univKg) * 100, 1) : 0) . '%',
+                        ($univKg > 0 ? round(($univOrganikKg / $univKg) * 100, 1) : 0) . '%',
+                        $univSaldo,
+                    ]);
                     break;
             }
 

@@ -384,6 +384,46 @@
                     </tr>
                 @endforelse
             </tbody>
+
+        @elseif($type === 'persen')
+            <thead>
+                <tr>
+                    <th style="width: 6%;" class="text-center">No</th>
+                    <th style="width: 26%;">Unit Kampus</th>
+                    <th style="width: 16%;" class="text-right">Total Masuk (kg)</th>
+                    <th style="width: 13%;" class="text-center">% Residu</th>
+                    <th style="width: 13%;" class="text-center">% Terjual</th>
+                    <th style="width: 13%;" class="text-center">% Organik</th>
+                    <th style="width: 13%;" class="text-right">Saldo Kas (Rp)</th>
+                </tr>
+            </thead>
+            <tbody>
+                @forelse($rows as $idx => $r)
+                    <tr>
+                        <td class="text-center">{{ $idx + 1 }}</td>
+                        <td style="font-weight: bold;">{{ $r['campus'] }}</td>
+                        <td class="text-right font-mono">{{ number_format($r['total_kg'], 1, ',', '.') }}</td>
+                        <td class="text-center font-mono" style="color: #ef4444; font-weight: bold;">{{ number_format($r['pct_residu'], 1) }}%</td>
+                        <td class="text-center font-mono" style="color: #059669; font-weight: bold;">{{ number_format($r['pct_terjual'], 1) }}%</td>
+                        <td class="text-center font-mono" style="color: #d97706; font-weight: bold;">{{ number_format($r['pct_organik'], 1) }}%</td>
+                        <td class="text-right font-mono">{{ number_format($r['saldo'], 0, ',', '.') }}</td>
+                    </tr>
+                @empty
+                    <tr>
+                        <td colspan="7" class="text-center" style="padding: 15px; color: #94a3b8;">Tidak ada data persentase pada periode ini.</td>
+                    </tr>
+                @endforelse
+                @if(isset($univSummary))
+                    <tr style="background-color: #f1f5f9; font-weight: bold;">
+                        <td colspan="2" class="text-center">TOTAL UNIVERSITAS (AGREGAT)</td>
+                        <td class="text-right font-mono">{{ number_format($univSummary['total_kg'], 1, ',', '.') }}</td>
+                        <td class="text-center font-mono">{{ number_format($univSummary['pct_residu'], 1) }}%</td>
+                        <td class="text-center font-mono">{{ number_format($univSummary['pct_terjual'], 1) }}%</td>
+                        <td class="text-center font-mono">{{ number_format($univSummary['pct_organik'], 1) }}%</td>
+                        <td class="text-right font-mono">{{ number_format($univSummary['saldo'], 0, ',', '.') }}</td>
+                    </tr>
+                @endif
+            </tbody>
         @endif
     </table>
 
