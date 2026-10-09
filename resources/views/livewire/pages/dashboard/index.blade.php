@@ -91,7 +91,21 @@ new #[Layout('layouts.app')] class extends Component
             $compositionQuery->where('weighing_sessions.campus_id', $campusQueryId);
         }
 
-        $categoryWeights = $compositionQuery->pluck('total_kg', 'category')->toArray();
+        $rawCategoryWeights = $compositionQuery->pluck('total_kg', 'category')->toArray();
+        $categoryWeights = [];
+        foreach ($rawCategoryWeights as $catKey => $catKg) {
+            $normalizedKey = strtolower(trim((string) $catKey));
+            if (str_contains($normalizedKey, 'organik') && !str_contains($normalizedKey, 'anorganik')) {
+                $categoryWeights['organik'] = ($categoryWeights['organik'] ?? 0.0) + (float) $catKg;
+            } elseif (str_contains($normalizedKey, 'anorganik')) {
+                $categoryWeights['anorganik'] = ($categoryWeights['anorganik'] ?? 0.0) + (float) $catKg;
+            } elseif (str_contains($normalizedKey, 'residu')) {
+                $categoryWeights['residu'] = ($categoryWeights['residu'] ?? 0.0) + (float) $catKg;
+            } else {
+                $categoryWeights[$normalizedKey] = ($categoryWeights[$normalizedKey] ?? 0.0) + (float) $catKg;
+            }
+        }
+
         $organikKg = (float) ($categoryWeights['organik'] ?? 0.0);
         $anorganikKg = (float) ($categoryWeights['anorganik'] ?? 0.0);
         $residuKg = (float) ($categoryWeights['residu'] ?? 0.0);
