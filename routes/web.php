@@ -36,6 +36,18 @@ Volt::route('users', 'pages.users.index')
     ->middleware(['auth', 'verified'])
     ->name('users.index');
 
+Volt::route('reports', 'pages.reports.index')
+    ->middleware(['auth', 'verified'])
+    ->name('reports');
+
+Route::get('reports/export/pdf', [App\Http\Controllers\ReportExportController::class, 'exportPdf'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.export.pdf');
+
+Route::get('reports/export/excel', [App\Http\Controllers\ReportExportController::class, 'exportExcel'])
+    ->middleware(['auth', 'verified'])
+    ->name('reports.export.excel');
+
 Volt::route('survei-kap', 'pages.kap.survey')
     ->name('kap.survey');
 
