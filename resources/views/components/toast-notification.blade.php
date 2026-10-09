@@ -8,6 +8,17 @@
     },
     remove(id) {
         this.toasts = this.toasts.filter(t => t.id !== id);
+    },
+    handleEvent(detail) {
+        if (!detail) return;
+        if (typeof detail === 'string') {
+            this.add(detail, 'success');
+        } else if (Array.isArray(detail)) {
+            const first = detail[0] || {};
+            this.add(first.message || first.status || JSON.stringify(first), first.type || 'success');
+        } else if (typeof detail === 'object') {
+            this.add(detail.message || detail.status, detail.type || 'success');
+        }
     }
 }"
 x-init="
@@ -16,7 +27,7 @@ x-init="
     @if (session('error')) add(@js(session('error')), 'error'); @endif
     @if (session('warning')) add(@js(session('warning')), 'warning'); @endif
 "
-@toast.window="add($event.detail?.message || $event.detail, $event.detail?.type || 'success')"
+@toast.window="handleEvent($event.detail)"
 class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0">
     <template x-for="t in toasts" :key="t.id">
         <div x-show="true"
@@ -80,3 +91,52 @@ class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2.5 max-w-sm w-full po
         </div>
     </template>
 </div>
+
+<script>
+    if (typeof window.copyToClipboard === 'undefined') {
+        window.copyToClipboard = function(text, successMsg = 'Tautan berhasil disalin ke clipboard!') {
+            function triggerSuccess() {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: successMsg, type: 'success' }
+                }));
+            }
+            function triggerError(msg) {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: msg || 'Gagal menyalin tautan.', type: 'error' }
+                }));
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text)
+                    .then(triggerSuccess)
+                    .catch(function() {
+                        fallback(text);
+                    });
+            } else {
+                fallback(text);
+            }
+
+            function fallback(content) {
+                try {
+                    const el = document.createElement('textarea');
+                    el.value = content;
+                    el.setAttribute('readonly', '');
+                    el.style.position = 'fixed';
+                    el.style.left = '-9999px';
+                    el.style.top = '0';
+                    document.body.appendChild(el);
+                    el.select();
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(el);
+                    if (successful) {
+                        triggerSuccess();
+                    } else {
+                        triggerError('Gagal menyalin tautan');
+                    }
+                } catch (err) {
+                    triggerError('Gagal menyalin tautan: ' + (err.message || ''));
+                }
+            }
+        };
+    }
+</script>

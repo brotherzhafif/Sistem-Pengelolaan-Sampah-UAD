@@ -133,51 +133,7 @@ new #[Layout('layouts.app')] class extends Component
 }; ?>
 
 <div x-data="{ 
-    detailModal: @entangle('viewSurveyId'),
-    copied: false,
-    copySurveyLink() {
-        const url = '{{ url('/survei-kap') }}';
-        const self = this;
-        const triggerSuccess = () => {
-            self.copied = true;
-            window.dispatchEvent(new CustomEvent('toast', {
-                detail: { message: 'Tautan survei KAP berhasil disalin ke clipboard!', type: 'success' }
-            }));
-            setTimeout(() => self.copied = false, 2500);
-        };
-
-        if (navigator.clipboard && window.isSecureContext) {
-            navigator.clipboard.writeText(url)
-                .then(triggerSuccess)
-                .catch(() => self.fallbackCopy(url, triggerSuccess));
-        } else {
-            self.fallbackCopy(url, triggerSuccess);
-        }
-    },
-    fallbackCopy(text, onSuccess) {
-        try {
-            const el = document.createElement('textarea');
-            el.value = text;
-            el.setAttribute('readonly', '');
-            el.style.position = 'fixed';
-            el.style.left = '-9999px';
-            document.body.appendChild(el);
-            el.select();
-            const successful = document.execCommand('copy');
-            document.body.removeChild(el);
-            if (successful && onSuccess) {
-                onSuccess();
-            } else {
-                window.dispatchEvent(new CustomEvent('toast', {
-                    detail: { message: 'Tautan survei: ' + text, type: 'info' }
-                }));
-            }
-        } catch (err) {
-            window.dispatchEvent(new CustomEvent('toast', {
-                detail: { message: 'Gagal menyalin tautan survei', type: 'error' }
-            }));
-        }
-    }
+    detailModal: @entangle('viewSurveyId')
 }"
 @close-modal.window="detailModal = null">
 
@@ -195,11 +151,14 @@ new #[Layout('layouts.app')] class extends Component
 
             <!-- Action Button: Copy Survey Link & Open Public Form -->
             <div class="flex items-center gap-2">
-                <button type="button" @click="copySurveyLink()" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5">
+                <button type="button" 
+                        x-data="{ copied: false }"
+                        @click="window.copyToClipboard('{{ url('/survei-kap') }}', 'Tautan survei KAP berhasil disalin ke clipboard!'); copied = true; setTimeout(() => copied = false, 2500);"
+                        class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                     </svg>
-                    <span x-text="copied ? 'Tautan Disalin!' : 'Salin Link Survei'"></span>
+                    <span x-text="copied ? 'Tautan Disalin!' : 'Salin Link Survei'">Salin Link Survei</span>
                 </button>
 
                 <a href="{{ url('/survei-kap') }}" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition flex items-center gap-1.5">
