@@ -128,16 +128,16 @@ class MasterDataSeeder extends Seeder
             Buyer::updateOrCreate(['name' => $buyer['name']], $buyer);
         }
 
-        // 4. Seed Kategori Pengeluaran Operasional (SRS M5)
+        // 4. Seed Kategori Pengeluaran Operasional (SRS M5 - Ringkas 2 Kata)
         $categories = [
-            'Upah Pilah TPS',
-            'Makan Minum Tenaga TPS',
-            'Pembelian Plastik / Bagor / Karung',
-            'Pembelian Alat (Sekop, Cangkul, Sarung Tangan)',
-            'Pakan Ternak / Maggot',
-            'Material Kandang & Komposter',
-            'Obat & P3K Petugas',
-            'BBM Operasional Mesin Cacah',
+            'Upah Pilah',
+            'Makan Minum',
+            'Bagor Karung',
+            'Pembelian Alat',
+            'Pakan Maggot',
+            'Material Komposter',
+            'Obat P3K',
+            'BBM Operasional',
         ];
 
         foreach ($categories as $categoryName) {

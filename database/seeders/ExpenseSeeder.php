@@ -31,32 +31,32 @@ class ExpenseSeeder extends Seeder
 
         $sampleExpenses = [
             [
-                'category' => 'Pembelian Plastik / Bagor / Karung',
+                'category' => 'Bagor Karung',
                 'amount' => 125000.00,
                 'description' => 'Pembelian 50 lembar karung bagor pilah kapasitas 50kg untuk TPS',
             ],
             [
-                'category' => 'Makan Minum Tenaga TPS',
+                'category' => 'Makan Minum',
                 'amount' => 60000.00,
                 'description' => 'Snack dan konsumsi air minum petugas pilah sampah TPS',
             ],
             [
-                'category' => 'Pembelian Alat (Sekop, Cangkul, Sarung Tangan)',
+                'category' => 'Pembelian Alat',
                 'amount' => 175000.00,
                 'description' => 'Pengadaan 4 pasang sarung tangan karet tebal dan 1 sekop sampah',
             ],
             [
-                'category' => 'Upah Pilah TPS',
+                'category' => 'Upah Pilah',
                 'amount' => 200000.00,
                 'description' => 'Upah harian tenaga sortir dan pilah sampah anorganik',
             ],
             [
-                'category' => 'BBM Operasional Mesin Cacah',
+                'category' => 'BBM Operasional',
                 'amount' => 50000.00,
                 'description' => 'Pertalite 5 liter untuk mesin perajang daun dan pencacah organik',
             ],
             [
-                'category' => 'Pakan Ternak / Maggot',
+                'category' => 'Pakan Maggot',
                 'amount' => 93000.00,
                 'description' => 'Dedak / Polar 10kg + konsentrat pengembang biak larva BSF',
             ],

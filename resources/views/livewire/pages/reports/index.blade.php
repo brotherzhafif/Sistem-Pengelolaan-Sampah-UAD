@@ -731,59 +731,33 @@ new #[Layout('layouts.app')] class extends Component
 
             <!-- 1. Top Control Bar: Filters & Period Selector -->
             <div class="bg-white rounded-2xl border border-slate-200 p-4 sm:p-5 shadow-sm">
-                <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 flex-1">
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Periode Laporan</label>
-                            <select wire:model.live="presetPeriod" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-slate-50/50 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
-                                <option value="this_month">Bulan Ini ({{ Carbon::now()->translatedFormat('F Y') }})</option>
-                                <option value="last_month">Bulan Lalu ({{ Carbon::now()->subMonth()->translatedFormat('F Y') }})</option>
-                                <option value="q_this">Q{{ Carbon::now()->quarter }} {{ Carbon::now()->year }} (Kuartal Berjalan)</option>
-                                <option value="this_year">Tahun {{ Carbon::now()->year }}</option>
-                                <option value="all">Semua Periode (Sejak Awal)</option>
-                                <option value="custom">Kustom Rentang Tanggal</option>
-                            </select>
-                        </div>
-
-                        <div>
-                            <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kampus / Unit Lokasi</label>
-                            @if ($isSuperAdmin)
-                                <select wire:model.live="filterCampusId" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-slate-50/50 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
-                                    <option value="">Semua Kampus (Agregat Universitas)</option>
-                                    @foreach($campuses as $c)
-                                        <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                    @endforeach
-                                </select>
-                            @else
-                                <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
-                                    {{ auth()->user()->campus?->name ?? 'Kampus Saya' }}
-                                </div>
-                            @endif
-                        </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Periode Laporan</label>
+                        <select wire:model.live="presetPeriod" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-slate-50/50 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                            <option value="this_month">Bulan Ini ({{ Carbon::now()->translatedFormat('F Y') }})</option>
+                            <option value="last_month">Bulan Lalu ({{ Carbon::now()->subMonth()->translatedFormat('F Y') }})</option>
+                            <option value="q_this">Q{{ Carbon::now()->quarter }} {{ Carbon::now()->year }} (Kuartal Berjalan)</option>
+                            <option value="this_year">Tahun {{ Carbon::now()->year }}</option>
+                            <option value="all">Semua Periode (Sejak Awal)</option>
+                            <option value="custom">Kustom Rentang Tanggal</option>
+                        </select>
                     </div>
 
-                    <!-- Export CTA inside filter toolbar (Vertically Centered Top-Down) -->
-                    <div class="flex flex-col justify-center self-stretch pt-2 lg:pt-0 border-t lg:border-t-0 border-slate-100">
-                        <div class="flex items-center gap-2 my-auto">
-                            <span class="text-xs text-slate-400 hidden xl:inline self-center">Unduh data tab aktif:</span>
-                            <a href="{{ route('reports.export.excel', ['type' => $activeTab, 'campus_id' => $filterCampusId, 'date_from' => $filterDateFrom, 'date_to' => $filterDateTo]) }}"
-                               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 border border-emerald-200 transition active:scale-95 cursor-pointer"
-                               title="Unduh Excel">
-                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                                </svg>
-                                <span>Excel</span>
-                            </a>
-                            <a href="{{ route('reports.export.pdf', ['type' => $activeTab, 'campus_id' => $filterCampusId, 'date_from' => $filterDateFrom, 'date_to' => $filterDateTo]) }}"
-                               target="_blank"
-                               class="inline-flex items-center gap-1.5 px-3 py-2 rounded-xl text-xs font-semibold bg-rose-50 text-rose-700 hover:bg-rose-100 border border-rose-200 transition active:scale-95 cursor-pointer"
-                               title="Unduh PDF Resmi">
-                                <svg class="w-4 h-4 text-rose-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-                                </svg>
-                                <span>PDF</span>
-                            </a>
-                        </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-700 mb-1.5">Kampus / Unit Lokasi</label>
+                        @if ($isSuperAdmin)
+                            <select wire:model.live="filterCampusId" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium text-slate-800 bg-slate-50/50 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500">
+                                <option value="">Semua Kampus (Agregat Universitas)</option>
+                                @foreach($campuses as $c)
+                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+                                {{ auth()->user()->campus?->name ?? 'Kampus Saya' }}
+                            </div>
+                        @endif
                     </div>
                 </div>
 
@@ -1203,8 +1177,8 @@ new #[Layout('layouts.app')] class extends Component
                             </table>
                         </div>
 
-                        <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-xs">
-                            <div>{{ $items->links(data: ['scrollTo' => false]) }}</div>
+                        <div class="px-5 py-3 border-t border-slate-100 bg-slate-50/50 text-xs">
+                            {{ $items->links(data: ['scrollTo' => false]) }}
                         </div>
                     </div>
                 </div>

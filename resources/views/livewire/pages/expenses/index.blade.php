@@ -379,7 +379,7 @@ class="space-y-6">
                                     <td class="py-2.5 px-3">
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
                                             <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
-                                            <span class="truncate">{{ $e->category->name }}</span>
+                                            <span class="truncate" title="{{ $e->category->name }}">{{ Str::words($e->category->name, 2, '') }}</span>
                                         </span>
                                     </td>
                                     <td class="py-2.5 px-3 truncate text-slate-700" title="{{ $e->description }}">
@@ -547,7 +547,7 @@ class="space-y-6">
                                     </div>
                                     <div>
                                         <span class="text-[11px] text-slate-400 block">Kategori Pengeluaran</span>
-                                        <span class="font-semibold text-rose-700">{{ $detailedExpense->category->name }}</span>
+                                        <span class="font-semibold text-rose-700">{{ Str::words($detailedExpense->category->name, 2, '') }}</span>
                                     </div>
                                     <div>
                                         <span class="text-[11px] text-slate-400 block">Petugas Pencatat</span>
