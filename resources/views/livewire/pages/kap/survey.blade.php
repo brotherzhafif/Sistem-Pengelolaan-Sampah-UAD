@@ -231,22 +231,28 @@ new #[Layout('layouts.guest')] class extends Component
 
                     <div>
                         <label class="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Status Civitas Akademika <span class="text-rose-500">*</span></label>
-                        <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                            <label class="h-11 flex items-center justify-center gap-2 p-3 rounded-xl border text-xs sm:text-sm font-semibold cursor-pointer transition select-none {{ $respondent_role === 'mahasiswa' ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs ring-1 ring-emerald-400' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">
-                                <input type="radio" wire:model.live="respondent_role" value="mahasiswa" class="hidden">
-                                <span class="w-2 h-2 rounded-full {{ $respondent_role === 'mahasiswa' ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+                        <div x-data="{ currentRole: '{{ $respondent_role }}' }" class="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                            <button type="button"
+                                    @click="currentRole = 'mahasiswa'; $wire.set('respondent_role', 'mahasiswa', false)"
+                                    :class="currentRole === 'mahasiswa' ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs ring-1 ring-emerald-400' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                                    class="h-11 flex items-center justify-center gap-2 p-3 rounded-xl border text-xs sm:text-sm font-semibold cursor-pointer transition select-none">
+                                <span class="w-2 h-2 rounded-full transition" :class="currentRole === 'mahasiswa' ? 'bg-emerald-500' : 'bg-slate-300'"></span>
                                 Mahasiswa
-                            </label>
-                            <label class="h-11 flex items-center justify-center gap-2 p-3 rounded-xl border text-xs sm:text-sm font-semibold cursor-pointer transition select-none {{ $respondent_role === 'dosen' ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs ring-1 ring-emerald-400' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">
-                                <input type="radio" wire:model.live="respondent_role" value="dosen" class="hidden">
-                                <span class="w-2 h-2 rounded-full {{ $respondent_role === 'dosen' ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+                            </button>
+                            <button type="button"
+                                    @click="currentRole = 'dosen'; $wire.set('respondent_role', 'dosen', false)"
+                                    :class="currentRole === 'dosen' ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs ring-1 ring-emerald-400' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                                    class="h-11 flex items-center justify-center gap-2 p-3 rounded-xl border text-xs sm:text-sm font-semibold cursor-pointer transition select-none">
+                                <span class="w-2 h-2 rounded-full transition" :class="currentRole === 'dosen' ? 'bg-emerald-500' : 'bg-slate-300'"></span>
                                 Dosen
-                            </label>
-                            <label class="h-11 flex items-center justify-center gap-2 p-3 rounded-xl border text-xs sm:text-sm font-semibold cursor-pointer transition select-none {{ $respondent_role === 'tendik' ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs ring-1 ring-emerald-400' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50' }}">
-                                <input type="radio" wire:model.live="respondent_role" value="tendik" class="hidden">
-                                <span class="w-2 h-2 rounded-full {{ $respondent_role === 'tendik' ? 'bg-emerald-500' : 'bg-slate-300' }}"></span>
+                            </button>
+                            <button type="button"
+                                    @click="currentRole = 'tendik'; $wire.set('respondent_role', 'tendik', false)"
+                                    :class="currentRole === 'tendik' ? 'bg-emerald-50 border-emerald-500 text-emerald-800 shadow-xs ring-1 ring-emerald-400' : 'border-slate-200 bg-white text-slate-600 hover:bg-slate-50'"
+                                    class="h-11 flex items-center justify-center gap-2 p-3 rounded-xl border text-xs sm:text-sm font-semibold cursor-pointer transition select-none">
+                                <span class="w-2 h-2 rounded-full transition" :class="currentRole === 'tendik' ? 'bg-emerald-500' : 'bg-slate-300'"></span>
                                 Tenaga Kependidikan (Tendik)
-                            </label>
+                            </button>
                         </div>
                     </div>
 
@@ -314,9 +320,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('knowledge.1', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('knowledge.1', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$knowledge[1] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -342,9 +348,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('knowledge.2', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('knowledge.2', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$knowledge[2] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -370,9 +376,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('knowledge.3', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('knowledge.3', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$knowledge[3] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -398,9 +404,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('knowledge.4', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('knowledge.4', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$knowledge[4] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -436,9 +442,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('attitude.1', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('attitude.1', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$attitude[1] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -464,9 +470,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('attitude.2', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('attitude.2', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$attitude[2] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -492,9 +498,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('attitude.3', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('attitude.3', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$attitude[3] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -520,9 +526,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('attitude.4', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('attitude.4', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$attitude[4] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -558,9 +564,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('practice.1', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('practice.1', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$practice[1] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -586,9 +592,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('practice.2', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('practice.2', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$practice[2] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -614,9 +620,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('practice.3', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('practice.3', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$practice[3] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -642,9 +648,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('practice.4', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('practice.4', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$practice[4] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -680,9 +686,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('facility.1', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('facility.1', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$facility[1] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
@@ -708,9 +714,9 @@ new #[Layout('layouts.guest')] class extends Component
                                 <div class="grid grid-cols-5 gap-2 sm:gap-3">
                                     @for($i = 1; $i <= 5; $i++)
                                         <button type="button"
-                                                @click="currentVal = {{ $i }}; $wire.set('facility.2', {{ $i }})"
+                                                @click="currentVal = {{ $i }}; $wire.set('facility.2', {{ $i }}, false)"
                                                 :class="currentVal == {{ $i }} ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300'"
-                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95 {{ (int)$facility[2] === $i ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs ring-2 ring-emerald-500/20' : 'border-slate-200 bg-white text-slate-700 hover:bg-emerald-50/60 hover:border-emerald-300' }}">
+                                                class="h-10 rounded-xl border-2 flex items-center justify-center text-xs sm:text-sm font-bold cursor-pointer transition select-none active:scale-95">
                                             {{ $i }}
                                         </button>
                                     @endfor
