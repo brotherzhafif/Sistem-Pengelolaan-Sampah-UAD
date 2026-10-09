@@ -267,7 +267,7 @@ new #[Layout('layouts.app')] class extends Component
                 </p>
             </div>
 
-            <!-- Unit Kampus Selector & Role Badge -->
+            <!-- Unit Kampus Selector, Role Badge & Notification Bell (Pojok Kanan Atas) -->
             <div class="flex flex-wrap items-center gap-2.5">
                 @if($isSuperAdmin)
                     <div class="flex items-center gap-1.5 bg-white border border-slate-200 rounded-lg px-2.5 py-1.5 shadow-xs">
@@ -290,39 +290,96 @@ new #[Layout('layouts.app')] class extends Component
                         {{ str_replace('_', ' ', Auth::user()->roles->first()->name) }}
                     </span>
                 @endif
+
+                <!-- Notification Bell Dropdown (Pojok Kanan Atas - SRS M10) -->
+                <div class="relative" x-data="{ notifOpen: false }" @click.outside="notifOpen = false">
+                    <button @click="notifOpen = !notifOpen" 
+                            type="button" 
+                            class="relative p-2 rounded-lg bg-white border border-slate-200 hover:bg-slate-50 text-slate-600 hover:text-slate-900 shadow-2xs transition cursor-pointer flex items-center justify-center"
+                            title="Notifikasi & Peringatan Sistem">
+                        <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+
+                        @if(!empty($alerts))
+                            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                                <span class="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-rose-600 text-[9px] font-bold text-white leading-none">
+                                    {{ count($alerts) }}
+                                </span>
+                            </span>
+                        @endif
+                    </button>
+
+                    <!-- Popup Notifikasi Dropdown -->
+                    <div x-show="notifOpen" 
+                         x-cloak
+                         x-transition:enter="transition ease-out duration-150"
+                         x-transition:enter-start="opacity-0 scale-95 translate-y-1"
+                         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave="transition ease-in duration-100"
+                         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+                         x-transition:leave-end="opacity-0 scale-95 translate-y-1"
+                         class="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white shadow-2xl border border-slate-200 z-50 overflow-hidden divide-y divide-slate-100">
+                        
+                        <!-- Header Popup -->
+                        <div class="p-3.5 bg-slate-50/80 flex items-center justify-between">
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-slate-900">Notifikasi Sistem</span>
+                                @if(!empty($alerts))
+                                    <span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                                        {{ count($alerts) }} Peringatan
+                                    </span>
+                                @endif
+                            </div>
+                            <span class="text-[10px] text-slate-400 font-medium">SRS M10 Alerts</span>
+                        </div>
+
+                        <!-- Daftar Notifikasi -->
+                        <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+                            @forelse($alerts as $alert)
+                                <div class="p-3.5 hover:bg-slate-50/80 transition flex items-start gap-3">
+                                    <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 {{ $alert['type'] === 'danger' ? 'bg-rose-100 text-rose-600' : ($alert['type'] === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600') }}">
+                                        @if($alert['type'] === 'danger')
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                                        @elseif($alert['type'] === 'warning')
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        @else
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                        @endif
+                                    </div>
+                                    <div class="flex-1 min-w-0">
+                                        <div class="flex items-center justify-between gap-1">
+                                            <h4 class="text-xs font-bold text-slate-900 truncate">{{ $alert['title'] }}</h4>
+                                        </div>
+                                        <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">{{ $alert['message'] }}</p>
+                                        <div class="mt-2">
+                                            <a href="{{ $alert['action_url'] }}" 
+                                               class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition">
+                                                <span>{{ $alert['action_label'] }}</span>
+                                                <span>&rarr;</span>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            @empty
+                                <div class="py-8 text-center text-xs text-slate-400">
+                                    <svg class="w-8 h-8 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                    <span>Semua operasional lancar. Tidak ada peringatan aktif.</span>
+                                </div>
+                            @endforelse
+                        </div>
+
+                    </div>
+                </div>
             </div>
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
-                <!-- M10 — Alerts & Notification Banners -->
-                @if(!empty($alerts))
-                    <div class="space-y-2.5">
-                        @foreach($alerts as $alert)
-                            <div class="p-3.5 rounded-2xl border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 shadow-2xs {{ $alert['type'] === 'danger' ? 'bg-rose-50/70 border-rose-200 text-rose-900' : ($alert['type'] === 'warning' ? 'bg-amber-50/70 border-amber-200 text-amber-900' : 'bg-emerald-50/70 border-emerald-200 text-emerald-900') }}">
-                                <div class="flex items-center gap-3">
-                                    <div class="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 {{ $alert['type'] === 'danger' ? 'bg-rose-100 text-rose-700' : ($alert['type'] === 'warning' ? 'bg-amber-100 text-amber-700' : 'bg-emerald-100 text-emerald-700') }}">
-                                        @if($alert['type'] === 'danger')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
-                                        @elseif($alert['type'] === 'warning')
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        @else
-                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                        @endif
-                                    </div>
-                                    <div>
-                                        <h4 class="text-xs font-bold">{{ $alert['title'] }}</h4>
-                                        <p class="text-[11px] opacity-90">{{ $alert['message'] }}</p>
-                                    </div>
-                                </div>
-                                <a href="{{ $alert['action_url'] }}" class="px-3.5 py-1.5 rounded-xl bg-white text-xs font-bold border border-slate-200 hover:bg-slate-50 transition shrink-0 text-center shadow-2xs">
-                                    {{ $alert['action_label'] }} &rarr;
-                                </a>
-                            </div>
-                        @endforeach
-                    </div>
-                @endif
 
                 <!-- 1. Executive Primary KPI Grid (6 Cards Clean Dribbble Style) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 gap-3.5">
