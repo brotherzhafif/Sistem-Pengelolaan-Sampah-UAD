@@ -101,6 +101,7 @@ new #[Layout('layouts.app')] class extends Component
 
         $this->closeBalanceModal();
         $this->dispatch('close-modal');
+        $this->dispatch('toast', message: 'Saldo kas awal berhasil ditetapkan dan disinkronkan ke Buku Besar.', type: 'success');
         session()->flash('message', 'Saldo kas awal berhasil ditetapkan dan disinkronkan ke Buku Besar.');
     }
 
@@ -119,9 +120,13 @@ new #[Layout('layouts.app')] class extends Component
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
 
+        $campusQueryId = $isSuperAdmin 
+            ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
+            : (!empty($user->campus_id) ? (int) $user->campus_id : null);
+
         // KPI Ringkasan
         $kpiQuery = Keuangan::query()
-            ->when($this->selectedCampusId, fn($q) => $q->where('campus_id', $this->selectedCampusId))
+            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
             ->when($this->filterDateFrom, fn($q) => $q->whereDate('tanggal', '>=', $this->filterDateFrom))
             ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo));
 
@@ -133,7 +138,7 @@ new #[Layout('layouts.app')] class extends Component
 
         // Saldo Kas Berjalan Terakhir (dari Buku Besar terkini)
         $latestLedger = BukuBesar::query()
-            ->when($this->selectedCampusId, fn($q) => $q->where('campus_id', $this->selectedCampusId))
+            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
             ->orderBy('tanggal', 'desc')
             ->first();
 
@@ -141,7 +146,7 @@ new #[Layout('layouts.app')] class extends Component
 
         // 1. Data Jurnal Buku Kas (Tabel keuangan)
         $cashbookQuery = Keuangan::with(['campus', 'creator'])
-            ->when($this->selectedCampusId, fn($q) => $q->where('campus_id', $this->selectedCampusId))
+            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
             ->when($this->filterDateFrom, fn($q) => $q->whereDate('tanggal', '>=', $this->filterDateFrom))
             ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo))
             ->when($this->filterJenis, fn($q) => $q->where('jenis', $this->filterJenis))
@@ -153,7 +158,7 @@ new #[Layout('layouts.app')] class extends Component
 
         // 2. Data Saldo Harian Buku Besar (Tabel buku_besar)
         $ledgerQuery = BukuBesar::with('campus')
-            ->when($this->selectedCampusId, fn($q) => $q->where('campus_id', $this->selectedCampusId))
+            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
             ->when($this->filterDateFrom, fn($q) => $q->whereDate('tanggal', '>=', $this->filterDateFrom))
             ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo))
             ->orderBy('tanggal', 'desc');
@@ -194,30 +199,11 @@ class="space-y-6">
                 <h2 class="font-bold text-xl text-slate-900 tracking-tight">Buku Kas & Buku Besar Keuangan</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Sistem pembukuan ganda mutasi kas TPS & neraca saldo harian kampus (SRS M6)</p>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    SRS M6 - Double Entry Ledger
-                </span>
-            </div>
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-            <!-- Toast Feedback -->
-            @if (session()->has('message'))
-                <div class="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-sm">
-                    <div class="flex items-center gap-2">
-                        <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                        </svg>
-                        <span>{{ session('message') }}</span>
-                    </div>
-                    <button type="button" class="text-emerald-600 hover:text-emerald-900 font-bold" onclick="this.parentElement.remove()">✕</button>
-                </div>
-            @endif
-
             <!-- KPI Metric Cards Keuangan (Dribbble Clean) -->
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <!-- Saldo Kas Sirkular Bersih -->

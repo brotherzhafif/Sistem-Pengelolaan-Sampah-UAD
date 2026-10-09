@@ -155,6 +155,7 @@ new #[Layout('layouts.app')] class extends Component
         $this->showCreateModal = false;
         $this->resetForm();
         $this->dispatch('close-modal');
+        $this->dispatch('toast', message: 'Data penimbangan harian berhasil disimpan dengan rapi.', type: 'success');
         session()->flash('status', 'Data penimbangan harian berhasil disimpan dengan rapi.');
     }
 
@@ -182,6 +183,7 @@ new #[Layout('layouts.app')] class extends Component
         
         // Otorisasi: hanya Super Admin atau user dari kampus bersangkutan
         if (auth()->user()->campus_id && auth()->user()->campus_id !== $session->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            $this->dispatch('toast', message: 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.', type: 'error');
             session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.');
             $this->confirmDeleteSessionId = null;
             $this->dispatch('close-modal');
@@ -191,6 +193,7 @@ new #[Layout('layouts.app')] class extends Component
         $session->delete();
         $this->confirmDeleteSessionId = null;
         $this->dispatch('close-modal');
+        $this->dispatch('toast', message: 'Data sesi penimbangan berhasil dihapus.', type: 'success');
         session()->flash('status', 'Data sesi penimbangan berhasil dihapus.');
     }
 
@@ -199,7 +202,9 @@ new #[Layout('layouts.app')] class extends Component
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
 
-        $campusQueryId = $isSuperAdmin ? $this->selectedCampusId : $user->campus_id;
+        $campusQueryId = $isSuperAdmin 
+            ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
+            : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
         $sessionsQuery = WeighingSession::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])
             ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
@@ -235,48 +240,12 @@ new #[Layout('layouts.app')] class extends Component
                 <h2 class="font-bold text-xl text-slate-900 tracking-tight">Penimbangan Sampah Harian</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Pencatatan volume dan bobot sampah masuk dari titik sumber kampus UAD</p>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Penimbangan Aktif
-                </span>
-            </div>
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-
-    <!-- Alert Status -->
-    @if (session('status'))
-        <div class="flex items-center justify-between p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-medium animate-fadeIn">
-            <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-emerald-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
-                </svg>
-                <span>{{ session('status') }}</span>
-            </div>
-            <button type="button" @click="$el.parentElement.remove()" class="text-emerald-500 hover:text-emerald-800">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-    @endif
-
-    @if (session('error'))
-        <div class="flex items-center justify-between p-3.5 rounded-lg bg-rose-50 border border-rose-200 text-rose-800 text-xs font-medium animate-fadeIn">
-            <div class="flex items-center gap-2">
-                <svg class="w-4 h-4 text-rose-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span>{{ session('error') }}</span>
-            </div>
-            <button type="button" @click="$el.parentElement.remove()" class="text-rose-500 hover:text-rose-800">
-                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-    @endif
-
-    <!-- Stock Summary Metric Cards (Clean Dribbble style matching dashboard) -->
+            <!-- Stock Summary Metric Cards (Clean Dribbble style matching dashboard) -->
     <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <!-- Total Masuk -->
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">

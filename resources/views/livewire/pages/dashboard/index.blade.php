@@ -48,7 +48,7 @@ new #[Layout('layouts.app')] class extends Component
 
         $campusQueryId = $isSuperAdmin 
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
-            : (int) $user->campus_id;
+            : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
         $activeCampus = $campusQueryId ? Campus::find($campusQueryId) : null;
         $campuses = Campus::where('is_active', true)->orderBy('id')->get();
@@ -237,10 +237,9 @@ new #[Layout('layouts.app')] class extends Component
                         </select>
                     </div>
                 @else
-                    <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
-                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                    <div class="text-xs font-semibold text-slate-700 bg-white border border-slate-200 px-3 py-1.5 rounded-lg">
                         {{ $activeCampus ? $activeCampus->name : 'Unit Kampus Terdaftar' }}
-                    </span>
+                    </div>
                 @endif
 
                 @if(Auth::user()->roles->isNotEmpty())

@@ -109,7 +109,7 @@ new #[Layout('layouts.app')] class extends Component
     {
         return [
             'campuses' => Campus::orderBy('id')->get(),
-            'sources' => WasteSource::where('campus_id', $this->selectedCampusId)->orderBy('name')->get(),
+            'sources' => WasteSource::when(!empty($this->selectedCampusId), fn($q) => $q->where('campus_id', (int) $this->selectedCampusId))->orderBy('name')->get(),
             'wasteTypes' => WasteType::orderBy('category')->orderBy('name')->get(),
             'vendors' => Vendor::orderBy('name')->get(),
             'buyers' => Buyer::orderBy('name')->get(),
@@ -140,6 +140,7 @@ new #[Layout('layouts.app')] class extends Component
         );
 
         $this->reset(['sourceName', 'sourceDescription', 'editingSourceId']);
+        $this->dispatch('toast', message: 'Titik sumber sampah berhasil disimpan.', type: 'success');
         session()->flash('message', 'Titik sumber sampah berhasil disimpan.');
     }
 
@@ -154,6 +155,7 @@ new #[Layout('layouts.app')] class extends Component
     public function deleteSource(int $id): void
     {
         WasteSource::findOrFail($id)->delete();
+        $this->dispatch('toast', message: 'Titik sumber sampah berhasil dihapus.', type: 'success');
         session()->flash('message', 'Titik sumber sampah berhasil dihapus.');
     }
 
@@ -179,6 +181,7 @@ new #[Layout('layouts.app')] class extends Component
         );
 
         $this->reset(['typeName', 'typeCategory', 'typePrice', 'typeIsSellable', 'editingTypeId']);
+        $this->dispatch('toast', message: 'Jenis sampah berhasil disimpan.', type: 'success');
         session()->flash('message', 'Jenis sampah berhasil disimpan.');
     }
 
@@ -195,6 +198,7 @@ new #[Layout('layouts.app')] class extends Component
     public function deleteWasteType(int $id): void
     {
         WasteType::findOrFail($id)->delete();
+        $this->dispatch('toast', message: 'Jenis sampah berhasil dihapus.', type: 'success');
         session()->flash('message', 'Jenis sampah berhasil dihapus.');
     }
 
@@ -218,6 +222,7 @@ new #[Layout('layouts.app')] class extends Component
         );
 
         $this->reset(['vendorName', 'vendorContact', 'vendorCost', 'editingVendorId']);
+        $this->dispatch('toast', message: 'Vendor pengangkut berhasil disimpan.', type: 'success');
         session()->flash('message', 'Vendor pengangkut berhasil disimpan.');
     }
 
@@ -233,6 +238,7 @@ new #[Layout('layouts.app')] class extends Component
     public function deleteVendor(int $id): void
     {
         Vendor::findOrFail($id)->delete();
+        $this->dispatch('toast', message: 'Vendor pengangkut berhasil dihapus.', type: 'success');
         session()->flash('message', 'Vendor pengangkut berhasil dihapus.');
     }
 
@@ -253,6 +259,7 @@ new #[Layout('layouts.app')] class extends Component
         );
 
         $this->reset(['buyerName', 'buyerContact', 'editingBuyerId']);
+        $this->dispatch('toast', message: 'Pembeli/Pengepul berhasil disimpan.', type: 'success');
         session()->flash('message', 'Pembeli/Pengepul berhasil disimpan.');
     }
 
@@ -267,6 +274,7 @@ new #[Layout('layouts.app')] class extends Component
     public function deleteBuyer(int $id): void
     {
         Buyer::findOrFail($id)->delete();
+        $this->dispatch('toast', message: 'Pembeli/Pengepul berhasil dihapus.', type: 'success');
         session()->flash('message', 'Pembeli/Pengepul berhasil dihapus.');
     }
 
@@ -283,6 +291,7 @@ new #[Layout('layouts.app')] class extends Component
         );
 
         $this->reset(['categoryName', 'editingCategoryId']);
+        $this->dispatch('toast', message: 'Kategori pengeluaran berhasil disimpan.', type: 'success');
         session()->flash('message', 'Kategori pengeluaran berhasil disimpan.');
     }
 
@@ -296,6 +305,7 @@ new #[Layout('layouts.app')] class extends Component
     public function deleteCategory(int $id): void
     {
         ExpenseCategory::findOrFail($id)->delete();
+        $this->dispatch('toast', message: 'Kategori pengeluaran berhasil dihapus.', type: 'success');
         session()->flash('message', 'Kategori pengeluaran berhasil dihapus.');
     }
 }; ?>
@@ -307,25 +317,11 @@ new #[Layout('layouts.app')] class extends Component
                 <h2 class="font-bold text-xl text-slate-900 tracking-tight">Master Data Sistem</h2>
                 <p class="text-xs text-slate-500 mt-0.5">Kelola titik lokasi sumber, jenis sampah, vendor angkut, dan pengepul</p>
             </div>
-            <div class="flex items-center gap-2">
-                <span class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200 text-xs font-semibold text-emerald-800">
-                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                    Master Data
-                </span>
-            </div>
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-            <!-- Toast Feedback -->
-            @if (session()->has('message'))
-                <div class="p-3.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold flex items-center justify-between shadow-sm">
-                    <span>{{ session('message') }}</span>
-                    <button type="button" class="text-emerald-600 hover:text-emerald-900" onclick="this.parentElement.remove()">✕</button>
-                </div>
-            @endif
-
             <!-- Navigation Tabs (Clean Dribbble style matching ref tokens) -->
             <div class="bg-white border border-slate-200 rounded-xl p-1.5 flex flex-wrap gap-1 shadow-sm">
                 <button wire:click="$set('activeTab', 'sources')" 

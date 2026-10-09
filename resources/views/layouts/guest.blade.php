@@ -36,7 +36,7 @@
                 </a>
             </div>
 
-            <div class="w-full sm:max-w-md z-10">
+            <div class="w-full {{ request()->routeIs('kap.survey') ? 'max-w-4xl' : 'sm:max-w-md' }} z-10">
                 <div class="card bg-base-100 shadow-xl border border-base-300 backdrop-blur-md">
                     <div class="card-body p-6 sm:p-8">
                         {{ $slot }}
@@ -48,5 +48,8 @@
                 </div>
             </div>
         </div>
+
+        <!-- Global Floating Toast / Snackbar (Bottom Right) -->
+        <x-toast-notification />
     </body>
 </html>

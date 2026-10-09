@@ -136,9 +136,47 @@ new #[Layout('layouts.app')] class extends Component
     detailModal: @entangle('viewSurveyId'),
     copied: false,
     copySurveyLink() {
-        navigator.clipboard.writeText('{{ url('/survei-kap') }}');
-        this.copied = true;
-        setTimeout(() => this.copied = false, 2500);
+        const url = '{{ url('/survei-kap') }}';
+        const self = this;
+        const triggerSuccess = () => {
+            self.copied = true;
+            window.dispatchEvent(new CustomEvent('toast', {
+                detail: { message: 'Tautan survei KAP berhasil disalin ke clipboard!', type: 'success' }
+            }));
+            setTimeout(() => self.copied = false, 2500);
+        };
+
+        if (navigator.clipboard && window.isSecureContext) {
+            navigator.clipboard.writeText(url)
+                .then(triggerSuccess)
+                .catch(() => self.fallbackCopy(url, triggerSuccess));
+        } else {
+            self.fallbackCopy(url, triggerSuccess);
+        }
+    },
+    fallbackCopy(text, onSuccess) {
+        try {
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.setAttribute('readonly', '');
+            el.style.position = 'fixed';
+            el.style.left = '-9999px';
+            document.body.appendChild(el);
+            el.select();
+            const successful = document.execCommand('copy');
+            document.body.removeChild(el);
+            if (successful && onSuccess) {
+                onSuccess();
+            } else {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: 'Tautan survei: ' + text, type: 'info' }
+                }));
+            }
+        } catch (err) {
+            window.dispatchEvent(new CustomEvent('toast', {
+                detail: { message: 'Gagal menyalin tautan survei', type: 'error' }
+            }));
+        }
     }
 }"
 @close-modal.window="detailModal = null">
@@ -149,9 +187,6 @@ new #[Layout('layouts.app')] class extends Component
             <div>
                 <h2 class="font-bold text-xl text-slate-900 tracking-tight flex items-center gap-2">
                     <span>Survei Perilaku (KAP) Civitas UAD</span>
-                    <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200 uppercase tracking-wider">
-                        SRS M11
-                    </span>
                 </h2>
                 <p class="text-xs text-slate-500 mt-0.5">
                     Analisis indeks Knowledge, Attitude, and Practice pemilahan sampah civitas akademika.
@@ -623,3 +658,4 @@ new #[Layout('layouts.app')] class extends Component
     </template>
 
 </div>
+

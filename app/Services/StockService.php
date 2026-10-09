@@ -12,12 +12,12 @@ class StockService
     /**
      * Get stock summary for a campus taking sales into account.
      * Stok Sampah Terpilah = Total Timbang - Total Terjual.
-     *
-     * @param int|null $campusId
+     * @param int|string|null $campusId
      * @return array
      */
-    public function getStockSummary(?int $campusId = null): array
+    public function getStockSummary(int|string|null $campusId = null): array
     {
+        $campusId = !empty($campusId) ? (int) $campusId : null;
         // 1. Agregasi total timbangan per waste_type
         $weighQuery = WeighingItem::query()
             ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
@@ -110,8 +110,9 @@ class StockService
     /**
      * Get available stock for a specific waste type and campus.
      */
-    public function getAvailableStock(int $wasteTypeId, ?int $campusId = null): float
+    public function getAvailableStock(int $wasteTypeId, int|string|null $campusId = null): float
     {
+        $campusId = !empty($campusId) ? (int) $campusId : null;
         $weighedQuery = WeighingItem::query()
             ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
             ->where('weighing_items.waste_type_id', $wasteTypeId);

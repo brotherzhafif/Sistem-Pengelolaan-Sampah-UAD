@@ -232,3 +232,4 @@ class KapSurveySeeder extends Seeder
         }
     }
 }
+

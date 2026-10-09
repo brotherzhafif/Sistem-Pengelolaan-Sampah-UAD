@@ -38,5 +38,8 @@
                 </main>
             </div>
         </div>
+
+        <!-- Global Floating Toast / Snackbar (Bottom Right) -->
+        <x-toast-notification />
     </body>
 </html>
