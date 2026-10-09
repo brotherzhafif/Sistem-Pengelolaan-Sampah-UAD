@@ -17,7 +17,7 @@ opener = urllib.request.build_opener(
     urllib.request.HTTPSHandler(context=ctx)
 )
 
-print(f"Connecting to {BASE_URL} for Modul M8 (Reports & Export) testing...")
+print(f"Connecting to {BASE_URL} for Modul M8 (Reports & Export - Prototype UI Alignment) testing...")
 
 # 1. Login as Super Admin
 login_req = urllib.request.Request(f"{BASE_URL}/login", headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
@@ -59,13 +59,14 @@ print("[1] Super Admin authenticated successfully.")
 reports_req = urllib.request.Request(f"{BASE_URL}/reports", headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
 reports_page = opener.open(reports_req).read().decode('utf-8')
 
-assert "Laporan & Ekspor Data PS2" in reports_page, "Header page title missing!"
-assert "Penimbangan Masuk" in reports_page, "Tab Penimbangan missing!"
-assert "Penjualan Sampah" in reports_page, "Tab Penjualan missing!"
-assert "Pengangkutan Residu" in reports_page, "Tab Pengangkutan missing!"
-assert "Buku Kas & Keuangan" in reports_page, "Tab Keuangan missing!"
-assert "Survei Perilaku (KAP)" in reports_page, "Tab KAP missing!"
-print("[2] /reports page loaded successfully with 200 OK.")
+assert "Laporan & Ekspor" in reports_page, "Header page title 'Laporan & Ekspor' missing!"
+assert "Penimbangan" in reports_page, "Tab Penimbangan missing!"
+assert "Penjualan" in reports_page, "Tab Penjualan missing!"
+assert "Pengangkutan" in reports_page, "Tab Pengangkutan missing!"
+assert "Keuangan" in reports_page, "Tab Keuangan missing!"
+assert "Persentase" in reports_page, "Tab Persentase missing!"
+assert "KAP" in reports_page, "Tab KAP missing!"
+print("[2] /reports page loaded successfully with 200 OK (All 6 tabs detected).")
 
 # Extract snapshot for pages.reports.index
 all_snaps = re.findall(r'wire:snapshot="([^"]+)"', reports_page)
@@ -108,8 +109,8 @@ def call_livewire(updates, calls):
     snapshot = json.loads(comp['snapshot'])
     return snapshot, comp.get('effects', {})
 
-# 3. Test Tab Switching
-tabs = ['sales', 'pickups', 'finance', 'kap', 'weighing']
+# 3. Test Tab Switching across all 6 tabs
+tabs = ['sales', 'pickups', 'finance', 'persen', 'kap', 'weighing']
 for t in tabs:
     print(f"[3] Switching to tab: {t}...")
     snapshot, effects = call_livewire(updates={}, calls=[{"path": "", "method": "setTab", "params": [t]}])
@@ -123,9 +124,9 @@ snapshot, effects = call_livewire(updates={}, calls=[{"path": "", "method": "app
 assert snapshot['data']['presetPeriod'] == 'all', "Preset not updated!"
 print("    Preset 'all' applied successfully.")
 
-# 5. Test PDF Export Endpoints
+# 5. Test PDF Export Endpoints for all 6 tabs
 print("[5] Testing PDF Export endpoints...")
-pdf_types = ['weighing', 'sales', 'pickups', 'finance', 'kap']
+pdf_types = ['weighing', 'sales', 'pickups', 'finance', 'persen', 'kap']
 for ptype in pdf_types:
     pdf_url = f"{BASE_URL}/reports/export/pdf?type={ptype}"
     pdf_req = urllib.request.Request(pdf_url, headers={'User-Agent': 'Mozilla/5.0'})
@@ -137,9 +138,9 @@ for ptype in pdf_types:
     assert pdf_bytes.startswith(b'%PDF-'), f"Invalid PDF header bytes for {ptype}!"
     print(f"    PDF export for '{ptype}' verified (%PDF- valid, Content-Type: {content_type}).")
 
-# 6. Test CSV / Excel Export Endpoints
+# 6. Test CSV / Excel Export Endpoints for all 6 tabs
 print("[6] Testing CSV / Excel Export endpoints...")
-for ctype in ['weighing', 'finance', 'sales']:
+for ctype in ['weighing', 'finance', 'sales', 'pickups', 'persen', 'kap']:
     csv_url = f"{BASE_URL}/reports/export/excel?type={ctype}"
     csv_req = urllib.request.Request(csv_url, headers={'User-Agent': 'Mozilla/5.0'})
     csv_res = opener.open(csv_req)
@@ -147,9 +148,7 @@ for ctype in ['weighing', 'finance', 'sales']:
     content_type = csv_res.headers.get('Content-Type', '')
     assert 'text/csv' in content_type, f"Invalid Content-Type for {ctype}: {content_type}"
     csv_bytes = csv_res.read(1024)
-    # Check UTF-8 BOM
     assert csv_bytes.startswith(b'\xef\xbb\xbf'), f"Missing UTF-8 BOM in CSV export for {ctype}!"
     print(f"    CSV export for '{ctype}' verified (UTF-8 BOM valid, Content-Type: {content_type}).")
 
-print("\n[SUCCESS] ALL MODUL M8 (REPORTS & DATA EXPORT) WORKFLOW TESTS PASSED 100% GREEN!")
-
+print("\n[SUCCESS] ALL MODUL M8 (REPORTS & DATA EXPORT) WORKFLOW TESTS PASSED 100% GREEN (MATCHING PROTOTYPE)!")
