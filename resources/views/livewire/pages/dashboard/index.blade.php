@@ -913,7 +913,7 @@ new #[Layout('layouts.app')] class extends Component
                         </p>
                     </div>
                     <div class="relative z-10 flex flex-wrap items-center gap-2.5 shrink-0">
-                        <a href="{{ route('public.survey') }}" target="_blank" class="px-4 py-2.5 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-bold transition shadow-xs flex items-center gap-2">
+                        <a href="{{ route('kap.survey') }}" target="_blank" class="px-4 py-2.5 rounded-xl bg-white text-emerald-900 hover:bg-emerald-50 text-xs font-bold transition shadow-xs flex items-center gap-2">
                             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
                             <span>Buka Form Kuesioner</span>
                         </a>

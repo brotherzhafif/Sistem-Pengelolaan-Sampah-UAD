@@ -50,6 +50,7 @@ Route::get('reports/export/excel', [App\Http\Controllers\ReportExportController:
 
 Volt::route('survei-kap', 'pages.kap.survey')
     ->name('kap.survey');
+Route::redirect('survey', 'survei-kap')->name('public.survey');
 
 Volt::route('kap', 'pages.kap.index')
     ->middleware(['auth', 'verified'])
