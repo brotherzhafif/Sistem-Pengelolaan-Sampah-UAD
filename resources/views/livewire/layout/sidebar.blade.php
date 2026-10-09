@@ -54,7 +54,7 @@ new class extends Component
     }
 }; ?>
 
-<aside class="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 min-h-screen border-r border-slate-900 select-none">
+<aside class="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 h-screen sticky top-0 border-r border-slate-900 select-none z-30">
     <!-- Brand Header -->
     <div class="p-5 flex items-center gap-3 border-b border-white/5">
         <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
@@ -286,7 +286,7 @@ new class extends Component
     </div>
 
     <!-- User Profile & Logout Footer -->
-    <div class="p-3.5 border-t border-white/5 flex items-center justify-between">
+    <div class="p-3.5 border-t border-white/5 flex items-center justify-between shrink-0">
         <a href="{{ route('profile') }}" class="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition">
             <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
                 {{ substr(auth()->user()->name, 0, 1) }}

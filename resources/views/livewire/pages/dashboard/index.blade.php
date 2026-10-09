@@ -426,29 +426,32 @@ new #[Layout('layouts.app')] class extends Component
                     </div>
 
                     <!-- Visual Histogram Bars -->
-                    <div class="pt-6 pb-2">
-                        <div class="h-44 flex items-end justify-between gap-2 sm:gap-4 px-2">
+                    <div class="pt-9 pb-2">
+                        <div class="h-48 flex items-end justify-between gap-2 sm:gap-4 px-2">
                             @foreach($sevenDaysTrend as $trend)
                                 @php
                                     $heightPercent = $maxTrendWeight > 0 ? max(6, round(($trend['weight_kg'] / $maxTrendWeight) * 100)) : 6;
                                     $isToday = $trend['date'] === Carbon::today()->format('Y-m-d');
                                 @endphp
-                                <div class="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                                    <!-- Tooltip hover popup detail nominal -->
-                                    <div class="opacity-0 group-hover:opacity-100 transition-all duration-150 transform group-hover:-translate-y-1 text-center px-2.5 py-1.5 rounded-xl bg-slate-900/95 text-white whitespace-nowrap shadow-xl pointer-events-none mb-1.5 border border-slate-700/80 relative z-30">
-                                        <div class="text-[9px] text-slate-300 font-medium">{{ $trend['day_name'] ?? $trend['short_day'] }}, {{ Carbon::parse($trend['date'])->translatedFormat('d M Y') }}</div>
-                                        <div class="text-[11px] font-mono font-bold text-emerald-400">{{ number_format($trend['weight_kg'], 1, ',', '.') }} kg</div>
-                                        <!-- Bottom pointer arrow -->
-                                        <div class="absolute left-1/2 -bottom-1 -translate-x-1/2 w-1.5 h-1.5 bg-slate-900/95 rotate-45 border-r border-b border-slate-700/80"></div>
-                                    </div>
-                                    
-                                    <!-- Bar Column -->
-                                    <div class="w-full max-w-[42px] rounded-t-md transition-all duration-300 {{ $isToday ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-xs' : 'bg-slate-200 hover:bg-emerald-300' }}"
-                                         style="height: {{ $heightPercent }}%;">
+                                <div class="flex-1 flex flex-col items-center h-full min-w-0 group cursor-pointer">
+                                    <!-- Bar Plotting Track (Takes all space above label) -->
+                                    <div class="w-full flex-1 flex items-end justify-center relative">
+                                        <!-- Bar Column -->
+                                        <div class="w-full max-w-[36px] sm:max-w-[42px] rounded-t-md transition-all duration-300 relative {{ $isToday ? 'bg-gradient-to-t from-emerald-600 to-emerald-400 shadow-sm' : 'bg-slate-200 group-hover:bg-emerald-300' }}"
+                                             style="height: {{ $heightPercent }}%;">
+                                            
+                                            <!-- Tooltip hover popup detail nominal (Pinned directly above the bar) -->
+                                            <div class="opacity-0 group-hover:opacity-100 transition-all duration-150 transform group-hover:-translate-y-1 text-center px-2.5 py-1.5 rounded-xl bg-slate-900/95 text-white whitespace-nowrap shadow-xl pointer-events-none mb-2 border border-slate-700/80 absolute bottom-full left-1/2 -translate-x-1/2 z-30">
+                                                <div class="text-[9px] text-slate-300 font-medium">{{ $trend['day_name'] ?? $trend['short_day'] }}, {{ Carbon::parse($trend['date'])->translatedFormat('d M Y') }}</div>
+                                                <div class="text-[11px] font-mono font-bold text-emerald-400">{{ number_format($trend['weight_kg'], 1, ',', '.') }} kg</div>
+                                                <!-- Bottom pointer arrow -->
+                                                <div class="absolute left-1/2 -bottom-1 -translate-x-1/2 w-1.5 h-1.5 bg-slate-900/95 rotate-45 border-r border-b border-slate-700/80"></div>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <!-- Label Tanggal & Hari -->
-                                    <div class="text-center mt-1">
+                                    <!-- Label Tanggal & Hari (Fixed height at bottom) -->
+                                    <div class="shrink-0 text-center mt-2 pt-1.5 border-t border-slate-100 w-full">
                                         <span class="block text-[11px] font-bold {{ $isToday ? 'text-emerald-700' : 'text-slate-600' }}">
                                             {{ $trend['short_day'] }}
                                         </span>

@@ -16,13 +16,13 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
     </head>
-    <body class="font-sans antialiased bg-[#f5f7fa] text-slate-900">
-        <div class="flex min-h-screen">
+    <body class="font-sans antialiased bg-[#f5f7fa] text-slate-900 h-screen overflow-hidden">
+        <div class="flex h-screen overflow-hidden">
             <!-- Left Sidebar Navigation -->
             <livewire:layout.sidebar />
 
             <!-- Main Content Area -->
-            <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+            <div class="flex-1 flex flex-col min-w-0 h-screen overflow-y-auto">
                 <!-- Page Top Header (If Provided) -->
                 @if (isset($header))
                     <header class="bg-white border-b border-slate-200 shrink-0 sticky top-0 z-20">
