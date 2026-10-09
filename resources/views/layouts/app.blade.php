@@ -26,7 +26,7 @@
                 <!-- Page Top Header (If Provided) -->
                 @if (isset($header))
                     <header class="bg-white border-b border-slate-200 shrink-0 sticky top-0 z-20">
-                        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
+                        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 pr-16 sm:pr-20">
                             {{ $header }}
                         </div>
                     </header>
@@ -38,6 +38,9 @@
                 </main>
             </div>
         </div>
+
+        <!-- Global Floating Notification Bell (Top Right Across All Pages - SRS M10) -->
+        <livewire:layout.notification-bell />
 
         <!-- Global Floating Toast / Snackbar (Bottom Right) -->
         <x-toast-notification />
