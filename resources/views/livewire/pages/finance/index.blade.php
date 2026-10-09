@@ -197,7 +197,7 @@ class="space-y-6">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
                 <h2 class="font-bold text-xl text-slate-900 tracking-tight">Buku Kas & Buku Besar Keuangan</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Sistem pembukuan ganda mutasi kas TPS & neraca saldo harian kampus (SRS M6)</p>
+                <p class="text-xs text-slate-500 mt-0.5">Sistem pembukuan ganda mutasi kas TPS & neraca saldo harian kampus.</p>
             </div>
         </div>
     </x-slot>

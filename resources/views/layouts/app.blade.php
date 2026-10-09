@@ -39,7 +39,7 @@
             </div>
         </div>
 
-        <!-- Global Floating Notification Bell (Top Right Across All Pages - SRS M10) -->
+        <!-- Global Floating Notification Bell -->
         <livewire:layout.notification-bell />
 
         <!-- Global Floating Toast / Snackbar (Bottom Right) -->

@@ -186,7 +186,7 @@ new class extends Component
             </div>
         </div>
 
-        <!-- Section: KEUANGAN (SRS v2 Buku Kas & Buku Besar) -->
+        <!-- Section: KEUANGAN -->
         <div>
             <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Keuangan
@@ -230,7 +230,7 @@ new class extends Component
                     <span>Survei KAP</span>
                 </a>
 
-                <!-- Laporan & Ekspor Data (Modul M8) -->
+                <!-- Laporan & Ekspor Data -->
                 <a href="{{ route('reports') }}" 
                    class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ request()->routeIs('reports') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
                    title="Laporan & Ekspor Data">
@@ -271,16 +271,15 @@ new class extends Component
                 @endif
 
                 <!-- Notifikasi -->
-                <a href="{{ route('dashboard') }}" 
-                   class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
+                <a href="{{ route('notifications') }}" 
+                   class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition {{ request()->routeIs('notifications') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
                    title="Notifikasi & Alerts">
                     <div class="flex items-center gap-2.5">
-                        <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('notifications') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                         </svg>
                         <span>Notifikasi</span>
                     </div>
-                    <span class="bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">3</span>
                 </a>
             </div>
         </div>

@@ -1,0 +1,212 @@
+==============================
+><span class="icon">🚛</span>Pengangkutan</a></li>
+  </ul>
+  <div class="side-section">Keuangan</div>
+  <ul class="side-nav">
+    <li><a onclick="nav('biaya')"><span class="icon">🧾</span>Pengeluaran</a></li>
+    <li><a onclick="nav('saldo')"><span class="icon">💳</span>Saldo</a></li>
+  </ul>
+  <div class="side-section">Analitik</div>
+  <ul class="sid
+==============================
+utan</a></li>
+  </ul>
+  <div class="side-section">Keuangan</div>
+  <ul class="side-nav">
+    <li><a onclick="nav('biaya')"><span class="icon">🧾</span>Pengeluaran</a></li>
+    <li><a onclick="nav('saldo')"><span class="icon">💳</span>Saldo</a></li>
+  </ul>
+  <div class="side-section">Analitik</div>
+  <ul class="side-nav">
+    <li><a onclick="nav('kap
+==============================
+50" oninput="ccc()"><div class="form-hint">Default dari master vendor</div></div>
+      </div>
+      <div class="summary-bar summary-bar--cost"><span>Biaya angkut</span><span id="cc" style="font-family:var(--mono)">Rp 0</span></div>
+      <div class="form-group"><label class="form-label">Keterangan</label><input class="form-input" placeholder="Opsi
+==============================
+tn--full" onclick="toast('Pengangkutan tersimpan')">Simpan pengangkutan</button>
+    </div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENGELUARAN ═══ -->
+  <div class="view" id="v-biaya">
+    <div class="page-header"><h2>Pengeluaran Operasional</h2><p>Catat biaya selain angkut: upah, makan, alat, dll</p></div>
+    <div class="card">
+==============================
+an')">Simpan pengangkutan</button>
+    </div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENGELUARAN ═══ -->
+  <div class="view" id="v-biaya">
+    <div class="page-header"><h2>Pengeluaran Operasional</h2><p>Catat biaya selain angkut: upah, makan, alat, dll</p></div>
+    <div class="card"><div class="card-body">
+      <div class="form
+==============================
+div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENGELUARAN ═══ -->
+  <div class="view" id="v-biaya">
+    <div class="page-header"><h2>Pengeluaran Operasional</h2><p>Catat biaya selain angkut: upah, makan, alat, dll</p></div>
+    <div class="card"><div class="card-body">
+      <div class="form-grid" style="margin-bottom:14px">
+      
+==============================
+   <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ PENGELUARAN ═══ -->
+  <div class="view" id="v-biaya">
+    <div class="page-header"><h2>Pengeluaran Operasional</h2><p>Catat biaya selain angkut: upah, makan, alat, dll</p></div>
+    <div class="card"><div class="card-body">
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class
+==============================
+div>
+  </div>
+
+  <!-- ═══ PENGELUARAN ═══ -->
+  <div class="view" id="v-biaya">
+    <div class="page-header"><h2>Pengeluaran Operasional</h2><p>Catat biaya selain angkut: upah, makan, alat, dll</p></div>
+    <div class="card"><div class="card-body">
+      <div class="form-grid" style="margin-bottom:14px">
+        <div class="form-group" style="marg
+==============================
+></select></div>
+      </div>
+      <div class="form-group"><label class="form-label">Keterangan</label><input class="form-input" placeholder="Detail pengeluaran"></div>
+      <div class="form-group"><label class="form-label">Nominal (Rp)</label><input class="form-input" type="number" placeholder="150000"></div>
+      <button class="btn btn--primar
+==============================
+inal (Rp)</label><input class="form-input" type="number" placeholder="150000"></div>
+      <button class="btn btn--primary btn--full" onclick="toast('Pengeluaran tersimpan')">Simpan pengeluaran</button>
+    </div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ SALDO ═══ -->
+  <div class="view" id="v-saldo">
+    <div class="page-header"><
+==============================
+orm-input" type="number" placeholder="150000"></div>
+      <button class="btn btn--primary btn--full" onclick="toast('Pengeluaran tersimpan')">Simpan pengeluaran</button>
+    </div></div>
+    <div class="spacer"></div>
+  </div>
+
+  <!-- ═══ SALDO ═══ -->
+  <div class="view" id="v-saldo">
+    <div class="page-header"><h2>Saldo Kampus 4</h2><p>Neraca 
+==============================
+-size:18px">52.538.900</div><div class="metric-sub">dari penjualan</div></div>
+      <div class="metric" data-color="coral"><div class="metric-label">Pengeluaran</div><div class="metric-value" style="font-size:18px">48.219.536</div><div class="metric-sub">angkut + operasional</div></div>
+      <div class="metric" data-color="sage" style="border:2px
+==============================
+="coral"><div class="metric-label">Pengeluaran</div><div class="metric-value" style="font-size:18px">48.219.536</div><div class="metric-sub">angkut + operasional</div></div>
+      <div class="metric" data-color="sage" style="border:2px solid var(--sage)"><div class="metric-label" style="color:var(--sage);font-weight:700">Saldo</div><div class="metr
+==============================
+metric-value">2.870</div><div class="metric-sub">kg residu</div></div>
+        <div class="metric" data-color="coral"><div class="metric-label">Total Biaya</div><div class="metric-value" style="font-size:18px">445.500</div><div class="metric-sub">rupiah</div></div>
+        <div class="metric" data-color="sky"><div class="metric-label">Frekuensi</di
+==============================
+ss="metric-value">7</div><div class="metric-sub">pengangkutan</div></div>
+        <div class="metric" data-color="plum"><div class="metric-label">Avg Biaya</div><div class="metric-value">155</div><div class="metric-sub">Rp/kg</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Riwayat Pengangkutan</h3></div>
+      <div class
+==============================
+ta-table">
+        <thead><tr><th>Tanggal</th><th>Vendor</th><th class="right">Volume (kg)</th><th class="right">Tarif/Kg</th><th class="right">Total Biaya</th><th>Oleh</th></tr></thead>
+        <tbody>
+          <tr><td>18 Sep</td><td class="bold">Pasti Angkut</td><td class="right mono">350</td><td class="right mono">Rp 150</td><td class="right mo
+==============================
+      <thead><tr><th>Vendor</th><th class="right">Frekuensi</th><th class="right">Total Kg</th><th class="right">Tarif/Kg</th><th class="right">Total Biaya</th><th class="right">% Biaya</th></tr></thead>
+        <tbody>
+          <tr><td class="bold">Pasti Angkut</td><td class="right mono">5</td><td class="right mono">1.980</td><td class="right mon
+==============================
+h><th class="right">Frekuensi</th><th class="right">Total Kg</th><th class="right">Tarif/Kg</th><th class="right">Total Biaya</th><th class="right">% Biaya</th></tr></thead>
+        <tbody>
+          <tr><td class="bold">Pasti Angkut</td><td class="right mono">5</td><td class="right mono">1.980</td><td class="right mono">Rp 150</td><td class="right
+==============================
+ze:18px">4.508.000</div><div class="metric-sub">penjualan sampah</div></div>
+        <div class="metric" data-color="coral"><div class="metric-label">Pengeluaran</div><div class="metric-value" style="font-size:18px">3.725.500</div><div class="metric-sub">angkut + operasional</div></div>
+        <div class="metric" data-color="sage" style="border:2p
+==============================
+r="coral"><div class="metric-label">Pengeluaran</div><div class="metric-value" style="font-size:18px">3.725.500</div><div class="metric-sub">angkut + operasional</div></div>
+        <div class="metric" data-color="sage" style="border:2px solid var(--sage)"><div class="metric-label" style="color:var(--sage);font-weight:700">Surplus</div><div class="
+==============================
+lor:var(--sage)">782.500</div><div class="metric-sub">bulan ini</div></div>
+      </div>
+      <div class="card"><div class="card-head"><h3>Komposisi Pengeluaran</h3></div><div class="card-body">
+        <svg viewBox="0 0 480 140" class="chart-svg" style="height:140px">
+          <g font-size="9" fill="var(--text-2)" text-anchor="end" font-family="
+==============================
+" style="height:140px">
+          <g font-size="9" fill="var(--text-2)" text-anchor="end" font-family="var(--font)">
+            <text x="106" y="21">Biaya Angkut</text><text x="106" y="46">Upah Pemilahan</text><text x="106" y="71">Makan & Minum</text><text x="106" y="96">Alat & Material</text><text x="106" y="121">Lainnya</text>
+          </g>
+   
+==============================
+ab('masterTabs','masterPanels','mt-kampus',this)">Kampus</button>
+      <button class="tab-btn" onclick="switchTab('masterTabs','masterPanels','mt-katbiaya',this)">Kat. Biaya</button>
+    </div>
+
+    <div id="masterPanels">
+      <!-- VENDOR -->
+      <div class="tab-panel active" id="mt-vendor">
+        <div class="card"><div class="card-head"><h3
+==============================
+sterPanels','mt-kampus',this)">Kampus</button>
+      <button class="tab-btn" onclick="switchTab('masterTabs','masterPanels','mt-katbiaya',this)">Kat. Biaya</button>
+    </div>
+
+    <div id="masterPanels">
+      <!-- VENDOR -->
+      <div class="tab-panel active" id="mt-vendor">
+        <div class="card"><div class="card-head"><h3>Vendor Pengangkut<
+==============================
+ mono">2</td><td><span class="tag tag--sage">Aktif</span></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- KATEGORI BIAYA -->
+      <div class="tab-panel" id="mt-katbiaya">
+        <div class="card"><div class="card-head"><h3>Kategori Pengeluaran</h3><button class="btn btn--primary btn--sm" onclick="toast('Form tam
+==============================
+f</span></td></tr>
+          </tbody>
+        </table></div></div>
+      </div>
+
+      <!-- KATEGORI BIAYA -->
+      <div class="tab-panel" id="mt-katbiaya">
+        <div class="card"><div class="card-head"><h3>Kategori Pengeluaran</h3><button class="btn btn--primary btn--sm" onclick="toast('Form tambah kategori')">+ Tambah kategori</button></div>
+
+==============================
+   </div>
+
+      <!-- KATEGORI BIAYA -->
+      <div class="tab-panel" id="mt-katbiaya">
+        <div class="card"><div class="card-head"><h3>Kategori Pengeluaran</h3><button class="btn btn--primary btn--sm" onclick="toast('Form tambah kategori')">+ Tambah kategori</button></div>
+        <div class="card-body--flush" style="overflow-x:auto"><table c
+==============================
+-flush" style="overflow-x:auto">
+        <table class="perm-table">
+          <thead><tr><th>Role</th><th>Timbang</th><th>Jual</th><th>Angkut</th><th>Biaya</th><th>Saldo</th><th>Master</th><th>Users</th></tr></thead>
+          <tbody>
+            <tr><td><span class="tag tag--coral">Super Admin</span></td><td class="perm-check">✓</td><td class="per
+==============================
+shadow:var(--shadow-lg)"></div>
+
+<script>
+var bnm = {dash:0,timbang:1,jual:2,angkut:3,saldo:4,kap:5};
+var sideMap = {dash:0,timbang:1,jual:2,angkut:3,biaya:4,saldo:5,kap:6,laporan:7,master:8,user:9};
+function nav(id) {
+  document.querySelectorAll('.view').forEach(function(v){v.classList.remove('active')});
+  var el = document.getElementById('v-'+id

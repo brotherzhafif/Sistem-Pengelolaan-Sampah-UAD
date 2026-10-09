@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="csrf-token" content="ew4jTCDntoSENd2ctUtPUNf48Gc0fKViwyv6yAnu">
+
+        <title>PS2 UAD</title>
+        <link rel="icon" type="image/svg+xml" href="https://ps2.brotherzhafif.my.id/favicon.svg">
+
+        <!-- Fonts: DM Sans & JetBrains Mono (Reference Standard) -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&family=JetBrains+Mono:wght@500;600&display=swap" rel="stylesheet">
+
+        <!-- Scripts -->
+        <link rel="preload" as="style" href="https://ps2.brotherzhafif.my.id/build/assets/app-BEDYCNhy.css" /><link rel="modulepreload" as="script" href="https://ps2.brotherzhafif.my.id/build/assets/app-CJDsdXZt.js" /><link rel="stylesheet" href="https://ps2.brotherzhafif.my.id/build/assets/app-BEDYCNhy.css" data-navigate-track="reload" /><script type="9e0a656ad0e4a333f31b2ec4-module" src="https://ps2.brotherzhafif.my.id/build/assets/app-CJDsdXZt.js" data-navigate-track="reload"></script>    <!-- Livewire Styles --><style >[wire\:loading][wire\:loading], [wire\:loading\.delay][wire\:loading\.delay], [wire\:loading\.inline-block][wire\:loading\.inline-block], [wire\:loading\.inline][wire\:loading\.inline], [wire\:loading\.block][wire\:loading\.block], [wire\:loading\.flex][wire\:loading\.flex], [wire\:loading\.table][wire\:loading\.table], [wire\:loading\.grid][wire\:loading\.grid], [wire\:loading\.inline-flex][wire\:loading\.inline-flex] {display: none;}[wire\:loading\.delay\.none][wire\:loading\.delay\.none], [wire\:loading\.delay\.shortest][wire\:loading\.delay\.shortest], [wire\:loading\.delay\.shorter][wire\:loading\.delay\.shorter], [wire\:loading\.delay\.short][wire\:loading\.delay\.short], [wire\:loading\.delay\.default][wire\:loading\.delay\.default], [wire\:loading\.delay\.long][wire\:loading\.delay\.long], [wire\:loading\.delay\.longer][wire\:loading\.delay\.longer], [wire\:loading\.delay\.longest][wire\:loading\.delay\.longest] {display: none;}[wire\:offline][wire\:offline] {display: none;}[wire\:dirty]:not(textarea):not(input):not(select) {display: none;}:root {--livewire-progress-bar-color: #2299dd;}[x-cloak="x-cloak"],[x-cloak=""] {display: none !important;}[wire\:cloak="wire:cloak"],[wire\:cloak=""] {display: none !important;}dialog#livewire-error::backdrop {background-color: rgba(0, 0, 0, .6);}</style>
+</head>
+    <body class="font-sans antialiased bg-[#f5f7fa] text-slate-900">
+        <div class="flex min-h-screen">
+            <!-- Left Sidebar Navigation -->
+            <aside wire:snapshot="{&quot;data&quot;:{&quot;activeCampusId&quot;:null},&quot;memo&quot;:{&quot;id&quot;:&quot;e2u76YMIP1p9huBEy7fu&quot;,&quot;name&quot;:&quot;layout.sidebar&quot;,&quot;path&quot;:&quot;kap&quot;,&quot;method&quot;:&quot;GET&quot;,&quot;release&quot;:&quot;a-a-a&quot;,&quot;children&quot;:[],&quot;scripts&quot;:[],&quot;assets&quot;:[],&quot;errors&quot;:[],&quot;locale&quot;:&quot;id&quot;},&quot;checksum&quot;:&quot;4d2d2c7dd76783f2931d69469e075192647db97264912ab3dc487cc846266bab&quot;}" wire:effects="[]" wire:id="e2u76YMIP1p9huBEy7fu" class="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 min-h-screen border-r border-slate-900 select-none">
+    <!-- Brand Header -->
+    <div class="p-5 flex items-center gap-3 border-b border-white/5">
+        <div class="w-9 h-9 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            </svg>
+        </div>
+        <div class="leading-tight">
+            <span class="text-base font-bold tracking-tight text-white">PS2 <span class="text-emerald-400">UAD</span></span>
+            <span class="block text-[10px] text-slate-500 font-medium">Zero Waste Campus</span>
+        </div>
+    </div>
+
+    <!-- Active Campus Selector (Interactive Dropdown for Super Admin) -->
+    <div class="mx-3.5 my-3 relative" x-data="{ open: false }">
+        <!--[if BLOCK]><![endif]-->            <!-- Super Admin Dropdown Trigger -->
+            <button @click="open = !open" 
+                    type="button"
+                    class="w-full p-2.5 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 flex items-center justify-between text-xs font-semibold text-emerald-400 transition cursor-pointer text-left">
+                <div class="flex items-center gap-2 truncate min-w-0">
+                    <svg class="w-3.5 h-3.5 text-rose-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="truncate font-semibold text-slate-200">
+                        Semua Kampus (Pusat)
+                    </span>
+                </div>
+                <svg class="w-3 h-3 text-slate-400 shrink-0 transition-transform duration-200" :class="{ 'rotate-180': open }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                </svg>
+            </button>
+
+            <!-- Dropdown Menu -->
+            <div x-show="open" 
+                 x-cloak
+                 style="display: none;"
+                 @click.outside="open = false" 
+                 x-transition:enter="transition ease-out duration-100"
+                 x-transition:enter-start="transform opacity-0 scale-95"
+                 x-transition:enter-end="transform opacity-100 scale-100"
+                 x-transition:leave="transition ease-in duration-75"
+                 x-transition:leave-start="transform opacity-100 scale-100"
+                 x-transition:leave-end="transform opacity-0 scale-95"
+                 class="absolute left-0 right-0 mt-1 py-1 bg-slate-900 border border-slate-800 rounded-xl shadow-xl z-50 overflow-hidden text-xs">
+                
+                <button wire:click="switchCampus(null)" 
+                        @click="open = false"
+                        type="button"
+                        class="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-white/5 transition text-emerald-400 font-bold bg-white/5">
+                    <span>Semua Kampus (Pusat)</span>
+                    <!--[if BLOCK]><![endif]-->                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    <!--[if ENDBLOCK]><![endif]-->                </button>
+
+                <div class="border-t border-white/5 my-1"></div>
+
+                <!--[if BLOCK]><![endif]-->                    <button wire:click="switchCampus(1)" 
+                            @click="open = false"
+                            type="button"
+                            class="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-white/5 transition text-slate-300">
+                        <span class="truncate">Kampus 1 UAD</span>
+                        <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                    </button>
+                                    <button wire:click="switchCampus(2)" 
+                            @click="open = false"
+                            type="button"
+                            class="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-white/5 transition text-slate-300">
+                        <span class="truncate">Kampus 2 UAD</span>
+                        <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                    </button>
+                                    <button wire:click="switchCampus(3)" 
+                            @click="open = false"
+                            type="button"
+                            class="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-white/5 transition text-slate-300">
+                        <span class="truncate">Kampus 3 UAD</span>
+                        <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                    </button>
+                                    <button wire:click="switchCampus(4)" 
+                            @click="open = false"
+                            type="button"
+                            class="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-white/5 transition text-slate-300">
+                        <span class="truncate">Kampus 4 UAD (Utama)</span>
+                        <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                    </button>
+                                    <button wire:click="switchCampus(5)" 
+                            @click="open = false"
+                            type="button"
+                            class="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-white/5 transition text-slate-300">
+                        <span class="truncate">Kampus 5 UAD</span>
+                        <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                    </button>
+                                    <button wire:click="switchCampus(6)" 
+                            @click="open = false"
+                            type="button"
+                            class="w-full px-3 py-2 text-left flex items-center justify-between hover:bg-white/5 transition text-slate-300">
+                        <span class="truncate">Kampus 6 UAD</span>
+                        <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                    </button>
+                <!--[if ENDBLOCK]><![endif]-->            </div>
+        <!--[if ENDBLOCK]><![endif]-->    </div>
+
+    <!-- Navigation Menu Items (Clean SVG Icons ala Dribbble) -->
+    <div class="flex-1 px-3 py-2 space-y-4 overflow-y-auto">
+        <!-- Section: PENCATATAN -->
+        <div>
+            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Pencatatan
+            </div>
+            <div class="space-y-0.5">
+                <!-- Dashboard -->
+                <a href="https://ps2.brotherzhafif.my.id/dashboard" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5">
+                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                    </svg>
+                    <span>Dashboard</span>
+                </a>
+
+                <!-- Penimbangan -->
+                <a href="https://ps2.brotherzhafif.my.id/weighing" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5">
+                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                    </svg>
+                    <span>Penimbangan</span>
+                </a>
+
+                <!-- Penjualan -->
+                <a href="https://ps2.brotherzhafif.my.id/sales" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5">
+                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <span>Penjualan</span>
+                </a>
+
+                <!-- Pengangkutan -->
+                <a href="https://ps2.brotherzhafif.my.id/pickups" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5" title="Pengangkutan Residu">
+                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                    </svg>
+                    <span>Pengangkutan</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Section: KEUANGAN (SRS v2 Buku Kas & Buku Besar) -->
+        <div>
+            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Keuangan
+            </div>
+            <div class="space-y-0.5">
+                <!-- Pengeluaran -->
+                <a href="https://ps2.brotherzhafif.my.id/expenses" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5" title="Pengeluaran Operasional TPS">
+                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Pengeluaran</span>
+                </a>
+
+                <!-- Buku Kas & Buku Besar -->
+                <a href="https://ps2.brotherzhafif.my.id/finance" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5" title="Buku Kas & Buku Besar">
+                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                    </svg>
+                    <span>Buku Kas</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Section: ANALITIK -->
+        <div>
+            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Analitik
+            </div>
+            <div class="space-y-0.5">
+                <!-- Survei KAP -->
+                <a href="https://ps2.brotherzhafif.my.id/kap" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition bg-white/10 text-emerald-400 font-semibold" title="Survei Perilaku (KAP)">
+                    <svg class="w-4 h-4 shrink-0 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Survei KAP</span>
+                </a>
+
+                <!-- Laporan & Ekspor Data (Modul M8) -->
+                <a href="https://ps2.brotherzhafif.my.id/reports" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5" title="Laporan & Ekspor Data">
+                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                    </svg>
+                    <span>Laporan</span>
+                </a>
+            </div>
+        </div>
+
+        <!-- Section: SISTEM -->
+        <div>
+            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                Sistem
+            </div>
+            <div class="space-y-0.5">
+                <!-- Master Data -->
+                <a href="https://ps2.brotherzhafif.my.id/master-data" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5">
+                    <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span>Master Data</span>
+                </a>
+
+                <!-- Pengguna -->
+                <!--[if BLOCK]><![endif]-->                    <a href="https://ps2.brotherzhafif.my.id/users" class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-300 hover:text-white hover:bg-white/5" title="Manajemen Pengguna">
+                        <svg class="w-4 h-4 shrink-0 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span>Pengguna</span>
+                    </a>
+                <!--[if ENDBLOCK]><![endif]-->
+                <!-- Notifikasi -->
+                <a href="https://ps2.brotherzhafif.my.id/dashboard" class="flex items-center justify-between px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed" title="Notifikasi & Alerts">
+                    <div class="flex items-center gap-2.5">
+                        <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                        <span>Notifikasi</span>
+                    </div>
+                    <span class="bg-rose-500 text-white text-[9px] font-bold px-1.5 py-0.2 rounded-full">3</span>
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <!-- User Profile & Logout Footer -->
+    <div class="p-3.5 border-t border-white/5 flex items-center justify-between">
+        <a href="https://ps2.brotherzhafif.my.id/profile" class="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition">
+            <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
+                S
+            </div>
+            <div class="truncate text-left leading-tight">
+                <span class="block text-xs font-semibold text-slate-200 truncate">Super Administrator UAD</span>
+                <span class="block text-[10px] text-slate-500 truncate">super_admin</span>
+            </div>
+        </a>
+        <button wire:click="logout" title="Keluar" class="p-1.5 text-slate-400 hover:text-rose-400 hover:bg-white/5 rounded-lg transition">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+            </svg>
+        </button>
+    </div>
+</aside>
+            <!-- Main Content Area -->
+            <div class="flex-1 flex flex-col min-w-0 overflow-y-auto">
+                <!-- Page Top Header (If Provided) -->
+                                    <header class="bg-white border-b border-slate-200 shrink-0 sticky top-0 z-20">
+                        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8 pr-16 sm:pr-20">
+                            <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+                <h2 class="font-bold text-xl text-slate-900 tracking-tight flex items-center gap-2">
+                    <span>Survei Perilaku (KAP) Civitas UAD</span>
+                </h2>
+                <p class="text-xs text-slate-500 mt-0.5">
+                    Analisis indeks Knowledge, Attitude, and Practice pemilahan sampah civitas akademika.
+                </p>
+            </div>
+
+            <!-- Action Button: Copy Survey Link & Open Public Form -->
+            <div class="flex items-center gap-2">
+                <button type="button" 
+                        x-data="{ copied: false }"
+                        @click.stop="window.copyToClipboard ? window.copyToClipboard('http://ps2.brotherzhafif.my.id/survei-kap', 'Tautan survei KAP berhasil disalin ke clipboard!') : navigator.clipboard.writeText('http://ps2.brotherzhafif.my.id/survei-kap'); copied = true; setTimeout(() => copied = false, 2500);"
+                        class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                    </svg>
+                    <span x-text="copied ? 'Tautan Disalin!' : 'Salin Link Survei'">Salin Link Survei</span>
+                </button>
+
+                <a href="https://ps2.brotherzhafif.my.id/survei-kap" target="_blank" class="px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-2xs transition flex items-center gap-1.5">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                    </svg>
+                    <span>Buka Form Publik</span>
+                </a>
+            </div>
+        </div>
+                        </div>
+                    </header>
+                
+                <!-- Page Main Body -->
+                <main class="flex-1">
+                    <div wire:snapshot="{&quot;data&quot;:{&quot;selectedCampusId&quot;:null,&quot;filterRole&quot;:&quot;&quot;,&quot;filterCategory&quot;:&quot;&quot;,&quot;filterDateFrom&quot;:null,&quot;filterDateTo&quot;:null,&quot;viewSurveyId&quot;:null,&quot;paginators&quot;:[{&quot;page&quot;:1},{&quot;s&quot;:&quot;arr&quot;}]},&quot;memo&quot;:{&quot;id&quot;:&quot;ZtdzQrQL9uFCT0CrdgeU&quot;,&quot;name&quot;:&quot;pages.kap.index&quot;,&quot;path&quot;:&quot;kap&quot;,&quot;method&quot;:&quot;GET&quot;,&quot;release&quot;:&quot;a-a-a&quot;,&quot;children&quot;:[],&quot;scripts&quot;:[],&quot;assets&quot;:[],&quot;errors&quot;:[],&quot;locale&quot;:&quot;id&quot;},&quot;checksum&quot;:&quot;02799f20b8a885a82a926a35c5df14b227e31851376a8044acc6d92dc8266fe9&quot;}" wire:effects="{&quot;url&quot;:{&quot;paginators.page&quot;:{&quot;as&quot;:&quot;page&quot;,&quot;use&quot;:&quot;push&quot;,&quot;alwaysShow&quot;:false,&quot;except&quot;:null}}}" wire:id="ZtdzQrQL9uFCT0CrdgeU" x-data="{ 
+    detailModal: window.Livewire.find('ZtdzQrQL9uFCT0CrdgeU').entangle('viewSurveyId')}"
+@close-modal.window="detailModal = null">
+
+    <!-- Topbar Header -->
+     
+    <div class="py-6">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-6">
+
+            <!-- 1. KPI Cards Analitik KAP (5 Cards Clean Dribbble Style) -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3.5">
+                
+                <!-- Card 1: Total Responden -->
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Responden</span>
+                        <div class="w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 flex items-baseline gap-1">
+                        <span class="font-mono text-2xl font-bold text-slate-900">55</span>
+                        <span class="text-xs text-slate-500">orang</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1 truncate">Civitas mengisi kuesioner</p>
+                </div>
+
+                <!-- Card 2: Indeks KAP Kampus Keseluruhan -->
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-600"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Indeks KAP Kampus</span>
+                        <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 flex items-baseline gap-1">
+                        <span class="font-mono text-2xl font-bold text-emerald-700">81.2</span>
+                        <span class="text-xs text-slate-400 font-bold">/ 100</span>
+                    </div>
+                    <p class="text-[10px] text-emerald-600 font-medium mt-1 truncate">
+                        Kategori Sangat Baik
+                    </p>
+                </div>
+
+                <!-- Card 3: Skor Pengetahuan (Knowledge) -->
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Pengetahuan (K)</span>
+                        <div class="w-6 h-6 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 flex items-baseline gap-0.5">
+                        <span class="font-mono text-2xl font-bold text-slate-900">81.8</span>
+                        <span class="text-xs text-sky-600 font-bold">%</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1 truncate">Pemahaman pemilahan sampah</p>
+                </div>
+
+                <!-- Card 4: Skor Sikap (Attitude) -->
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-teal-500"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Sikap & Peduli (A)</span>
+                        <div class="w-6 h-6 rounded-md bg-teal-50 text-teal-600 flex items-center justify-center">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 flex items-baseline gap-0.5">
+                        <span class="font-mono text-2xl font-bold text-slate-900">83.8</span>
+                        <span class="text-xs text-teal-600 font-bold">%</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1 truncate">Kesadaran & kepedulian kampus</p>
+                </div>
+
+                <!-- Card 5: Skor Perilaku Nyata (Practice) -->
+                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden">
+                    <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+                    <div class="flex items-center justify-between">
+                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Perilaku Nyata (P)</span>
+                        <div class="w-6 h-6 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="mt-2.5 flex items-baseline gap-0.5">
+                        <span class="font-mono text-2xl font-bold text-slate-900">77.9</span>
+                        <span class="text-xs text-amber-600 font-bold">%</span>
+                    </div>
+                    <p class="text-[10px] text-slate-400 mt-1 truncate">Tindakan memilah & bawa tumbler</p>
+                </div>
+
+            </div>
+
+            <!-- 2. Visual Komparasi Dimensi & Distribusi Kategori -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+                
+                <!-- Kolom Kiri: Komparasi Gap Dimensi (Knowledge vs Attitude vs Practice) -->
+                <div class="lg:col-span-7 bg-white border border-slate-200 rounded-xl p-5 shadow-2xs">
+                    <div class="flex items-center justify-between mb-4">
+                        <div>
+                            <h3 class="font-bold text-sm text-slate-900">Perbandingan Dimensi KAP</h3>
+                            <p class="text-xs text-slate-500 mt-0.5">Identifikasi kesenjangan antara pengetahuan, sikap, dan tindakan nyata</p>
+                        </div>
+                        <span class="text-xs font-semibold px-2.5 py-1 rounded bg-slate-100 text-slate-700">Skala 0 - 100</span>
+                    </div>
+
+                    <div class="space-y-4 pt-1">
+                        <!-- Knowledge Bar -->
+                        <div>
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="font-semibold text-slate-700 flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-sky-500"></span>
+                                    Pengetahuan (Knowledge)
+                                </span>
+                                <span class="font-mono font-bold text-slate-900">81.8%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                <div class="bg-sky-500 h-full transition-all duration-500" style="width: 81.8%;"></div>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Pemahaman jenis sampah, bahaya plastik, fasilitas TPS3R & warna wadah.</span>
+                        </div>
+
+                        <!-- Attitude Bar -->
+                        <div>
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="font-semibold text-slate-700 flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-teal-500"></span>
+                                    Sikap & Kepedulian (Attitude)
+                                </span>
+                                <span class="font-mono font-bold text-slate-900">83.8%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                <div class="bg-teal-500 h-full transition-all duration-500" style="width: 83.8%;"></div>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Rasa tanggung jawab, kesediaan memilah, dan dukungan pembatasan kresek.</span>
+                        </div>
+
+                        <!-- Practice Bar -->
+                        <div>
+                            <div class="flex items-center justify-between text-xs mb-1">
+                                <span class="font-semibold text-slate-700 flex items-center gap-1.5">
+                                    <span class="w-2.5 h-2.5 rounded-full bg-amber-500"></span>
+                                    Perilaku Nyata (Practice)
+                                </span>
+                                <span class="font-mono font-bold text-slate-900">77.9%</span>
+                            </div>
+                            <div class="w-full bg-slate-100 h-3 rounded-full overflow-hidden">
+                                <div class="bg-amber-500 h-full transition-all duration-500" style="width: 77.9%;"></div>
+                            </div>
+                            <span class="text-[10px] text-slate-400">Kebiasaan memilah rutin, menghabiskan makanan, dan membawa tumbler mandiri.</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kolom Kanan: Distribusi Kategori Kesadaran -->
+                <div class="lg:col-span-5 bg-white border border-slate-200 rounded-xl p-5 shadow-2xs flex flex-col justify-between">
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900">Distribusi Kategori Kesadaran</h3>
+                        <p class="text-xs text-slate-500 mt-0.5">Proporsi tingkat kesadaran seluruh responden</p>
+
+                        <!-- Segmented Distribution Bar -->
+                        <div class="w-full h-4 rounded-full overflow-hidden bg-slate-100 flex mt-4 shadow-inner">
+                            <!--[if BLOCK]><![endif]-->                                <div style="width: 50.9%;" class="bg-emerald-500 transition-all duration-500" title="Sangat Baik: 50.9%"></div>
+                                <div style="width: 45.5%;" class="bg-amber-500 transition-all duration-500" title="Sedang: 45.5%"></div>
+                                <div style="width: 3.6%;" class="bg-rose-500 transition-all duration-500" title="Kurang: 3.6%"></div>
+                            <!--[if ENDBLOCK]><![endif]-->                        </div>
+
+                        <!-- Legend Cards -->
+                        <div class="space-y-2 mt-4 text-xs">
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-emerald-50/60 border border-emerald-100">
+                                <span class="text-emerald-800 font-semibold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+                                    Sangat Baik (Skor &ge; 80)
+                                </span>
+                                <div class="text-right">
+                                    <span class="font-mono font-bold text-slate-900">28</span>
+                                    <span class="text-[10px] text-slate-500">(50.9%)</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-amber-50/60 border border-amber-100">
+                                <span class="text-amber-800 font-semibold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-500"></span>
+                                    Cukup / Sedang (60 - 79.9)
+                                </span>
+                                <div class="text-right">
+                                    <span class="font-mono font-bold text-slate-900">25</span>
+                                    <span class="text-[10px] text-slate-500">(45.5%)</span>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center justify-between p-2 rounded-lg bg-rose-50/60 border border-rose-100">
+                                <span class="text-rose-800 font-semibold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-rose-500"></span>
+                                    Kurang (&lt; 60)
+                                </span>
+                                <div class="text-right">
+                                    <span class="font-mono font-bold text-slate-900">2</span>
+                                    <span class="text-[10px] text-slate-500">(3.6%)</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-slate-400 mt-3 pt-2 border-t border-slate-100">
+                        Target UAD Zero Waste: &gt; 80% civitas masuk kategori Sangat Baik.
+                    </p>
+                </div>
+
+            </div>
+
+            <!-- 3. Filter Bar & Container Tabel Responden -->
+            <div id="kap-table-container" class="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden">
+                
+                <!-- Filter Toolbar -->
+                <div class="p-4 border-b border-slate-100 bg-slate-50/50 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2.5">
+                        <!-- Filter Kampus -->
+                        <!--[if BLOCK]><![endif]-->                            <select wire:model.live="selectedCampusId" class="text-xs rounded-lg border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white">
+                                <option value="">Semua Kampus</option>
+                                <!--[if BLOCK]><![endif]-->                                    <option value="1">Kampus 1 UAD</option>
+                                                                    <option value="2">Kampus 2 UAD</option>
+                                                                    <option value="3">Kampus 3 UAD</option>
+                                                                    <option value="4">Kampus 4 UAD (Utama)</option>
+                                                                    <option value="5">Kampus 5 UAD</option>
+                                                                    <option value="6">Kampus 6 UAD</option>
+                                <!--[if ENDBLOCK]><![endif]-->                            </select>
+                        <!--[if ENDBLOCK]><![endif]-->
+                        <!-- Filter Role -->
+                        <select wire:model.live="filterRole" class="text-xs rounded-lg border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white">
+                            <option value="">Semua Status Responden</option>
+                            <option value="mahasiswa">Mahasiswa</option>
+                            <option value="dosen">Dosen</option>
+                            <option value="tendik">Tenaga Kependidikan</option>
+                        </select>
+
+                        <!-- Filter Kategori -->
+                        <select wire:model.live="filterCategory" class="text-xs rounded-lg border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white">
+                            <option value="">Semua Kategori</option>
+                            <option value="sangat_baik">Sangat Baik</option>
+                            <option value="sedang">Cukup / Sedang</option>
+                            <option value="kurang">Kurang</option>
+                        </select>
+                    </div>
+
+                    <!-- Filter Tanggal -->
+                    <div class="flex items-center gap-2">
+                        <input type="date" wire:model.live="filterDateFrom" class="text-xs rounded-lg border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white" placeholder="Dari">
+                        <span class="text-xs text-slate-400">s/d</span>
+                        <input type="date" wire:model.live="filterDateTo" class="text-xs rounded-lg border-slate-200 focus:border-emerald-500 focus:ring-emerald-500 bg-white" placeholder="Sampai">
+                    </div>
+                </div>
+
+                <!-- Table Content Wrapper with Smooth In-Place Loading Overlay -->
+                <div class="relative overflow-x-auto">
+                    <!-- Smooth Loading Overlay -->
+                    <div wire:loading.flex class="absolute inset-0 bg-white/70 backdrop-blur-2xs z-20 items-center justify-center">
+                        <div class="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 text-white text-xs font-semibold shadow-md">
+                            <svg class="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Memperbarui data survei...</span>
+                        </div>
+                    </div>
+
+                    <!-- Table -->
+                    <table class="w-full text-left text-xs table-fixed">
+                        <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
+                            <tr>
+                                <th class="py-3 px-3 w-[11%]">Tanggal</th>
+                                <th class="py-3 px-3 w-[20%]">Responden</th>
+                                <th class="py-3 px-3 w-[20%]">Kampus & Unit</th>
+                                <th class="py-3 px-2 text-center w-[9%]">Pengetahuan</th>
+                                <th class="py-3 px-2 text-center w-[9%]">Sikap</th>
+                                <th class="py-3 px-2 text-center w-[9%]">Perilaku</th>
+                                <th class="py-3 px-2 text-right w-[9%]">Skor KAP</th>
+                                <th class="py-3 px-2 text-center w-[9%]">Kategori</th>
+                                <th class="py-3 px-1 text-center w-[4%]">Aksi</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+                            <!--[if BLOCK]><![endif]-->                                <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                                        09/10/2026
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="Tri Wahyuni">
+                                            Tri Wahyuni
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                                                Tenaga Kependidikan
+                                            </span>
+                                            <!--[if BLOCK]><![endif]-->                                                <span class="truncate">&bull; 199208242018022001</span>
+                                            <!--[if ENDBLOCK]><![endif]-->                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="Kampus 2 UAD">Kampus 2 UAD</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="Unit/Biro lainnya">Unit/Biro lainnya</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
+                                        100%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
+                                        97%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
+                                        87%
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <span class="font-mono text-sm font-bold text-slate-900">94.4</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                            Sangat Baik (Tinggi)
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-1 text-center">
+                                        <button type="button" 
+                                                wire:click="viewSurvey(722)" 
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                title="Lihat Rincian Jawaban Responden">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                                            <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                                        09/10/2026
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="Anonim">
+                                            Anonim
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                                                Mahasiswa
+                                            </span>
+                                            <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="Kampus 4 UAD (Utama)">Kampus 4 UAD (Utama)</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="Fakultas Sastra, Budaya &amp; Komunikasi">Fakultas Sastra, Budaya &amp; Komunikasi</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
+                                        75%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
+                                        73%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
+                                        53%
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <span class="font-mono text-sm font-bold text-slate-900">67.2</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                            Cukup / Sedang
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-1 text-center">
+                                        <button type="button" 
+                                                wire:click="viewSurvey(721)" 
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                title="Lihat Rincian Jawaban Responden">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                                            <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                                        08/10/2026
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="Endang Susilowati">
+                                            Endang Susilowati
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                                                Mahasiswa
+                                            </span>
+                                            <!--[if BLOCK]><![endif]-->                                                <span class="truncate">&bull; 2100098241</span>
+                                            <!--[if ENDBLOCK]><![endif]-->                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="Kampus 6 UAD">Kampus 6 UAD</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="Fakultas Agama Islam">Fakultas Agama Islam</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
+                                        88%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
+                                        90%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
+                                        77%
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <span class="font-mono text-sm font-bold text-slate-900">84.7</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                            Sangat Baik (Tinggi)
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-1 text-center">
+                                        <button type="button" 
+                                                wire:click="viewSurvey(752)" 
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                title="Lihat Rincian Jawaban Responden">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                                            <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                                        08/10/2026
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="Zahra Aulia">
+                                            Zahra Aulia
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                                                Mahasiswa
+                                            </span>
+                                            <!--[if BLOCK]><![endif]-->                                                <span class="truncate">&bull; 2200005078</span>
+                                            <!--[if ENDBLOCK]><![endif]-->                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="Kampus 5 UAD">Kampus 5 UAD</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="Fakultas Keguruan &amp; Ilmu Pendidikan">Fakultas Keguruan &amp; Ilmu Pendidikan</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
+                                        88%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
+                                        83%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
+                                        73%
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <span class="font-mono text-sm font-bold text-slate-900">81.4</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                            Sangat Baik (Tinggi)
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-1 text-center">
+                                        <button type="button" 
+                                                wire:click="viewSurvey(720)" 
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                title="Lihat Rincian Jawaban Responden">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                                            <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                                        08/10/2026
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="Dr. Rahmat Hidayat, S.H., M.H.">
+                                            Dr. Rahmat Hidayat, S.H., M.H.
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                                                Dosen
+                                            </span>
+                                            <!--[if BLOCK]><![endif]-->                                                <span class="truncate">&bull; 197903102008011015</span>
+                                            <!--[if ENDBLOCK]><![endif]-->                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="Kampus 4 UAD (Utama)">Kampus 4 UAD (Utama)</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="Fakultas Hukum">Fakultas Hukum</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
+                                        100%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
+                                        100%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
+                                        97%
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <span class="font-mono text-sm font-bold text-slate-900">98.9</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                            Sangat Baik (Tinggi)
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-1 text-center">
+                                        <button type="button" 
+                                                wire:click="viewSurvey(719)" 
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                title="Lihat Rincian Jawaban Responden">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                                            <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                                        07/10/2026
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="Wawan Setiawan">
+                                            Wawan Setiawan
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                                                Tenaga Kependidikan
+                                            </span>
+                                            <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="Kampus 1 UAD">Kampus 1 UAD</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="Fakultas Hukum">Fakultas Hukum</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
+                                        88%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
+                                        83%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
+                                        87%
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <span class="font-mono text-sm font-bold text-slate-900">85.8</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                            Sangat Baik (Tinggi)
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-1 text-center">
+                                        <button type="button" 
+                                                wire:click="viewSurvey(753)" 
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                title="Lihat Rincian Jawaban Responden">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                                            <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                                        07/10/2026
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="Sri Wahyuningsih">
+                                            Sri Wahyuningsih
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                                                Tenaga Kependidikan
+                                            </span>
+                                            <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="Kampus 6 UAD">Kampus 6 UAD</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="Fakultas Keguruan dan Ilmu Pendidikan">Fakultas Keguruan dan Ilmu Pendidikan</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
+                                        75%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
+                                        77%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
+                                        77%
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <span class="font-mono text-sm font-bold text-slate-900">76.1</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                            Cukup / Sedang
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-1 text-center">
+                                        <button type="button" 
+                                                wire:click="viewSurvey(740)" 
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                title="Lihat Rincian Jawaban Responden">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                                                            <tr class="hover:bg-slate-50/70 transition">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
+                                        07/10/2026
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="Ahmad Fauzi">
+                                            Ahmad Fauzi
+                                        </div>
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
+                                                Tenaga Kependidikan
+                                            </span>
+                                            <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                                        </div>
+                                    </td>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="Kampus 5 UAD">Kampus 5 UAD</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="Fakultas Agama Islam">Fakultas Agama Islam</div>
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
+                                        63%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
+                                        87%
+                                    </td>
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
+                                        73%
+                                    </td>
+                                    <td class="py-3 px-2 text-right">
+                                        <span class="font-mono text-sm font-bold text-slate-900">74.2</span>
+                                    </td>
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800">
+                                            Cukup / Sedang
+                                        </span>
+                                    </td>
+                                    <td class="py-3 px-1 text-center">
+                                        <button type="button" 
+                                                wire:click="viewSurvey(727)" 
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                title="Lihat Rincian Jawaban Responden">
+                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                            </svg>
+                                        </button>
+                                    </td>
+                                </tr>
+                            <!--[if ENDBLOCK]><![endif]-->                        </tbody>
+                    </table>
+                </div>
+
+                <!-- Pagination Footer (In-Place Independen & 8 baris per halaman) -->
+                <!--[if BLOCK]><![endif]-->                    <div class="p-3 border-t border-slate-100 bg-slate-50/50">
+                        <div>
+    <!--[if BLOCK]><![endif]-->        <nav role="navigation" aria-label="Pagination Navigation" class="flex items-center justify-between">
+            <!-- Mobile Navigation -->
+            <div class="flex justify-between flex-1 sm:hidden gap-2">
+                <!--[if BLOCK]><![endif]-->                    <span class="relative inline-flex items-center px-3 py-1.5 text-xs font-semibold text-slate-300 bg-slate-50 border border-slate-200 cursor-not-allowed rounded-lg">
+                        &laquo; Previous
+                    </span>
+                <!--[if ENDBLOCK]><![endif]-->
+                <!--[if BLOCK]><![endif]-->                    <button type="button" wire:click="nextPage('page')" x-on:click="" wire:loading.attr="disabled" class="relative inline-flex items-center px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 transition">
+                        Next &raquo;
+                    </button>
+                <!--[if ENDBLOCK]><![endif]-->            </div>
+
+            <!-- Desktop Navigation -->
+            <div class="hidden sm:flex-1 sm:flex sm:items-center sm:justify-between gap-4">
+                <div>
+                    <p class="text-xs text-slate-500">
+                        Menampilkan
+                        <span class="font-semibold text-slate-800">1</span>
+                        sampai
+                        <span class="font-semibold text-slate-800">8</span>
+                        dari
+                        <span class="font-semibold text-slate-800">55</span>
+                        data
+                    </p>
+                </div>
+
+                <div>
+                    <span class="relative z-0 inline-flex rounded-lg shadow-xs -space-x-px">
+                        
+                        <!--[if BLOCK]><![endif]-->                            <span aria-disabled="true" aria-label="&amp;laquo; Previous">
+                                <span class="relative inline-flex items-center px-2 py-1.5 text-xs font-medium text-slate-300 bg-slate-50 border border-slate-200 cursor-not-allowed rounded-l-lg" aria-hidden="true">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                                    </svg>
+                                </span>
+                            </span>
+                        <!--[if ENDBLOCK]><![endif]-->
+                        
+                        <!--[if BLOCK]><![endif]-->                            
+                            <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->
+                            
+                            <!--[if BLOCK]><![endif]-->                                <!--[if BLOCK]><![endif]-->                                    <span wire:key="paginator-page-page1">
+                                        <!--[if BLOCK]><![endif]-->                                            <span aria-current="page">
+                                                <span class="relative inline-flex items-center px-3 py-1.5 text-xs font-bold text-emerald-700 bg-emerald-50 border border-emerald-300 z-10">1</span>
+                                            </span>
+                                        <!--[if ENDBLOCK]><![endif]-->                                    </span>
+                                                                    <span wire:key="paginator-page-page2">
+                                        <!--[if BLOCK]><![endif]-->                                            <button type="button" wire:click="gotoPage(2, 'page')" x-on:click="" wire:loading.attr="disabled" class="relative inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Go to page 2">
+                                                2
+                                            </button>
+                                        <!--[if ENDBLOCK]><![endif]-->                                    </span>
+                                                                    <span wire:key="paginator-page-page3">
+                                        <!--[if BLOCK]><![endif]-->                                            <button type="button" wire:click="gotoPage(3, 'page')" x-on:click="" wire:loading.attr="disabled" class="relative inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Go to page 3">
+                                                3
+                                            </button>
+                                        <!--[if ENDBLOCK]><![endif]-->                                    </span>
+                                                                    <span wire:key="paginator-page-page4">
+                                        <!--[if BLOCK]><![endif]-->                                            <button type="button" wire:click="gotoPage(4, 'page')" x-on:click="" wire:loading.attr="disabled" class="relative inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Go to page 4">
+                                                4
+                                            </button>
+                                        <!--[if ENDBLOCK]><![endif]-->                                    </span>
+                                                                    <span wire:key="paginator-page-page5">
+                                        <!--[if BLOCK]><![endif]-->                                            <button type="button" wire:click="gotoPage(5, 'page')" x-on:click="" wire:loading.attr="disabled" class="relative inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Go to page 5">
+                                                5
+                                            </button>
+                                        <!--[if ENDBLOCK]><![endif]-->                                    </span>
+                                                                    <span wire:key="paginator-page-page6">
+                                        <!--[if BLOCK]><![endif]-->                                            <button type="button" wire:click="gotoPage(6, 'page')" x-on:click="" wire:loading.attr="disabled" class="relative inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Go to page 6">
+                                                6
+                                            </button>
+                                        <!--[if ENDBLOCK]><![endif]-->                                    </span>
+                                                                    <span wire:key="paginator-page-page7">
+                                        <!--[if BLOCK]><![endif]-->                                            <button type="button" wire:click="gotoPage(7, 'page')" x-on:click="" wire:loading.attr="disabled" class="relative inline-flex items-center px-3 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 hover:text-slate-900 transition disabled:opacity-50 disabled:cursor-not-allowed" aria-label="Go to page 7">
+                                                7
+                                            </button>
+                                        <!--[if ENDBLOCK]><![endif]-->                                    </span>
+                                <!--[if ENDBLOCK]><![endif]-->                            <!--[if ENDBLOCK]><![endif]-->                        <!--[if ENDBLOCK]><![endif]-->
+                        
+                        <!--[if BLOCK]><![endif]-->                            <button type="button" wire:click="nextPage('page')" x-on:click="" wire:loading.attr="disabled" rel="next" class="relative inline-flex items-center px-2 py-1.5 text-xs font-medium text-slate-600 bg-white border border-slate-200 rounded-r-lg hover:bg-slate-50 hover:text-slate-900 transition" aria-label="Next &amp;raquo;">
+                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                                </svg>
+                            </button>
+                        <!--[if ENDBLOCK]><![endif]-->                    </span>
+                </div>
+            </div>
+        </nav>
+    <!--[if ENDBLOCK]><![endif]--></div>
+
+
+                    </div>
+                <!--[if ENDBLOCK]><![endif]-->            </div>
+
+        </div>
+    </div>
+
+    <!-- MODAL DETAIL JAWABAN RESPONDEN (RULE 1: TELEPORT BODY & FULL BACKDROP BLUR) -->
+    <template x-teleport="body">
+        <div x-show="detailModal" 
+             x-cloak 
+             style="display: none;"
+             class="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-xs flex items-center justify-center p-4">
+            
+            <div @click.away="detailModal = null; $wire.closeDetailModal()"
+                 class="bg-white rounded-2xl max-w-xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl border border-slate-200">
+                
+                <!-- Modal Header -->
+                <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50">
+                    <div>
+                        <h3 class="font-bold text-sm text-slate-900">Rincian Survei Responden</h3>
+                        <p class="text-[11px] text-slate-400">Detail jawaban kuesioner evaluasi perilaku pemilahan</p>
+                    </div>
+                    <button type="button" @click="detailModal = null; $wire.closeDetailModal()" class="w-7 h-7 rounded-lg text-slate-400 hover:text-slate-700 hover:bg-slate-200 flex items-center justify-center text-sm font-bold">
+                        &times;
+                    </button>
+                </div>
+
+                <!-- Modal Body -->
+                <div class="p-5 overflow-y-auto space-y-4 text-xs">
+                    <!--[if BLOCK]><![endif]--><!--[if ENDBLOCK]><![endif]-->                </div>
+
+                <!-- Modal Footer -->
+                <div class="p-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-end">
+                    <button type="button" @click="detailModal = null; $wire.closeDetailModal()" class="px-4 py-1.5 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-100 transition">
+                        Tutup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </template>
+
+</div>
+                </main>
+            </div>
+        </div>
+
+        <!-- Global Floating Notification Bell (Top Right Across All Pages - SRS M10) -->
+        <div wire:snapshot="{&quot;data&quot;:[],&quot;memo&quot;:{&quot;id&quot;:&quot;4oHWGfDmk8WycfX0EtC8&quot;,&quot;name&quot;:&quot;layout.notification-bell&quot;,&quot;path&quot;:&quot;kap&quot;,&quot;method&quot;:&quot;GET&quot;,&quot;release&quot;:&quot;a-a-a&quot;,&quot;children&quot;:[],&quot;scripts&quot;:[],&quot;assets&quot;:[],&quot;errors&quot;:[],&quot;locale&quot;:&quot;id&quot;},&quot;checksum&quot;:&quot;3a31b9cfa7efda2cbd225e74f5aeb0f0c16a9ee6bc7e002950611336e1aecf3b&quot;}" wire:effects="[]" wire:id="4oHWGfDmk8WycfX0EtC8" class="fixed top-3.5 right-4 sm:right-6 md:right-8 z-40" 
+     x-data="{ notifOpen: false }" 
+     @click.outside="notifOpen = false"
+     @keydown.escape.window="notifOpen = false">
+    
+    <!-- Floating Notification Bell Button ("Melayang vibes") -->
+    <button @click="notifOpen = !notifOpen" 
+            type="button" 
+            class="relative p-2.5 rounded-xl bg-white/95 backdrop-blur-md border border-slate-200/90 hover:border-emerald-300 hover:bg-white text-slate-600 hover:text-slate-900 shadow-sm hover:shadow-md transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center group"
+            title="Notifikasi & Peringatan Operasional (SRS M10)">
+        <svg class="w-4 h-4 text-slate-600 group-hover:text-emerald-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+        </svg>
+
+        <!--[if BLOCK]><![endif]-->            <span class="absolute -top-1 -right-1 flex h-4 w-4">
+                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                <span class="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-rose-600 text-[9px] font-bold text-white leading-none shadow-xs">
+                    2
+                </span>
+            </span>
+        <!--[if ENDBLOCK]><![endif]-->    </button>
+
+    <!-- Floating Dropdown Popup Card -->
+    <div x-show="notifOpen" 
+         x-cloak
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-1.5"
+         x-transition:enter-end="opacity-100 scale-100 translate-y-0"
+         x-transition:leave="transition ease-in duration-150"
+         x-transition:leave-start="opacity-100 scale-100 translate-y-0"
+         x-transition:leave-end="opacity-0 scale-95 translate-y-1.5"
+         class="absolute right-0 mt-2.5 w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl border border-slate-200/90 z-50 overflow-hidden divide-y divide-slate-100">
+        
+        <!-- Header Popup -->
+        <div class="p-3.5 bg-slate-50/90 flex items-center justify-between border-b border-slate-100">
+            <div class="flex items-center gap-2">
+                <span class="text-xs font-bold text-slate-900">Notifikasi Sistem</span>
+                <!--[if BLOCK]><![endif]-->                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                        2 Peringatan
+                    </span>
+                <!--[if ENDBLOCK]><![endif]-->            </div>
+            <span class="text-[10px] text-slate-400 font-semibold tracking-wide uppercase">SRS M10 Alerts</span>
+        </div>
+
+        <!-- Daftar Notifikasi -->
+        <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+            <!--[if BLOCK]><![endif]-->                <div class="p-3.5 hover:bg-slate-50/80 transition flex items-start gap-3">
+                    <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-amber-100 text-amber-600">
+                        <!--[if BLOCK]><![endif]-->                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-1">
+                            <h4 class="text-xs font-bold text-slate-900 truncate">Alert Stok Menumpuk</h4>
+                            <!--[if BLOCK]><![endif]-->                                <span class="text-[9px] text-slate-400 shrink-0 font-medium">Operasional</span>
+                            <!--[if ENDBLOCK]><![endif]-->                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">Akumulasi sampah terpilah siap jual mencapai 8.338,3 kg. Segera jadwalkan penjualan.</p>
+                        <!--[if BLOCK]><![endif]-->                            <div class="mt-2">
+                                <a href="https://ps2.brotherzhafif.my.id/sales" @click="notifOpen = false" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition">
+                                    <span>Catat Penjualan</span>
+                                    <span>&rarr;</span>
+                                </a>
+                            </div>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                </div>
+                            <div class="p-3.5 hover:bg-slate-50/80 transition flex items-start gap-3">
+                    <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 bg-rose-100 text-rose-600">
+                        <!--[if BLOCK]><![endif]-->                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="flex items-center justify-between gap-1">
+                            <h4 class="text-xs font-bold text-slate-900 truncate">Alert Akumulasi Residu Tinggi</h4>
+                            <!--[if BLOCK]><![endif]-->                                <span class="text-[9px] text-slate-400 shrink-0 font-medium">Kritis</span>
+                            <!--[if ENDBLOCK]><![endif]-->                        </div>
+                        <p class="text-[11px] text-slate-500 mt-0.5 leading-snug">Akumulasi residu TPS mencapai 8.991,4 kg. Segera jadwalkan pengangkutan armada.</p>
+                        <!--[if BLOCK]><![endif]-->                            <div class="mt-2">
+                                <a href="https://ps2.brotherzhafif.my.id/pickups" @click="notifOpen = false" class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition">
+                                    <span>Jadwalkan Angkut</span>
+                                    <span>&rarr;</span>
+                                </a>
+                            </div>
+                        <!--[if ENDBLOCK]><![endif]-->                    </div>
+                </div>
+            <!--[if ENDBLOCK]><![endif]-->        </div>
+    </div>
+</div>
+        <!-- Global Floating Toast / Snackbar (Bottom Right) -->
+        <div x-data="{
+    toasts: [],
+    add(message, type = 'success') {
+        if (!message) return;
+        const now = Date.now();
+        // Prevent duplicate toast with identical message within 2 seconds
+        if (this.toasts.some(t => t.message === message && (now - (t.timestamp || 0)) < 2000)) {
+            return;
+        }
+        const id = now + Math.random();
+        this.toasts.push({ id, message, type, timestamp: now });
+        setTimeout(() => this.remove(id), 4000);
+    },
+    remove(id) {
+        this.toasts = this.toasts.filter(t => t.id !== id);
+    },
+    handleEvent(detail) {
+        if (!detail) return;
+        if (typeof detail === 'string') {
+            this.add(detail, 'success');
+        } else if (Array.isArray(detail)) {
+            const first = detail[0] || {};
+            this.add(first.message || first.status || JSON.stringify(first), first.type || 'success');
+        } else if (typeof detail === 'object') {
+            this.add(detail.message || detail.status, detail.type || 'success');
+        }
+    }
+}"
+x-init="
+                "
+@toast.window="handleEvent($event.detail)"
+class="fixed bottom-5 right-5 z-[99999] flex flex-col gap-2.5 max-w-sm w-full pointer-events-none px-4 sm:px-0">
+    <template x-for="t in toasts" :key="t.id">
+        <div x-show="true"
+             x-transition:enter="transition ease-out duration-300"
+             x-transition:enter-start="opacity-0 translate-y-3 scale-95"
+             x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+             x-transition:leave="transition ease-in duration-200"
+             x-transition:leave-start="opacity-100 translate-y-0 scale-100"
+             x-transition:leave-end="opacity-0 translate-y-2 scale-95"
+             class="pointer-events-auto bg-white rounded-xl shadow-xl border p-4 flex items-start gap-3 transition-all"
+             :class="{
+                 'border-emerald-200 shadow-emerald-500/10': t.type === 'success',
+                 'border-rose-200 shadow-rose-500/10': t.type === 'error',
+                 'border-amber-200 shadow-amber-500/10': t.type === 'warning',
+                 'border-sky-200 shadow-sky-500/10': t.type === 'info'
+             }">
+             
+            <!-- Icon -->
+            <div class="shrink-0 mt-0.5">
+                <template x-if="t.type === 'success'">
+                    <div class="w-6 h-6 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M5 13l4 4L19 7"/>
+                        </svg>
+                    </div>
+                </template>
+                <template x-if="t.type === 'error'">
+                    <div class="w-6 h-6 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </div>
+                </template>
+                <template x-if="t.type === 'warning'">
+                    <div class="w-6 h-6 rounded-full bg-amber-100 text-amber-600 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                        </svg>
+                    </div>
+                </template>
+                <template x-if="t.type === 'info'">
+                    <div class="w-6 h-6 rounded-full bg-sky-100 text-sky-600 flex items-center justify-center">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                        </svg>
+                    </div>
+                </template>
+            </div>
+
+            <!-- Content -->
+            <div class="flex-1 min-w-0 pr-1">
+                <p class="text-xs font-semibold text-slate-800 leading-snug" x-text="t.message"></p>
+            </div>
+
+            <!-- Dismiss Button -->
+            <button type="button" @click="remove(t.id)" class="shrink-0 text-slate-400 hover:text-slate-600 transition p-0.5 rounded-lg hover:bg-slate-100" title="Tutup">
+                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+        </div>
+    </template>
+</div>
+
+<script type="9e0a656ad0e4a333f31b2ec4-text/javascript">
+    if (typeof window.copyToClipboard === 'undefined') {
+        window.copyToClipboard = function(text, successMsg = 'Tautan berhasil disalin ke clipboard!') {
+            function triggerSuccess() {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: successMsg, type: 'success' }
+                }));
+            }
+            function triggerError(msg) {
+                window.dispatchEvent(new CustomEvent('toast', {
+                    detail: { message: msg || 'Gagal menyalin tautan.', type: 'error' }
+                }));
+            }
+
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(text)
+                    .then(triggerSuccess)
+                    .catch(function() {
+                        fallback(text);
+                    });
+            } else {
+                fallback(text);
+            }
+
+            function fallback(content) {
+                try {
+                    const el = document.createElement('textarea');
+                    el.value = content;
+                    el.setAttribute('readonly', '');
+                    el.style.position = 'fixed';
+                    el.style.left = '-9999px';
+                    el.style.top = '0';
+                    document.body.appendChild(el);
+                    el.select();
+                    const successful = document.execCommand('copy');
+                    document.body.removeChild(el);
+                    if (successful) {
+                        triggerSuccess();
+                    } else {
+                        triggerError('Gagal menyalin tautan');
+                    }
+                } catch (err) {
+                    triggerError('Gagal menyalin tautan: ' + (err.message || ''));
+                }
+            }
+        };
+    }
+</script>
+    <!-- Livewire Scripts -->
+<script src="/livewire/livewire.js?id=dfa5f5ee" data-csrf="ew4jTCDntoSENd2ctUtPUNf48Gc0fKViwyv6yAnu" data-update-uri="/livewire/update" data-navigate-once="true" type="9e0a656ad0e4a333f31b2ec4-text/javascript"></script>
+<script src="/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js" data-cf-settings="9e0a656ad0e4a333f31b2ec4-|49" defer></script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4bc70e2c01a94c73b74392e4234840661791215815920" integrity="sha512-L0ha0OXavK/8okipN9F8BtP84dg9DUhPERbBXzwI6dgTA55d2+yweo3pn5CSFYs45/r8md2+xvUPtTdvTNRfjA==" data-cf-beacon='{"version":"2024.11.0","token":"865b03e65aca47839088790d992adf9a","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>

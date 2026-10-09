@@ -2114,78 +2114,81 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
 
-                    <!-- Indeks per Konstruk (Prototype UI Table - Full Width) -->
-                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                        <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-                            <div>
-                                <h3 class="text-sm font-bold text-slate-900">Indeks per Konstruk</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Rincian skor dan skala pengukuran perilaku civitas akademika</p>
-                            </div>
-                            <span class="text-xs text-slate-400 font-medium">Skala 0–100</span>
-                        </div>
-                        <div class="overflow-x-auto sm:overflow-x-visible">
-                            <table class="w-full text-left text-xs min-w-[560px] sm:min-w-0">
-                                <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-100">
-                                    <tr>
-                                        <th class="py-3 px-4 sm:px-6 w-[38%]">Konstruk</th>
-                                        <th class="py-3 px-4 text-right whitespace-nowrap">Skor Aktual</th>
-                                        <th class="py-3 px-4 text-right whitespace-nowrap">Skala Asli</th>
-                                        <th class="py-3 px-4 text-right whitespace-nowrap">Indeks (0–100)</th>
-                                        <th class="py-3 px-4 sm:px-6 text-center whitespace-nowrap">Interpretasi</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100">
-                                    @foreach($tabData['constructs'] ?? [] as $c)
-                                        <tr class="hover:bg-slate-50/80 transition-colors">
-                                            <td class="py-3.5 px-4 sm:px-6">
-                                                <div class="font-bold text-slate-900 text-sm">{{ $c['name'] }}</div>
-                                                <div class="text-[11px] text-slate-500 mt-0.5">{{ $c['sub'] }} &bull; <span class="text-slate-400">{{ $c['desc'] }}</span></div>
-                                            </td>
-                                            <td class="py-3.5 px-4 text-right font-mono font-medium text-slate-700 whitespace-nowrap text-sm">
-                                                {{ $c['orig_val'] }}
-                                            </td>
-                                            <td class="py-3.5 px-4 text-right text-slate-500 text-xs whitespace-nowrap">
-                                                {{ $c['scale_orig'] }}
-                                            </td>
-                                            <td class="py-3.5 px-4 text-right font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
-                                                {{ number_format($c['score'], 1) }}
-                                            </td>
-                                            <td class="py-3.5 px-4 sm:px-6 text-center whitespace-nowrap">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold border {{ $c['tag_class'] }}">
-                                                    {{ $c['interpretation'] }}
-                                                </span>
-                                            </td>
-                                        </tr>
-                                    @endforeach
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-
-                    <!-- Detail Item Knowledge (K1 - K6) - Full Width Grid -->
-                    <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-                        <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-                            <div>
-                                <h3 class="text-sm font-bold text-slate-900">Detail per Item Knowledge (K1–K6)</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Tingkat ketepatan jawaban pernyataan pengetahuan civitas akademika</p>
-                            </div>
-                            <span class="text-xs text-slate-400 font-medium">Akurasi (%)</span>
-                        </div>
-                        <div class="p-4 sm:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5 sm:gap-4">
-                            @foreach($tabData['k_items'] ?? [] as $k)
-                                <div class="p-3.5 rounded-xl bg-slate-50/80 border border-slate-100 hover:border-slate-200 transition">
-                                    <div class="flex items-center justify-between text-xs mb-2">
-                                        <div class="flex items-center gap-2 truncate pr-2">
-                                            <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-white text-slate-700 border border-slate-200 font-mono shrink-0">{{ $k['code'] }}</span>
-                                            <span class="text-slate-800 font-medium truncate" title="{{ $k['item'] }}">{{ $k['item'] }}</span>
-                                        </div>
-                                        <span class="font-mono font-bold text-emerald-600 shrink-0 text-xs">{{ $k['rate'] }}%</span>
-                                    </div>
-                                    <div class="w-full bg-slate-200/80 rounded-full h-2 overflow-hidden">
-                                        <div class="bg-gradient-to-r from-emerald-500 to-sky-500 h-full rounded-full transition-all duration-500" style="width: {{ min(100, max(0, (float)$k['rate'])) }}%"></div>
-                                    </div>
+                    <!-- Indeks per Konstruk & Detail K1-K6 Grid -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Indeks per Konstruk (Prototype UI Table) -->
+                        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                            <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900">Indeks per Konstruk</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Rincian skor dan skala pengukuran perilaku civitas</p>
                                 </div>
-                            @endforeach
+                                <span class="text-xs text-slate-400 font-medium">Skala 0–100</span>
+                            </div>
+                            <div class="overflow-x-auto">
+                                <table class="w-full text-left text-xs table-fixed">
+                                    <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-100">
+                                        <tr>
+                                            <th class="py-3 px-3.5 w-[30%]">Konstruk</th>
+                                            <th class="py-3 px-3.5 text-right w-[18%]">Skor</th>
+                                            <th class="py-3 px-3.5 text-right w-[18%]">Skala Asli</th>
+                                            <th class="py-3 px-3.5 text-right w-[18%]">Indeks</th>
+                                            <th class="py-3 px-3.5 text-center w-[16%]">Interpretasi</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody class="divide-y divide-slate-100">
+                                        @foreach($tabData['constructs'] ?? [] as $c)
+                                            <tr class="hover:bg-slate-50/80 transition-colors">
+                                                <td class="py-3 px-3.5">
+                                                    <div class="font-bold text-slate-900">{{ $c['name'] }}</div>
+                                                    <div class="text-[11px] text-slate-400">{{ $c['sub'] }} &bull; {{ $c['desc'] }}</div>
+                                                </td>
+                                                <td class="py-3 px-3.5 text-right font-mono font-medium text-slate-700">
+                                                    {{ $c['orig_val'] }}
+                                                </td>
+                                                <td class="py-3 px-3.5 text-right text-slate-500 text-[11px]">
+                                                    {{ $c['scale_orig'] }}
+                                                </td>
+                                                <td class="py-3 px-3.5 text-right font-mono font-bold text-slate-900">
+                                                    {{ number_format($c['score'], 1) }}
+                                                </td>
+                                                <td class="py-3 px-3.5 text-center">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold border {{ $c['tag_class'] }}">
+                                                        {{ $c['interpretation'] }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        @endforeach
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <!-- Detail Item Knowledge (K1 - K6) -->
+                        <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+                            <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
+                                <div>
+                                    <h3 class="text-sm font-bold text-slate-900">Detail per Item Knowledge</h3>
+                                    <p class="text-xs text-slate-400 mt-0.5">Tingkat ketepatan jawaban pernyataan pengetahuan (K1–K6)</p>
+                                </div>
+                                <span class="text-xs text-slate-400 font-medium">Akurasi (%)</span>
+                            </div>
+                            <div class="p-4 sm:p-5 space-y-3.5">
+                                @foreach($tabData['k_items'] ?? [] as $k)
+                                    <div>
+                                        <div class="flex items-center justify-between text-xs mb-1">
+                                            <div class="flex items-center gap-2 truncate pr-2">
+                                                <span class="px-1.5 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 font-mono shrink-0">{{ $k['code'] }}</span>
+                                                <span class="text-slate-800 font-medium truncate" title="{{ $k['item'] }}">{{ $k['item'] }}</span>
+                                            </div>
+                                            <span class="font-mono font-bold text-emerald-600 shrink-0">{{ $k['rate'] }}%</span>
+                                        </div>
+                                        <div class="w-full bg-slate-100 rounded-lg h-2.5 overflow-hidden border border-slate-200/60 p-0.5">
+                                            <div class="bg-gradient-to-r from-emerald-500 to-sky-500 h-full rounded-md transition-all duration-500" style="width: {{ min(100, max(0, (float)$k['rate'])) }}%"></div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
                         </div>
                     </div>
 

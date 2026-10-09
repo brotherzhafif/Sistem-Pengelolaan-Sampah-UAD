@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="id" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Survei KAP — Pemilahan Sampah UAD</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f5f7fa;--sf:#fff;--bd:#e2e8f0;--tx:#111827;--t2:#64748b;--t3:#94a3b8;--gn:#16a34a;--gn2:#dcfce7;--gn3:#166534;--rd:#dc2626;--rd2:#fef2f2;--bl:#2563eb;--bl2:#dbeafe;--am:#d97706;--r:12px;--sh:0 2px 8px rgba(0,0,0,.06);--font:'DM Sans',system-ui,sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-padding-top:env(safe-area-inset-top,0)}
+:root{padding-top:env(safe-area-inset-top,0);padding-bottom:env(safe-area-inset-bottom,0)}
+body{font-family:var(--font);background:var(--bg);color:var(--tx);line-height:1.55;-webkit-font-smoothing:antialiased}
+
+.wrap{max-width:640px;margin:0 auto;padding:16px}
+
+/* Header */
+.header{text-align:center;padding:28px 20px 22px;background:linear-gradient(135deg,#0c1222 0%,#1a2540 100%);border-radius:0 0 20px 20px;margin:-16px -16px 20px;color:#fff}
+.header-logo{font-size:32px;margin-bottom:6px}
+.header h1{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:4px}
+.header p{font-size:12px;color:#94a3b8;line-height:1.5;max-width:420px;margin:0 auto}
+.header-meta{display:flex;justify-content:center;gap:16px;margin-top:12px;font-size:11px;color:#64748b}
+.header-meta span{display:flex;align-items:center;gap:4px}
+
+/* Progress */
+.progress-wrap{margin-bottom:20px}
+.progress-labels{display:flex;justify-content:space-between;margin-bottom:6px}
+.progress-step{font-size:10px;font-weight:600;color:var(--t3);transition:.2s}
+.progress-step.active{color:var(--gn3)}
+.progress-step.done{color:var(--gn)}
+.progress-bar{height:6px;background:var(--bd);border-radius:99px;overflow:hidden}
+.progress-fill{height:100%;background:linear-gradient(90deg,var(--gn),#4ade80);border-radius:99px;transition:width .4s ease}
+
+/* Section */
+.section{background:var(--sf);border:1px solid var(--bd);border-radius:var(--r);padding:20px;margin-bottom:16px;box-shadow:var(--sh);display:none}
+.section.active{display:block}
+.section-badge{display:inline-flex;align-items:center;gap:5px;padding:4px 10px;border-radius:6px;font-size:10px;font-weight:700;margin-bottom:10px}
+.section-badge.b-sage{background:var(--gn2);color:var(--gn3)}
+.section-badge.b-blue{background:var(--bl2);color:var(--bl)}
+.section-badge.b-amber{background:#fef3c7;color:var(--am)}
+.section h2{font-size:16px;font-weight:800;margin-bottom:4px}
+.section-desc{font-size:12px;color:var(--t2);margin-bottom:16px;line-height:1.5}
+
+/* Form elements */
+.q{margin-bottom:18px;padding-bottom:18px;border-bottom:1px solid var(--bd)}
+.q:last-of-type{border-bottom:none;margin-bottom:0;padding-bottom:0}
+.q-label{font-size:13px;font-weight:600;margin-bottom:8px;display:flex;gap:6px}
+.q-code{color:var(--t3);font-weight:700;flex-shrink:0}
+.q-required{color:var(--rd);font-size:10px}
+.q.error .q-label{color:var(--rd)}
+.q.error .q-error-msg{display:block}
+.q-error-msg{display:none;font-size:10px;color:var(--rd);margin-top:4px;font-weight:500}
+
+/* Radio/checkbox options */
+.opts{display:flex;flex-direction:column;gap:6px}
+.opt{display:flex;align-items:center;gap:10px;padding:10px 14px;border:1.5px solid var(--bd);border-radius:8px;cursor:pointer;transition:.15s;font-size:13px}
+.opt:hover{border-color:var(--gn);background:rgba(22,163,74,.03)}
+.opt input{display:none}
+.opt .radio{width:18px;height:18px;border-radius:50%;border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s}
+.opt input:checked ~ .radio{border-color:var(--gn);background:var(--gn)}
+.opt input:checked ~ .radio::after{content:'';width:6px;height:6px;border-radius:50%;background:#fff}
+.opt .check{width:18px;height:18px;border-radius:5px;border:2px solid var(--bd);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:.15s;font-size:11px;color:transparent}
+.opt input:checked ~ .check{border-color:var(--gn);background:var(--gn);color:#fff}
+.opt input:checked ~ span{font-weight:600}
+
+/* Likert scale */
+.likert{display:flex;gap:6px}
+.likert label{flex:1;text-align:center;cursor:pointer}
+.likert input{display:none}
+.likert .lk-box{display:flex;flex-direction:column;align-items:center;gap:4px;padding:10px 4px;border:1.5px solid var(--bd);border-radius:8px;transition:.15s}
+.likert .lk-num{font-size:18px;font-weight:700;color:var(--t3)}
+.likert .lk-txt{font-size:8px;color:var(--t3);line-height:1.2}
+.likert label:hover .lk-box{border-color:var(--gn)}
+.likert input:checked + .lk-box{border-color:var(--gn);background:var(--gn2)}
+.likert input:checked + .lk-box .lk-num{color:var(--gn3)}
+
+/* True/False */
+.tf{display:flex;gap:8px}
+.tf label{flex:1}
+.tf input{display:none}
+.tf .tf-box{display:flex;align-items:center;justify-content:center;gap:6px;padding:10px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;font-weight:600;cursor:pointer;transition:.15s;color:var(--t2)}
+.tf label:hover .tf-box{border-color:var(--gn)}
+.tf input:checked + .tf-box{border-color:var(--gn);background:var(--gn2);color:var(--gn3)}
+
+/* Select */
+.sel{width:100%;padding:10px 12px;border:1.5px solid var(--bd);border-radius:8px;font-size:13px;font-family:var(--font);background:var(--sf);color:var(--tx);-webkit-appearance:none;outline:none;cursor:pointer}
+.sel:focus{border-color:var(--gn);box-shadow:0 0 0 3px rgba(22,163,74,.12)}
+
+/* Buttons */
+.btn-row{display:flex;gap:8px;margin-top:20px}
+.btn{flex:1;padding:12px 20px;border-radius:10px;font-family:var(--font);font-size:14px;font-weight:700;cursor:pointer;border:none;transition:.15s;min-height:48px}
+.btn-primary{background:var(--gn);color:#fff}
+.btn-primary:hover{background:#15803d}
+.btn-secondary{background:var(--sf);color:var(--tx);border:1.5px solid var(--bd)}
+.btn-secondary:hover{background:var(--bg)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* Confirmation */
+.confirm-card{background:var(--gn2);border:1px solid rgba(22,163,74,.2);border-radius:var(--r);padding:20px;text-align:center;margin-bottom:16px}
+.confirm-card .ic{font-size:40px;margin-bottom:8px}
+.confirm-card h3{font-size:16px;font-weight:800;color:var(--gn3);margin-bottom:4px}
+.confirm-card p{font-size:12px;color:var(--t2)}
+
+/* Summary */
+.summary-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:16px 0}
+.summary-item{background:var(--bg);border-radius:8px;padding:10px;text-align:center}
+.summary-item .sv{font-size:18px;font-weight:800;color:var(--gn3)}
+.summary-item .sl{font-size:9px;color:var(--t2);font-weight:500}
+
+/* Thank you */
+.thanks{text-align:center;padding:40px 20px}
+.thanks .ic{font-size:56px;margin-bottom:12px}
+.thanks h2{font-size:22px;font-weight:800;margin-bottom:6px}
+.thanks p{font-size:13px;color:var(--t2);max-width:400px;margin:0 auto 20px}
+
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:10px 22px;border-radius:99px;font-size:12px;font-weight:600;opacity:0;transition:.3s;pointer-events:none;z-index:500;box-shadow:0 8px 24px rgba(0,0,0,.15)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <div class="header">
+    <div class="header-logo">♻️</div>
+    <h1>Survei Pemilahan Sampah Kampus</h1>
+    <p>Bantu kami memahami pengetahuan, sikap, dan perilaku Anda tentang pemilahan sampah di kampus UAD</p>
+    <div class="header-meta">
+      <span>⏱ 5–8 menit</span>
+      <span>📋 33 pertanyaan</span>
+      <span>🔒 Anonim</span>
+    </div>
+  </div>
+
+  <div class="progress-wrap">
+    <div class="progress-labels">
+      <span class="progress-step active" id="ps-0">Demografi</span>
+      <span class="progress-step" id="ps-1">Knowledge</span>
+      <span class="progress-step" id="ps-2">Attitude</span>
+      <span class="progress-step" id="ps-3">Practice</span>
+      <span class="progress-step" id="ps-4">Satisfaction</span>
+      <span class="progress-step" id="ps-5">Lainnya</span>
+    </div>
+    <div class="progress-bar"><div class="progress-fill" id="pbar" style="width:8%"></div></div>
+  </div>
+
+  <!-- ═══ SECTION A: DEMOGRAFI ═══ -->
+  <div class="section active" id="sec-0">
+    <span class="section-badge b-sage">Bagian A</span>
+    <h2>Data Diri</h2>
+    <div class="section-desc">Informasi dasar untuk analisis segmentasi. Data bersifat anonim.</div>
+
+    <div class="q"><div class="q-label"><span class="q-code">D1</span>Kampus<span class="q-required">*</span></div>
+      <select class="sel"><option value="">Pilih kampus...</option><option>Kampus 1 — Jl. Kapas</option><option>Kampus 2 — Jl. Pramuka</option><option>Kampus 3 — Jl. Prof. Soepomo</option><option>Kampus 4 — Jl. Ringroad Selatan</option><option>Kampus 5 — Jl. Ki Ageng Pemanahan</option><option>Kampus 6 — Jl. Sorowajan</option></select>
+    </div>
+    <div class="q"><div class="q-label"><span class="q-code">D2</span>Status<span class="q-required">*</span></div>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="d2"><span class="radio"></span><span>Mahasiswa</span></label>
+        <label class="opt"><input type="radio" name="d2"><span class="radio"></span><span>Dosen</span></label>
+        <label class="opt"><input type="radio" name="d2"><span class="radio"></span><span>Tenaga Kependidikan</span></label>
+        <label class="opt"><input type="radio" name="d2"><span class="radio"></span><span>Tenaga Outsourcing</span></label>
+      </div>
+    </div>
+    <div class="q"><div class="q-label"><span class="q-code">D3</span>Fakultas / Unit<span class="q-required">*</span></div>
+      <select class="sel"><option value="">Pilih fakultas...</option><option>Fakultas Teknik Industri</option><option>Fakultas Teknologi Industri</option><option>Fakultas MIPA</option><option>Fakultas Ekonomi & Bisnis</option><option>Fakultas Hukum</option><option>Fakultas Keguruan & Ilmu Pendidikan</option><option>Fakultas Farmasi</option><option>Fakultas Sastra, Budaya & Komunikasi</option><option>Fakultas Psikologi</option><option>Fakultas Agama Islam</option><option>Pascasarjana</option><option>Unit/Biro lainnya</option></select>
+    </div>
+    <div class="q"><div class="q-label"><span class="q-code">D4</span>Jenis Kelamin<span class="q-required">*</span></div>
+      <div class="opts">
+        <label class="opt"><input type="radio" name="d4"><span class="radio"></span><span>Laki-laki</span></label>
+        <label class="opt"><input type="radio" name="d4"><span class="radio"></span><span>Perempuan</span></label>
+      </div>
+    </div>
+    <div class="q"><div class="q-label"><span class="q-code">D5</span>Pernah mengikuti sosialisasi pemilahan sampah di kampus?<span class="q-required">*</span></div>
+      <div class="tf">
+        <label><input type="radio" name="d5"><div class="tf-box">✓ Ya</div></label>
+        <label><input type="radio" name="d5"><div class="tf-box">✗ Tidak</div></label>
+      </div>
+    </div>
+    <div class="q"><div class="q-label"><span class="q-code">D6</span>Bersedia menjadi relawan program pemilahan sampah?<span class="q-required">*</span></div>
+      <div class="tf">
+        <label><input type="radio" name="d6"><div class="tf-box">✓ Ya, bersedia</div></label>
+        <label><input type="radio" name="d6"><div class="tf-box">✗ Tidak</div></label>
+      </div>
+    </div>
+    <div class="btn-row"><div style="flex:1"></div><button class="btn btn-primary" onclick="goSec(1)">Selanjutnya →</button></div>
+  </div>
+
+  <!-- ═══ SECTION B: KNOWLEDGE ═══ -->
+  <div class="section" id="sec-1">
+    <span class="section-badge b-blue">Bagian B</span>
+    <h2>Pengetahuan (Knowledge)</h2>
+    <div class="section-desc">Pilih Benar atau Salah untuk setiap pernyataan berikut.</div>
+
+    <div class="q"><div class="q-label"><span class="q-code">K1</span>Sampah organik (sisa makanan, daun) bisa dijadikan kompos</div><div class="tf"><label><input type="radio" name="k1"><div class="tf-box">Benar</div></label><label><input type="radio" name="k1"><div class="tf-box">Salah</div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">K2</span>Semua jenis plastik bisa didaur ulang tanpa syarat</div><div class="tf"><label><input type="radio" name="k2"><div class="tf-box">Benar</div></label><label><input type="radio" name="k2"><div class="tf-box">Salah</div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">K3</span>Sampah yang tercampur minyak atau cairan kimia termasuk residu</div><div class="tf"><label><input type="radio" name="k3"><div class="tf-box">Benar</div></label><label><input type="radio" name="k3"><div class="tf-box">Salah</div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">K4</span>Saya mengetahui ada sistem pemilahan sampah di kampus saya</div><div class="tf"><label><input type="radio" name="k4"><div class="tf-box">Benar</div></label><label><input type="radio" name="k4"><div class="tf-box">Salah</div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">K5</span>Styrofoam dan kain sulit diproses dalam daur ulang</div><div class="tf"><label><input type="radio" name="k5"><div class="tf-box">Benar</div></label><label><input type="radio" name="k5"><div class="tf-box">Salah</div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">K6</span>Saya tahu ke mana membuang sampah sesuai label tempat sampah</div><div class="tf"><label><input type="radio" name="k6"><div class="tf-box">Benar</div></label><label><input type="radio" name="k6"><div class="tf-box">Salah</div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">K7</span>Sampah elektronik (baterai, kabel) bisa dibuang bersama sampah biasa</div><div class="tf"><label><input type="radio" name="k7"><div class="tf-box">Benar</div></label><label><input type="radio" name="k7"><div class="tf-box">Salah</div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">K8</span>Kertas dan kardus yang basah atau berminyak tidak bisa didaur ulang</div><div class="tf"><label><input type="radio" name="k8"><div class="tf-box">Benar</div></label><label><input type="radio" name="k8"><div class="tf-box">Salah</div></label></div></div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="goSec(0)">← Kembali</button><button class="btn btn-primary" onclick="goSec(2)">Selanjutnya →</button></div>
+  </div>
+
+  <!-- ═══ SECTION C: ATTITUDE ═══ -->
+  <div class="section" id="sec-2">
+    <span class="section-badge b-sage">Bagian C</span>
+    <h2>Sikap (Attitude)</h2>
+    <div class="section-desc">Seberapa setuju Anda dengan pernyataan berikut? (1 = Sangat Tidak Setuju, 5 = Sangat Setuju)</div>
+
+    <div class="q"><div class="q-label"><span class="q-code">A1</span>Pemilahan sampah adalah tanggung jawab bersama, bukan hanya petugas kebersihan</div><div class="likert"><label><input type="radio" name="a1" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">Sangat Tidak Setuju</span></div></label><label><input type="radio" name="a1" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">Tidak Setuju</span></div></label><label><input type="radio" name="a1" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">Netral</span></div></label><label><input type="radio" name="a1" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">Setuju</span></div></label><label><input type="radio" name="a1" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">Sangat Setuju</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">A2</span>Penting bagi setiap individu untuk memilah sampah sebelum membuang</div><div class="likert"><label><input type="radio" name="a2" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STS</span></div></label><label><input type="radio" name="a2" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TS</span></div></label><label><input type="radio" name="a2" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="a2" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="a2" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SS</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">A3</span>Saya bersedia meluangkan waktu ekstra untuk memilah sampah</div><div class="likert"><label><input type="radio" name="a3" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STS</span></div></label><label><input type="radio" name="a3" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TS</span></div></label><label><input type="radio" name="a3" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="a3" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="a3" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SS</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">A4</span>Kampus yang bersih dan bebas sampah meningkatkan kenyamanan belajar</div><div class="likert"><label><input type="radio" name="a4" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STS</span></div></label><label><input type="radio" name="a4" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TS</span></div></label><label><input type="radio" name="a4" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="a4" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="a4" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SS</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">A5</span>Saya merasa bersalah jika membuang sampah tanpa memilah</div><div class="likert"><label><input type="radio" name="a5" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STS</span></div></label><label><input type="radio" name="a5" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TS</span></div></label><label><input type="radio" name="a5" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="a5" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="a5" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SS</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">A6</span>Pemilahan sampah di kampus dapat menjadi contoh bagi masyarakat sekitar</div><div class="likert"><label><input type="radio" name="a6" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STS</span></div></label><label><input type="radio" name="a6" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TS</span></div></label><label><input type="radio" name="a6" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="a6" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="a6" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SS</span></div></label></div></div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="goSec(1)">← Kembali</button><button class="btn btn-primary" onclick="goSec(3)">Selanjutnya →</button></div>
+  </div>
+
+  <!-- ═══ SECTION D: PRACTICE ═══ -->
+  <div class="section" id="sec-3">
+    <span class="section-badge b-blue">Bagian D</span>
+    <h2>Perilaku (Practice)</h2>
+    <div class="section-desc">Seberapa sering Anda melakukan hal berikut? (1 = Tidak Pernah, 5 = Selalu)</div>
+
+    <div class="q"><div class="q-label"><span class="q-code">P1</span>Saya memilah sampah organik dan anorganik sebelum membuang</div><div class="likert"><label><input type="radio" name="p1" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">Tidak Pernah</span></div></label><label><input type="radio" name="p1" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">Jarang</span></div></label><label><input type="radio" name="p1" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">Kadang</span></div></label><label><input type="radio" name="p1" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">Sering</span></div></label><label><input type="radio" name="p1" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">Selalu</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">P2</span>Saya membuang sampah sesuai label pada tempat sampah</div><div class="likert"><label><input type="radio" name="p2" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="p2" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">J</span></div></label><label><input type="radio" name="p2" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">K</span></div></label><label><input type="radio" name="p2" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="p2" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SL</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">P3</span>Saya membawa tumbler/botol minum sendiri</div><div class="likert"><label><input type="radio" name="p3" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="p3" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">J</span></div></label><label><input type="radio" name="p3" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">K</span></div></label><label><input type="radio" name="p3" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="p3" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SL</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">P4</span>Saya membawa tas belanja sendiri saat ke kantin</div><div class="likert"><label><input type="radio" name="p4" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="p4" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">J</span></div></label><label><input type="radio" name="p4" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">K</span></div></label><label><input type="radio" name="p4" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="p4" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SL</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">P5</span>Saya mengurangi penggunaan plastik sekali pakai</div><div class="likert"><label><input type="radio" name="p5" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="p5" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">J</span></div></label><label><input type="radio" name="p5" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">K</span></div></label><label><input type="radio" name="p5" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="p5" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SL</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">P6</span>Saya membuang sampah elektronik ke tempat khusus</div><div class="likert"><label><input type="radio" name="p6" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="p6" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">J</span></div></label><label><input type="radio" name="p6" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">K</span></div></label><label><input type="radio" name="p6" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">S</span></div></label><label><input type="radio" name="p6" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SL</span></div></label></div></div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="goSec(2)">← Kembali</button><button class="btn btn-primary" onclick="goSec(4)">Selanjutnya →</button></div>
+  </div>
+
+  <!-- ═══ SECTION E: SATISFACTION ═══ -->
+  <div class="section" id="sec-4">
+    <span class="section-badge b-amber">Bagian E</span>
+    <h2>Kepuasan (Satisfaction)</h2>
+    <div class="section-desc">Seberapa puas Anda dengan hal berikut? (1 = Sangat Tidak Puas, 5 = Sangat Puas)</div>
+
+    <div class="q"><div class="q-label"><span class="q-code">S1</span>Jumlah tempat sampah terpilah di kampus sudah memadai</div><div class="likert"><label><input type="radio" name="s1" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STP</span></div></label><label><input type="radio" name="s1" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="s1" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="s1" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">P</span></div></label><label><input type="radio" name="s1" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SP</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">S2</span>Label/petunjuk pada tempat sampah sudah jelas dan mudah dipahami</div><div class="likert"><label><input type="radio" name="s2" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STP</span></div></label><label><input type="radio" name="s2" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="s2" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="s2" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">P</span></div></label><label><input type="radio" name="s2" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SP</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">S3</span>Kebersihan area TPS sudah baik</div><div class="likert"><label><input type="radio" name="s3" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STP</span></div></label><label><input type="radio" name="s3" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="s3" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="s3" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">P</span></div></label><label><input type="radio" name="s3" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SP</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">S4</span>Informasi/sosialisasi tentang pemilahan sampah sudah cukup</div><div class="likert"><label><input type="radio" name="s4" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STP</span></div></label><label><input type="radio" name="s4" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="s4" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="s4" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">P</span></div></label><label><input type="radio" name="s4" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SP</span></div></label></div></div>
+    <div class="q"><div class="q-label"><span class="q-code">S5</span>Secara keseluruhan, saya puas dengan sistem pengelolaan sampah kampus</div><div class="likert"><label><input type="radio" name="s5" value="1"><div class="lk-box"><span class="lk-num">1</span><span class="lk-txt">STP</span></div></label><label><input type="radio" name="s5" value="2"><div class="lk-box"><span class="lk-num">2</span><span class="lk-txt">TP</span></div></label><label><input type="radio" name="s5" value="3"><div class="lk-box"><span class="lk-num">3</span><span class="lk-txt">N</span></div></label><label><input type="radio" name="s5" value="4"><div class="lk-box"><span class="lk-num">4</span><span class="lk-txt">P</span></div></label><label><input type="radio" name="s5" value="5"><div class="lk-box"><span class="lk-num">5</span><span class="lk-txt">SP</span></div></label></div></div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="goSec(3)">← Kembali</button><button class="btn btn-primary" onclick="goSec(5)">Selanjutnya →</button></div>
+  </div>
+
+  <!-- ═══ SECTION F: FACILITY & BARRIERS ═══ -->
+  <div class="section" id="sec-5">
+    <span class="section-badge b-sage">Bagian F</span>
+    <h2>Fasilitas & Hambatan</h2>
+    <div class="section-desc">Boleh pilih lebih dari satu jawaban.</div>
+
+    <div class="q"><div class="q-label"><span class="q-code">F1</span>Fasilitas pemilahan apa yang tersedia di sekitar Anda?</div>
+      <div class="opts">
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Tempat sampah terpilah (organik/anorganik)</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Komposter</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Drop point khusus (elektronik, B3)</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Tidak tahu / tidak memperhatikan</span></label>
+      </div>
+    </div>
+    <div class="q"><div class="q-label"><span class="q-code">B1</span>Apa hambatan utama Anda dalam memilah sampah?</div>
+      <div class="opts">
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Tidak tahu cara memilah yang benar</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Tempat sampah terpilah terlalu jauh</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Tidak ada waktu</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Tidak tersedia tempat sampah terpilah</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Malas / tidak terbiasa</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Tidak ada hambatan</span></label>
+      </div>
+    </div>
+    <div class="q"><div class="q-label"><span class="q-code">B2</span>Apa yang paling memotivasi Anda untuk memilah?</div>
+      <div class="opts">
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Kesadaran lingkungan</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Aturan/kebijakan kampus</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Ajakan teman/dosen</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Reward / insentif</span></label>
+        <label class="opt"><input type="checkbox"><span class="check">✓</span><span>Tidak ada yang memotivasi</span></label>
+      </div>
+    </div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="goSec(4)">← Kembali</button><button class="btn btn-primary" onclick="goSec(6)">Review & Kirim →</button></div>
+  </div>
+
+  <!-- ═══ CONFIRM ═══ -->
+  <div class="section" id="sec-6">
+    <div class="confirm-card">
+      <div class="ic">✅</div>
+      <h3>Survei siap dikirim</h3>
+      <p>Periksa kembali jawaban Anda. Setelah dikirim, jawaban tidak dapat diubah.</p>
+    </div>
+    <div class="summary-grid">
+      <div class="summary-item"><div class="sv">6</div><div class="sl">Demografi</div></div>
+      <div class="summary-item"><div class="sv">8</div><div class="sl">Knowledge</div></div>
+      <div class="summary-item"><div class="sv">6</div><div class="sl">Attitude</div></div>
+      <div class="summary-item"><div class="sv">6</div><div class="sl">Practice</div></div>
+      <div class="summary-item"><div class="sv">5</div><div class="sl">Satisfaction</div></div>
+      <div class="summary-item"><div class="sv">3</div><div class="sl">Fasilitas</div></div>
+    </div>
+    <div class="btn-row"><button class="btn btn-secondary" onclick="goSec(5)">← Kembali</button><button class="btn btn-primary" onclick="goSec(7)">Kirim Survei ✓</button></div>
+  </div>
+
+  <!-- ═══ THANK YOU ═══ -->
+  <div class="section" id="sec-7">
+    <div class="thanks">
+      <div class="ic">🎉</div>
+      <h2>Terima kasih!</h2>
+      <p>Jawaban Anda telah berhasil dikirim. Partisipasi Anda membantu kami meningkatkan sistem pemilahan sampah di kampus UAD.</p>
+      <div style="font-size:11px;color:var(--t3);margin-bottom:16px">Respons #248 · Kampus 4 · 22 Sep 2026</div>
+      <button class="btn btn-secondary" style="max-width:200px;margin:0 auto" onclick="location.reload()">Isi survei lagi</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+var total=8, cur=0;
+function goSec(n){
+  document.querySelectorAll('.section').forEach(function(s){s.classList.remove('active')});
+  document.getElementById('sec-'+n).classList.add('active');
+  cur=n;
+  var pct=Math.round(((n)/(total-1))*100);
+  if(n>=7)pct=100;
+  document.getElementById('pbar').style.width=Math.max(pct,4)+'%';
+  for(var i=0;i<6;i++){
+    var ps=document.getElementById('ps-'+i);
+    ps.classList.remove('active','done');
+    if(i===n)ps.classList.add('active');
+    else if(i<n)ps.classList.add('done');
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+</script>
+</body>
+</html>

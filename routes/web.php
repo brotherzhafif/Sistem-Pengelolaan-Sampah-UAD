@@ -40,6 +40,10 @@ Volt::route('reports', 'pages.reports.index')
     ->middleware(['auth', 'verified'])
     ->name('reports');
 
+Volt::route('notifications', 'pages.notifications.index')
+    ->middleware(['auth', 'verified'])
+    ->name('notifications');
+
 Route::get('reports/export/pdf', [App\Http\Controllers\ReportExportController::class, 'exportPdf'])
     ->middleware(['auth', 'verified'])
     ->name('reports.export.pdf');

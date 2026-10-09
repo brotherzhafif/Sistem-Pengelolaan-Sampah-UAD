@@ -9,14 +9,15 @@ new class extends Component
     {
         $user = auth()->user();
         if (!$user) {
-            return ['alerts' => []];
+            return ['alerts' => [], 'totalAlerts' => 0];
         }
 
         $activeCampusId = session('active_campus_id', $user->campus_id ?? null);
-        $alerts = $alertService->getAlerts($activeCampusId);
+        $allAlerts = $alertService->getAlerts($activeCampusId);
 
         return [
-            'alerts' => $alerts,
+            'alerts'      => array_slice($allAlerts, 0, 3),
+            'totalAlerts' => count($allAlerts),
         ];
     }
 }; ?>
@@ -26,20 +27,20 @@ new class extends Component
      @click.outside="notifOpen = false"
      @keydown.escape.window="notifOpen = false">
     
-    <!-- Floating Notification Bell Button ("Melayang vibes & agak gede di kanan bawah") -->
+    <!-- Floating Notification Bell Button -->
     <button @click="notifOpen = !notifOpen" 
             type="button" 
             class="relative w-14 h-14 sm:w-16 sm:h-16 rounded-2xl sm:rounded-3xl bg-white/95 backdrop-blur-md border border-slate-200/90 hover:border-emerald-400 hover:bg-white text-slate-700 hover:text-emerald-700 shadow-xl hover:shadow-2xl hover:-translate-y-1 transition-all duration-300 active:scale-95 cursor-pointer flex items-center justify-center group"
-            title="Notifikasi & Peringatan Operasional (SRS M10)">
+            title="Notifikasi & Peringatan Operasional">
         <svg class="w-6 h-6 sm:w-7 sm:h-7 text-slate-700 group-hover:text-emerald-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
 
-        @if(!empty($alerts))
+        @if($totalAlerts > 0)
             <span class="absolute -top-1.5 -right-1.5 flex h-5 w-5 sm:h-6 sm:w-6">
                 <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
                 <span class="relative inline-flex items-center justify-center rounded-full h-5 w-5 sm:h-6 sm:w-6 bg-rose-600 text-[10px] sm:text-xs font-bold text-white leading-none shadow-md ring-2 ring-white">
-                    {{ count($alerts) }}
+                    {{ $totalAlerts }}
                 </span>
             </span>
         @endif
@@ -60,17 +61,21 @@ new class extends Component
         <div class="p-3.5 bg-slate-50/90 flex items-center justify-between border-b border-slate-100">
             <div class="flex items-center gap-2">
                 <span class="text-xs font-bold text-slate-900">Notifikasi Sistem</span>
-                @if(!empty($alerts))
+                @if($totalAlerts > 0)
                     <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
-                        {{ count($alerts) }} Peringatan
+                        {{ $totalAlerts }} Peringatan
                     </span>
                 @endif
             </div>
-            <span class="text-[10px] text-slate-400 font-semibold tracking-wide uppercase">SRS M10 Alerts</span>
+            <a href="{{ route('notifications') }}"
+               @click="notifOpen = false"
+               class="text-[10px] text-emerald-600 hover:text-emerald-700 font-semibold transition">
+                Lihat Semua
+            </a>
         </div>
 
-        <!-- Daftar Notifikasi -->
-        <div class="max-h-80 overflow-y-auto divide-y divide-slate-100">
+        <!-- Daftar Notifikasi (max 3) -->
+        <div class="divide-y divide-slate-100">
             @forelse($alerts as $alert)
                 <div class="p-3.5 hover:bg-slate-50/80 transition flex items-start gap-3">
                     <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 {{ $alert['type'] === 'danger' ? 'bg-rose-100 text-rose-600' : ($alert['type'] === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600') }}">
@@ -112,6 +117,30 @@ new class extends Component
                 </div>
             @endforelse
         </div>
+
+        <!-- Footer: Selengkapnya (hanya jika totalAlerts > 3) -->
+        @if($totalAlerts > 3)
+            <div class="p-3 bg-slate-50/80">
+                <a href="{{ route('notifications') }}"
+                   @click="notifOpen = false"
+                   class="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-semibold text-emerald-600 hover:text-emerald-700 hover:bg-emerald-50 transition">
+                    <span>Lihat {{ $totalAlerts - 3 }} Notifikasi Lainnya</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+        @elseif($totalAlerts > 0)
+            <div class="p-3 bg-slate-50/80">
+                <a href="{{ route('notifications') }}"
+                   @click="notifOpen = false"
+                   class="flex items-center justify-center gap-1.5 w-full py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-700 hover:bg-slate-100 transition">
+                    <span>Lihat Halaman Notifikasi</span>
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/>
+                    </svg>
+                </a>
+            </div>
+        @endif
     </div>
 </div>
-
