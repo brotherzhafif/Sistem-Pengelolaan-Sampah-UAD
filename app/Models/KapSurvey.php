@@ -16,14 +16,20 @@ class KapSurvey extends Model
         'respondent_identifier',
         'respondent_role',
         'faculty_unit',
+        'gender',
+        'has_attended_training',
+        'is_willing_volunteer',
         'residence_type',
         'knowledge_responses',
         'attitude_responses',
         'practice_responses',
+        'satisfaction_responses',
         'facility_responses',
+        'barrier_responses',
         'knowledge_score',
         'attitude_score',
         'practice_score',
+        'satisfaction_score',
         'overall_score',
         'category',
         'feedback',
@@ -31,13 +37,18 @@ class KapSurvey extends Model
     ];
 
     protected $casts = [
+        'has_attended_training' => 'boolean',
+        'is_willing_volunteer' => 'boolean',
         'knowledge_responses' => 'array',
         'attitude_responses' => 'array',
         'practice_responses' => 'array',
+        'satisfaction_responses' => 'array',
         'facility_responses' => 'array',
+        'barrier_responses' => 'array',
         'knowledge_score' => 'float',
         'attitude_score' => 'float',
         'practice_score' => 'float',
+        'satisfaction_score' => 'float',
         'overall_score' => 'float',
         'survey_date' => 'date',
     ];
@@ -88,6 +99,7 @@ class KapSurvey extends Model
             'mahasiswa' => 'Mahasiswa',
             'dosen' => 'Dosen',
             'tendik' => 'Tenaga Kependidikan',
+            'outsourcing' => 'Tenaga Outsourcing',
             default => ucfirst($this->respondent_role),
         };
     }

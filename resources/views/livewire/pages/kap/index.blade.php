@@ -153,7 +153,7 @@ new #[Layout('layouts.app')] class extends Component
             <div class="flex items-center gap-2">
                 <button type="button" 
                         x-data="{ copied: false }"
-                        @click="window.copyToClipboard('{{ url('/survei-kap') }}', 'Tautan survei KAP berhasil disalin ke clipboard!'); copied = true; setTimeout(() => copied = false, 2500);"
+                        @click="if (window.copyToClipboard) { window.copyToClipboard('{{ url('/survei-kap') }}', 'Tautan survei KAP berhasil disalin ke clipboard!'); } else if (navigator.clipboard) { navigator.clipboard.writeText('{{ url('/survei-kap') }}'); } $dispatch('toast', { message: 'Tautan survei KAP berhasil disalin ke clipboard!', type: 'success' }); copied = true; setTimeout(() => copied = false, 2500);"
                         class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -561,21 +561,42 @@ new #[Layout('layouts.app')] class extends Component
                 <div class="p-5 overflow-y-auto space-y-4 text-xs">
                     @if($detailedSurvey)
                         <!-- Identitas Responden -->
-                        <div class="grid grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200">
                             <div>
                                 <span class="block text-[10px] text-slate-400 uppercase font-semibold">Nama Responden</span>
                                 <span class="font-bold text-slate-800">{{ $detailedSurvey->respondent_name ?? 'Anonim' }}</span>
-                                <span class="block text-[11px] text-slate-500">{{ $detailedSurvey->role_label }} &bull; {{ $detailedSurvey->respondent_identifier ?? '-' }}</span>
+                                <span class="block text-[11px] text-slate-500">
+                                    {{ $detailedSurvey->role_label }} 
+                                    @if($detailedSurvey->respondent_identifier)
+                                        &bull; {{ $detailedSurvey->respondent_identifier }}
+                                    @endif
+                                    @if($detailedSurvey->gender)
+                                        &bull; {{ $detailedSurvey->gender }}
+                                    @endif
+                                </span>
                             </div>
                             <div>
-                                <span class="block text-[10px] text-slate-400 uppercase font-semibold">Unit Kampus</span>
+                                <span class="block text-[10px] text-slate-400 uppercase font-semibold">Unit Kampus & Fakultas</span>
                                 <span class="font-bold text-slate-800">{{ $detailedSurvey->campus->name }}</span>
                                 <span class="block text-[11px] text-slate-500">{{ $detailedSurvey->faculty_unit }}</span>
                             </div>
+                            <div class="sm:col-span-2 pt-2 border-t border-slate-200/60 flex flex-wrap gap-2 text-[11px]">
+                                <span class="px-2 py-0.5 rounded-md font-medium {{ $detailedSurvey->has_attended_training ? 'bg-emerald-100 text-emerald-800' : 'bg-slate-200 text-slate-700' }}">
+                                    Sosialisasi: {{ $detailedSurvey->has_attended_training ? 'Pernah Mengikuti' : 'Belum Pernah' }}
+                                </span>
+                                <span class="px-2 py-0.5 rounded-md font-medium {{ $detailedSurvey->is_willing_volunteer ? 'bg-teal-100 text-teal-800' : 'bg-slate-200 text-slate-700' }}">
+                                    Relawan: {{ $detailedSurvey->is_willing_volunteer ? 'Bersedia' : 'Belum Bersedia' }}
+                                </span>
+                                @if($detailedSurvey->residence_type)
+                                    <span class="px-2 py-0.5 rounded-md font-medium bg-slate-100 text-slate-700">
+                                        Tempat Tinggal: {{ $detailedSurvey->residence_label }}
+                                    </span>
+                                @endif
+                            </div>
                         </div>
 
-                        <!-- Ringkasan Nilai Dimensi -->
-                        <div class="grid grid-cols-4 gap-2 text-center">
+                        <!-- Ringkasan Nilai Dimensi (5 Dimensi) -->
+                        <div class="grid grid-cols-2 sm:grid-cols-5 gap-2 text-center">
                             <div class="p-2.5 rounded-lg bg-sky-50 border border-sky-100">
                                 <span class="block text-[10px] text-sky-800 font-semibold uppercase">Knowledge</span>
                                 <span class="font-mono text-base font-bold text-slate-900">{{ number_format($detailedSurvey->knowledge_score, 1) }}%</span>
@@ -588,11 +609,56 @@ new #[Layout('layouts.app')] class extends Component
                                 <span class="block text-[10px] text-amber-800 font-semibold uppercase">Practice</span>
                                 <span class="font-mono text-base font-bold text-slate-900">{{ number_format($detailedSurvey->practice_score, 1) }}%</span>
                             </div>
-                            <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-100">
+                            <div class="p-2.5 rounded-lg bg-indigo-50 border border-indigo-100">
+                                <span class="block text-[10px] text-indigo-800 font-semibold uppercase">Kepuasan</span>
+                                <span class="font-mono text-base font-bold text-slate-900">{{ number_format($detailedSurvey->satisfaction_score ?? 0, 1) }}%</span>
+                            </div>
+                            <div class="p-2.5 rounded-lg bg-emerald-50 border border-emerald-100 sm:col-span-1 col-span-2">
                                 <span class="block text-[10px] text-emerald-800 font-semibold uppercase">Skor KAP</span>
                                 <span class="font-mono text-base font-bold text-emerald-800">{{ number_format($detailedSurvey->overall_score, 1) }}</span>
                             </div>
                         </div>
+
+                        <!-- Fasilitas & Hambatan -->
+                        @if(!empty($detailedSurvey->facility_responses) || !empty($detailedSurvey->barrier_responses))
+                            <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-2">
+                                @if(!empty($detailedSurvey->facility_responses) && is_array($detailedSurvey->facility_responses))
+                                    <div>
+                                        <span class="block text-[10px] font-bold text-slate-600 uppercase">Fasilitas yang Diketahui:</span>
+                                        <div class="flex flex-wrap gap-1 mt-1">
+                                            @foreach($detailedSurvey->facility_responses as $fac)
+                                                @if(is_string($fac))
+                                                    <span class="px-2 py-0.5 rounded bg-emerald-100/70 text-emerald-800 text-[10px] font-medium">{{ $fac }}</span>
+                                                @endif
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
+
+                                @if(!empty($detailedSurvey->barrier_responses) && is_array($detailedSurvey->barrier_responses))
+                                    @if(!empty($detailedSurvey->barrier_responses['barriers']))
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600 uppercase">Hambatan Utama:</span>
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach($detailedSurvey->barrier_responses['barriers'] as $bar)
+                                                    <span class="px-2 py-0.5 rounded bg-rose-100/70 text-rose-800 text-[10px] font-medium">{{ $bar }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                    @if(!empty($detailedSurvey->barrier_responses['motivations']))
+                                        <div>
+                                            <span class="block text-[10px] font-bold text-slate-600 uppercase">Motivasi Memilah:</span>
+                                            <div class="flex flex-wrap gap-1 mt-1">
+                                                @foreach($detailedSurvey->barrier_responses['motivations'] as $mot)
+                                                    <span class="px-2 py-0.5 rounded bg-sky-100/70 text-sky-800 text-[10px] font-medium">{{ $mot }}</span>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                @endif
+                            </div>
+                        @endif
 
                         <!-- Feedback Responden -->
                         @if($detailedSurvey->feedback)
