@@ -464,9 +464,12 @@ new #[Layout('layouts.app')] class extends Component
                                     $isToday = $trend['date'] === Carbon::today()->format('Y-m-d');
                                 @endphp
                                 <div class="flex-1 flex flex-col items-center gap-2 group h-full justify-end">
-                                    <!-- Tooltip hover nominal -->
-                                    <div class="opacity-0 group-hover:opacity-100 transition-opacity duration-150 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-800 text-white whitespace-nowrap shadow-xs pointer-events-none mb-1">
-                                        {{ number_format($trend['weight_kg'], 1, ',', '.') }} kg
+                                    <!-- Tooltip hover popup detail nominal -->
+                                    <div class="opacity-0 group-hover:opacity-100 transition-all duration-150 transform group-hover:-translate-y-1 text-center px-2.5 py-1.5 rounded-xl bg-slate-900/95 text-white whitespace-nowrap shadow-xl pointer-events-none mb-1.5 border border-slate-700/80 relative z-30">
+                                        <div class="text-[9px] text-slate-300 font-medium">{{ $trend['day_name'] ?? $trend['short_day'] }}, {{ Carbon::parse($trend['date'])->translatedFormat('d M Y') }}</div>
+                                        <div class="text-[11px] font-mono font-bold text-emerald-400">{{ number_format($trend['weight_kg'], 1, ',', '.') }} kg</div>
+                                        <!-- Bottom pointer arrow -->
+                                        <div class="absolute left-1/2 -bottom-1 -translate-x-1/2 w-1.5 h-1.5 bg-slate-900/95 rotate-45 border-r border-b border-slate-700/80"></div>
                                     </div>
                                     
                                     <!-- Bar Column -->

@@ -861,7 +861,46 @@ new #[Layout('layouts.app')] class extends Component
                                 @php
                                     $cd = $tabData['chart_data'];
                                 @endphp
-                                <div class="relative w-full overflow-hidden">
+                                <div x-data="{
+                                    activePt: null,
+                                    setPoint(pt) {
+                                        this.activePt = pt;
+                                    },
+                                    clearPoint() {
+                                        this.activePt = null;
+                                    }
+                                }" 
+                                class="relative w-full overflow-visible"
+                                @mouseleave="clearPoint()">
+
+                                    <!-- Floating Interactive Tooltip Popup -->
+                                    <div x-show="activePt !== null" 
+                                         x-cloak
+                                         x-transition:enter="transition ease-out duration-150"
+                                         x-transition:enter-start="opacity-0 -translate-y-1 scale-95"
+                                         x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                         x-transition:leave="transition ease-in duration-100"
+                                         x-transition:leave-start="opacity-100 scale-100"
+                                         x-transition:leave-end="opacity-0 scale-95"
+                                         class="absolute z-30 pointer-events-none -translate-x-1/2 -translate-y-full mb-3 pb-2"
+                                         :style="activePt ? `left: ${Math.max(10, Math.min(90, activePt.x))}%; top: ${activePt.y}%;` : ''">
+                                        <div class="relative bg-slate-900/95 backdrop-blur-sm text-white rounded-xl shadow-xl px-3.5 py-2 text-xs border border-slate-700/80 whitespace-nowrap">
+                                            <div class="flex items-center gap-1.5 text-slate-300 text-[10px] font-medium border-b border-slate-800 pb-1 mb-1">
+                                                <svg class="w-3.5 h-3.5 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                                </svg>
+                                                <span x-text="activePt ? activePt.date : ''"></span>
+                                            </div>
+                                            <div class="flex items-baseline gap-1.5">
+                                                <span class="text-emerald-400 font-bold font-mono text-sm" x-text="activePt ? activePt.kg : '0'"></span>
+                                                <span class="text-slate-300 font-semibold text-[11px]">kg</span>
+                                                <span class="text-slate-400 text-[10px]" x-text="activePt ? `(${activePt.sessions} sesi)` : ''"></span>
+                                            </div>
+                                            <!-- Bottom Arrow -->
+                                            <div class="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 bg-slate-900/95 rotate-45 border-r border-b border-slate-700/80"></div>
+                                        </div>
+                                    </div>
+
                                     <svg viewBox="0 0 1000 240" class="w-full h-56 sm:h-72" preserveAspectRatio="none">
                                         <defs>
                                             <linearGradient id="areaGrad" x1="0" y1="0" x2="0" y2="1">
@@ -894,11 +933,28 @@ new #[Layout('layouts.app')] class extends Component
                                             <polyline points="{{ $cd['polyline'] }}" fill="none" stroke="#059669" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
                                         @endif
 
-                                        <!-- Circles and Hover Points -->
+                                        <!-- Dynamic Active Guide Line and Halo Highlight -->
+                                        <g x-show="activePt !== null" class="transition-opacity pointer-events-none">
+                                            <line :x1="activePt ? (activePt.x / 100) * 1000 : 0" y1="30" :x2="activePt ? (activePt.x / 100) * 1000 : 0" y2="200" stroke="#10b981" stroke-width="1.5" stroke-dasharray="3" opacity="0.6" />
+                                            <circle :cx="activePt ? (activePt.x / 100) * 1000 : 0" :cy="activePt ? (activePt.y / 100) * 240 : 0" r="8" fill="#10b981" fill-opacity="0.25" stroke="#059669" stroke-width="2" />
+                                        </g>
+
+                                        <!-- Circles and Base Points -->
                                         @foreach($cd['points'] as $pt)
-                                            <circle cx="{{ $pt['x'] }}" cy="{{ $pt['y'] }}" r="3.5" fill="#ffffff" stroke="#059669" stroke-width="2" class="hover:r-5 transition-all cursor-pointer">
+                                            <circle cx="{{ $pt['x'] }}" cy="{{ $pt['y'] }}" r="4" fill="#ffffff" stroke="#059669" stroke-width="2" class="transition-all pointer-events-none" />
+                                        @endforeach
+
+                                        <!-- Invisible Hover Trigger Strips for Effortless Point Selection -->
+                                        @php
+                                            $ptCount = count($cd['points']);
+                                            $stripWidth = $ptCount > 1 ? max(16, (int)(900 / $ptCount)) : 60;
+                                        @endphp
+                                        @foreach($cd['points'] as $pt)
+                                            <rect x="{{ max(0, $pt['x'] - ($stripWidth / 2)) }}" y="20" width="{{ $stripWidth }}" height="190" fill="transparent" class="cursor-pointer"
+                                                  @mouseenter="setPoint({ date: '{{ $pt['date_str'] }}', kg: '{{ number_format($pt['kg'], 1, ',', '.') }}', sessions: {{ $pt['sessions'] }}, x: {{ round(($pt['x'] / 1000) * 100, 2) }}, y: {{ round(($pt['y'] / 240) * 100, 2) }} })"
+                                                  @click="setPoint({ date: '{{ $pt['date_str'] }}', kg: '{{ number_format($pt['kg'], 1, ',', '.') }}', sessions: {{ $pt['sessions'] }}, x: {{ round(($pt['x'] / 1000) * 100, 2) }}, y: {{ round(($pt['y'] / 240) * 100, 2) }} })">
                                                 <title>{{ $pt['date_str'] }}: {{ number_format($pt['kg'], 1) }} kg ({{ $pt['sessions'] }} sesi)</title>
-                                            </circle>
+                                            </rect>
                                         @endforeach
 
                                         <!-- X Axis Labels -->
@@ -925,8 +981,8 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
 
-                    <!-- Rekap Kategori & Rekap Sumber Side-by-Side Grid -->
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <!-- Rekap Kategori & Rekap Sumber (Atas-Bawah Layout) -->
+                    <div class="flex flex-col gap-6">
                         <!-- Rekap per Kategori Sampah -->
                         <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between">
                             <div>
@@ -1615,7 +1671,33 @@ new #[Layout('layouts.app')] class extends Component
                             </div>
                         </div>
 
-                        <div class="w-full">
+                        <div x-data="{
+                            activeResidu: null
+                        }"
+                        class="w-full relative overflow-visible"
+                        @mouseleave="activeResidu = null">
+
+                            <!-- Floating Tooltip Popup for Persentase Residu -->
+                            <div x-show="activeResidu !== null" 
+                                 x-cloak
+                                 x-transition:enter="transition ease-out duration-150"
+                                 x-transition:enter-start="opacity-0 -translate-y-1 scale-95"
+                                 x-transition:enter-end="opacity-100 translate-y-0 scale-100"
+                                 x-transition:leave="transition ease-in duration-100"
+                                 x-transition:leave-start="opacity-100 scale-100"
+                                 x-transition:leave-end="opacity-0 scale-95"
+                                 class="absolute z-30 pointer-events-none -translate-x-1/2 -translate-y-full mb-3 pb-2"
+                                 :style="activeResidu ? `left: ${activeResidu.x}%; top: ${activeResidu.y}%;` : ''">
+                                <div class="relative bg-slate-900/95 backdrop-blur-sm text-white rounded-xl shadow-xl px-3 py-1.5 text-xs border border-slate-700/80 whitespace-nowrap">
+                                    <div class="text-[10px] text-slate-300 font-medium" x-text="activeResidu ? activeResidu.label : ''"></div>
+                                    <div class="flex items-baseline gap-1 mt-0.5">
+                                        <span class="text-emerald-400 font-bold font-mono text-sm" x-text="activeResidu ? activeResidu.val : ''"></span>
+                                        <span class="text-[10px] text-slate-400" x-text="activeResidu ? `• ${activeResidu.desc}` : ''"></span>
+                                    </div>
+                                    <div class="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 bg-slate-900/95 rotate-45 border-r border-b border-slate-700/80"></div>
+                                </div>
+                            </div>
+
                             <svg viewBox="0 0 1000 240" class="w-full h-56 sm:h-64" preserveAspectRatio="none">
                                 <g stroke="#f1f5f9" stroke-width="1">
                                     <line x1="60" y1="30" x2="960" y2="30" stroke-dasharray="4" />
@@ -1631,10 +1713,21 @@ new #[Layout('layouts.app')] class extends Component
                                 <polyline points="60,110 160,105 260,115 360,120 460,118 560,130 660,135 760,128 860,132 960,135" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="6" opacity="0.6" />
                                 <!-- 2025-2026 Trend Curve (Solid Emerald) -->
                                 <polyline points="60,140 160,145 260,152 360,158 460,165 560,170 660,175 760,180 860,184 960,188" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
-                                <circle cx="60" cy="140" r="4" fill="#10b981" />
-                                <circle cx="360" cy="158" r="4" fill="#10b981" />
-                                <circle cx="660" cy="175" r="4" fill="#10b981" />
-                                <circle cx="960" cy="188" r="4" fill="#10b981" />
+                                
+                                @php
+                                    $residuPoints = [
+                                        ['x' => 60, 'y' => 140, 'month' => 'Januari 2026', 'pct' => '8.2%', 'desc' => 'Tren awal tahun'],
+                                        ['x' => 360, 'y' => 158, 'month' => 'April 2026', 'pct' => '6.4%', 'desc' => 'Program minim sampah'],
+                                        ['x' => 660, 'y' => 175, 'month' => 'Juli 2026', 'pct' => '4.8%', 'desc' => 'Optimalisasi TPS3R'],
+                                        ['x' => 960, 'y' => 188, 'month' => 'Oktober 2026', 'pct' => '3.5%', 'desc' => 'Capaian kampus lestari'],
+                                    ];
+                                @endphp
+                                @foreach($residuPoints as $rp)
+                                    <circle cx="{{ $rp['x'] }}" cy="{{ $rp['y'] }}" r="4.5" fill="#ffffff" stroke="#10b981" stroke-width="2.5" class="cursor-pointer" />
+                                    <circle cx="{{ $rp['x'] }}" cy="{{ $rp['y'] }}" r="16" fill="transparent" class="cursor-pointer"
+                                            @mouseenter="activeResidu = { label: '{{ $rp['month'] }}', val: '{{ $rp['pct'] }}', desc: '{{ $rp['desc'] }}', x: {{ round(($rp['x'] / 1000) * 100, 2) }}, y: {{ round(($rp['y'] / 240) * 100, 2) }} }"
+                                            @click="activeResidu = { label: '{{ $rp['month'] }}', val: '{{ $rp['pct'] }}', desc: '{{ $rp['desc'] }}', x: {{ round(($rp['x'] / 1000) * 100, 2) }}, y: {{ round(($rp['y'] / 240) * 100, 2) }} }" />
+                                @endforeach
                                 <g font-size="11" fill="#94a3b8" font-family="monospace" text-anchor="middle">
                                     <text x="60" y="222">Jan</text><text x="160" y="222">Feb</text><text x="260" y="222">Mar</text><text x="360" y="222">Apr</text><text x="460" y="222">Mei</text>
                                     <text x="560" y="222">Jun</text><text x="660" y="222">Jul</text><text x="760" y="222">Ags</text><text x="860" y="222">Sep</text><text x="960" y="222">Okt</text>

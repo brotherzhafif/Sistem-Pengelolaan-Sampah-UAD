@@ -153,7 +153,7 @@ new #[Layout('layouts.app')] class extends Component
             <div class="flex items-center gap-2">
                 <button type="button" 
                         x-data="{ copied: false }"
-                        @click="if (window.copyToClipboard) { window.copyToClipboard('{{ url('/survei-kap') }}', 'Tautan survei KAP berhasil disalin ke clipboard!'); } else if (navigator.clipboard) { navigator.clipboard.writeText('{{ url('/survei-kap') }}'); } $dispatch('toast', { message: 'Tautan survei KAP berhasil disalin ke clipboard!', type: 'success' }); copied = true; setTimeout(() => copied = false, 2500);"
+                        @click="if (window.copyToClipboard) { window.copyToClipboard('{{ url('/survei-kap') }}', 'Tautan survei KAP berhasil disalin ke clipboard!'); } else if (navigator.clipboard) { navigator.clipboard.writeText('{{ url('/survei-kap') }}').then(() => { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Tautan survei KAP berhasil disalin ke clipboard!', type: 'success' } })); }); } copied = true; setTimeout(() => copied = false, 2500);"
                         class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
