@@ -7,10 +7,11 @@ use App\Models\Pickup;
 use App\Models\Sale;
 use App\Models\WeighingSession;
 use Carbon\Carbon;
+use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
 
-new class extends Component
+new #[Layout('layouts.app')] class extends Component
 {
     use WithPagination;
 
@@ -781,3 +782,4 @@ new class extends Component
 
     </div>
 </div>
+

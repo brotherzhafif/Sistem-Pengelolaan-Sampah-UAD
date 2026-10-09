@@ -152,3 +152,4 @@ for ctype in ['weighing', 'finance', 'sales']:
     print(f"    CSV export for '{ctype}' verified (UTF-8 BOM valid, Content-Type: {content_type}).")
 
 print("\n[SUCCESS] ALL MODUL M8 (REPORTS & DATA EXPORT) WORKFLOW TESTS PASSED 100% GREEN!")
+
