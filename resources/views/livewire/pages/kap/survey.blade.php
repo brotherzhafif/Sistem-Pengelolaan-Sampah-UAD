@@ -193,28 +193,21 @@ new #[Layout('layouts.guest')] class extends Component
 
         <!-- Step Progress Indicator (Interactive Stepper) -->
         <div class="mb-8 bg-slate-50/90 border border-slate-200 rounded-2xl p-3 sm:p-4">
-            <div class="grid grid-cols-5 gap-1 sm:gap-2 mb-3">
+            <div class="grid grid-cols-5 text-center text-[10px] sm:text-xs font-semibold mb-2.5 gap-1">
                 @php
                     $steps = [
-                        1 => 'Demografi',
-                        2 => 'Pengetahuan',
-                        3 => 'Sikap',
-                        4 => 'Perilaku',
-                        5 => 'Masukan',
+                        1 => '1. Demografi',
+                        2 => '2. Pengetahuan',
+                        3 => '3. Sikap',
+                        4 => '4. Perilaku',
+                        5 => '5. Masukan',
                     ];
                 @endphp
                 @foreach($steps as $stepIdx => $stepTitle)
                     <button type="button"
                             wire:click="goToStep({{ $stepIdx }})"
-                            class="group py-2 px-1 rounded-xl transition duration-200 flex flex-col sm:flex-row items-center justify-center gap-1.5 cursor-pointer select-none {{ $currentStep === $stepIdx ? 'bg-emerald-600 text-white shadow-xs font-bold ring-2 ring-emerald-500/20' : ($currentStep > $stepIdx ? 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 font-semibold' : 'bg-transparent text-slate-500 hover:bg-slate-100 hover:text-slate-800 font-medium') }}">
-                        <span class="w-5 h-5 rounded-full flex items-center justify-center text-[10px] shrink-0 transition {{ $currentStep === $stepIdx ? 'bg-white text-emerald-700 font-black' : ($currentStep > $stepIdx ? 'bg-emerald-600 text-white' : 'bg-slate-200 text-slate-600 group-hover:bg-slate-300') }}">
-                            @if($currentStep > $stepIdx)
-                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7"/></svg>
-                            @else
-                                {{ $stepIdx }}
-                            @endif
-                        </span>
-                        <span class="text-[10px] sm:text-xs truncate text-center sm:text-left">{{ $stepTitle }}</span>
+                            class="py-1.5 px-1 rounded-xl transition duration-150 cursor-pointer select-none truncate {{ $currentStep === $stepIdx ? 'bg-emerald-600 text-white shadow-xs font-bold' : ($currentStep > $stepIdx ? 'text-emerald-700 hover:bg-emerald-100/70 font-semibold' : 'text-slate-400 hover:text-slate-700 hover:bg-slate-100 font-medium') }}">
+                        {{ $stepTitle }}
                     </button>
                 @endforeach
             </div>
