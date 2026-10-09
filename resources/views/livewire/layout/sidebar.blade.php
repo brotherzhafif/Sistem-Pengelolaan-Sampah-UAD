@@ -259,14 +259,16 @@ new class extends Component
                 </a>
 
                 <!-- Pengguna -->
-                <a href="{{ route('dashboard') }}" 
-                   class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition text-slate-400 hover:text-white hover:bg-white/5 opacity-70 cursor-not-allowed"
-                   title="Manajemen Pengguna">
-                    <svg class="w-4 h-4 shrink-0 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                    </svg>
-                    <span>Pengguna</span>
-                </a>
+                @if ($isSuperAdmin || auth()->user()->can('user.view'))
+                    <a href="{{ route('users.index') }}" 
+                       class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-xs font-medium transition {{ request()->routeIs('users.*') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
+                       title="Manajemen Pengguna">
+                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('users.*') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                        </svg>
+                        <span>Pengguna</span>
+                    </a>
+                @endif
 
                 <!-- Notifikasi -->
                 <a href="{{ route('dashboard') }}" 

@@ -32,6 +32,10 @@ Volt::route('master-data', 'pages.master.index')
     ->middleware(['auth', 'verified'])
     ->name('master-data');
 
+Volt::route('users', 'pages.users.index')
+    ->middleware(['auth', 'verified'])
+    ->name('users.index');
+
 Volt::route('survei-kap', 'pages.kap.survey')
     ->name('kap.survey');
 
