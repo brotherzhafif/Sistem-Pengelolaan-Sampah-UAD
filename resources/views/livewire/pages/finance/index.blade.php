@@ -371,59 +371,56 @@ class="space-y-6">
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600">
+                        <table class="w-full text-left text-xs text-slate-600 table-fixed">
                             <thead class="bg-slate-50/75 border-b border-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                                 <tr>
-                                    <th class="py-3 px-4">Tanggal</th>
-                                    <th class="py-3 px-4">Kampus</th>
-                                    <th class="py-3 px-4">Jenis Mutasi</th>
-                                    <th class="py-3 px-4">Sumber Transaksi</th>
-                                    <th class="py-3 px-4">Uraian / Keterangan</th>
-                                    <th class="py-3 px-4 text-right">Nominal (Rp)</th>
-                                    <th class="py-3 px-4">Petugas</th>
-                                    <th class="py-3 px-4 text-center">Aksi</th>
+                                    <th class="py-3 px-3 w-[14%]">Tanggal</th>
+                                    <th class="py-3 px-3 w-[18%]">Kampus & Sumber</th>
+                                    <th class="py-3 px-3 w-[13%]">Jenis Mutasi</th>
+                                    <th class="py-3 px-3 w-[27%]">Uraian / Keterangan</th>
+                                    <th class="py-3 px-3 text-right w-[14%]">Nominal (Rp)</th>
+                                    <th class="py-3 px-3 w-[10%]">Petugas</th>
+                                    <th class="py-3 px-3 text-center w-[4%]">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 font-medium">
                                 @forelse ($cashbookEntries as $entry)
                                     <tr class="hover:bg-slate-50/60 transition">
-                                        <td class="py-2.5 px-4 whitespace-nowrap">
+                                        <td class="py-2.5 px-3">
                                             <div class="font-semibold text-slate-800">{{ $entry->tanggal->format('d M Y') }}</div>
                                             <div class="text-[10px] text-slate-400">{{ $entry->created_at->format('H:i') }} WIB</div>
                                         </td>
-                                        <td class="py-2.5 px-4 whitespace-nowrap">
-                                            <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+                                        <td class="py-2.5 px-3">
+                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 truncate max-w-full">
                                                 {{ $entry->campus->name }}
                                             </span>
+                                            <div class="text-[10px] text-slate-500 capitalize mt-0.5 font-medium truncate">
+                                                {{ str_replace('_', ' ', $entry->sumber) }}
+                                            </div>
                                         </td>
-                                        <td class="py-2.5 px-4 whitespace-nowrap">
+                                        <td class="py-2.5 px-3">
                                             @if ($entry->jenis === 'K')
-                                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                                     <span>Kredit (Masuk)</span>
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
                                                     <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
                                                     <span>Debet (Keluar)</span>
                                                 </span>
                                             @endif
                                         </td>
-                                        <td class="py-2.5 px-4 whitespace-nowrap">
-                                            <span class="text-[11px] font-semibold text-slate-700 capitalize">
-                                                {{ str_replace('_', ' ', $entry->sumber) }}
-                                            </span>
-                                        </td>
-                                        <td class="py-2.5 px-4 max-w-xs truncate text-slate-700">
+                                        <td class="py-2.5 px-3 text-slate-700 truncate" title="{{ $entry->keterangan }}">
                                             {{ $entry->keterangan ?: '-' }}
                                         </td>
-                                        <td class="py-2.5 px-4 text-right font-mono font-bold whitespace-nowrap text-sm {{ $entry->jenis === 'K' ? 'text-emerald-700' : 'text-rose-600' }}">
+                                        <td class="py-2.5 px-3 text-right font-mono font-bold text-sm {{ $entry->jenis === 'K' ? 'text-emerald-700' : 'text-rose-600' }}">
                                             {{ $entry->jenis === 'K' ? '+' : '-' }} Rp {{ number_format($entry->nominal, 0, ',', '.') }}
                                         </td>
-                                        <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                                        <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate" title="{{ $entry->creator?->name ?? 'Sistem' }}">
                                             {{ $entry->creator?->name ?? 'Sistem' }}
                                         </td>
-                                        <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                        <td class="py-2.5 px-3 text-center">
                                             <button @click="detailModal = true; $wire.viewTransaction({{ $entry->id }})" 
                                                     type="button" 
                                                     title="Lihat Rincian Jurnal"
@@ -437,7 +434,7 @@ class="space-y-6">
                                     </tr>
                                 @empty
                                     <tr>
-                                        <td colspan="8" class="py-8 text-center text-slate-400">
+                                        <td colspan="7" class="py-8 text-center text-slate-400">
                                             <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
                                             </svg>
@@ -490,44 +487,44 @@ class="space-y-6">
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600">
+                        <table class="w-full text-left text-xs text-slate-600 table-fixed">
                             <thead class="bg-slate-50/75 border-b border-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                                 <tr>
-                                    <th class="py-3 px-4">Tanggal</th>
-                                    <th class="py-3 px-4">Kampus</th>
-                                    <th class="py-3 px-4 text-right">Saldo Awal (Rp)</th>
-                                    <th class="py-3 px-4 text-right">Total Kredit (+)</th>
-                                    <th class="py-3 px-4 text-right">Total Debet (-)</th>
-                                    <th class="py-3 px-4 text-right">Saldo Akhir (Rp)</th>
-                                    <th class="py-3 px-4 text-center">Status</th>
+                                    <th class="py-3 px-3 w-[15%]">Tanggal</th>
+                                    <th class="py-3 px-3 w-[19%]">Kampus</th>
+                                    <th class="py-3 px-3 text-right w-[16%]">Saldo Awal (Rp)</th>
+                                    <th class="py-3 px-3 text-right w-[15%]">Total Kredit (+)</th>
+                                    <th class="py-3 px-3 text-right w-[15%]">Total Debet (-)</th>
+                                    <th class="py-3 px-3 text-right w-[15%]">Saldo Akhir (Rp)</th>
+                                    <th class="py-3 px-3 text-center w-[5%]">Status</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 font-medium">
                                 @forelse ($ledgerEntries as $ledger)
                                     <tr class="hover:bg-slate-50/60 transition">
-                                        <td class="py-2.5 px-4 whitespace-nowrap font-semibold text-slate-800">
+                                        <td class="py-2.5 px-3 whitespace-nowrap font-semibold text-slate-800">
                                             {{ $ledger->tanggal->format('d M Y') }}
                                         </td>
-                                        <td class="py-2.5 px-4 whitespace-nowrap">
-                                            <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+                                        <td class="py-2.5 px-3 truncate">
+                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 truncate max-w-full">
                                                 {{ $ledger->campus->name }}
                                             </span>
                                         </td>
-                                        <td class="py-2.5 px-4 text-right font-mono text-slate-700 whitespace-nowrap">
+                                        <td class="py-2.5 px-3 text-right font-mono text-slate-700 whitespace-nowrap">
                                             Rp {{ number_format($ledger->saldo_awal, 0, ',', '.') }}
                                         </td>
-                                        <td class="py-2.5 px-4 text-right font-mono font-bold text-emerald-700 whitespace-nowrap">
+                                        <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-700 whitespace-nowrap">
                                             + Rp {{ number_format($ledger->total_kredit, 0, ',', '.') }}
                                         </td>
-                                        <td class="py-2.5 px-4 text-right font-mono font-bold text-rose-600 whitespace-nowrap">
+                                        <td class="py-2.5 px-3 text-right font-mono font-bold text-rose-600 whitespace-nowrap">
                                             - Rp {{ number_format($ledger->total_debet, 0, ',', '.') }}
                                         </td>
-                                        <td class="py-2.5 px-4 text-right font-mono font-bold text-sm whitespace-nowrap {{ $ledger->saldo_akhir >= 0 ? 'text-slate-900' : 'text-rose-600' }}">
+                                        <td class="py-2.5 px-3 text-right font-mono font-bold text-sm whitespace-nowrap {{ $ledger->saldo_akhir >= 0 ? 'text-slate-900' : 'text-rose-600' }}">
                                             Rp {{ number_format($ledger->saldo_akhir, 0, ',', '.') }}
                                         </td>
-                                        <td class="py-2.5 px-4 text-center whitespace-nowrap">
-                                            <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-700">
-                                                Tervalidasi
+                                        <td class="py-2.5 px-3 text-center whitespace-nowrap">
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[9px] font-bold bg-slate-100 text-slate-700">
+                                                Valid
                                             </span>
                                         </td>
                                     </tr>

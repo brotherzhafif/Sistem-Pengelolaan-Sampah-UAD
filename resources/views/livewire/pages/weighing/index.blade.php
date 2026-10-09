@@ -364,70 +364,81 @@ new #[Layout('layouts.app')] class extends Component
         </div>
 
         <div class="overflow-x-auto">
-            <table class="w-full text-left border-collapse text-xs">
+            <table class="w-full text-left border-collapse text-xs table-fixed">
                 <thead>
                     <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                        <th class="py-3 px-4">Tanggal</th>
-                        <th class="py-3 px-4">Kampus & Lokasi Sumber</th>
-                        <th class="py-3 px-4">Rincian Komposisi Sampah</th>
-                        <th class="py-3 px-4 text-right">Total Berat</th>
-                        <th class="py-3 px-4">Petugas</th>
-                        <th class="py-3 px-4 text-center">Aksi</th>
+                        <th class="py-3 px-3 w-[14%]">Tanggal</th>
+                        <th class="py-3 px-3 w-[28%]">Kampus & Lokasi Sumber</th>
+                        <th class="py-3 px-3 w-[20%]">Rincian Komposisi Sampah</th>
+                        <th class="py-3 px-3 text-right w-[15%]">Total Berat</th>
+                        <th class="py-3 px-3 w-[15%]">Petugas</th>
+                        <th class="py-3 px-2 text-center w-[8%]">Aksi</th>
                     </tr>
                 </thead>
-                        <tbody class="divide-y divide-slate-100 text-slate-700">
-                            @forelse ($sessions as $session)
-                                <tr class="hover:bg-slate-50/50 transition">
-                                    <td class="py-2.5 px-4 whitespace-nowrap font-medium text-slate-900">
-                                        <div>{{ $session->weigh_date->translatedFormat('d M Y') }}</div>
-                                        <div class="text-[10px] text-slate-400 font-normal">{{ $session->created_at->format('H:i') }} WIB</div>
-                                    </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap">
-                                        <div class="font-semibold text-slate-900">{{ $session->campus->name }}</div>
-                                        <div class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
-                                            <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
-                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-                                            </svg>
-                                            <span>{{ $session->wasteSource?->name ?? 'Titik Kampus Umum' }}</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap">
-                                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                            <span>{{ $session->items->count() }} Jenis Tervalidasi</span>
-                                        </div>
-                                    </td>
-                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-sm">
-                                        {{ number_format($session->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
-                                    </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
-                                        {{ $session->creator?->name ?? 'Sistem' }}
-                                    </td>
-                                    <td class="py-2.5 px-4 text-center whitespace-nowrap">
-                                        <div class="flex items-center justify-center gap-1">
-                                            <button wire:click="viewSession({{ $session->id }})" 
-                                                    type="button"
-                                                    title="Lihat Rincian Sesi Timbang"
-                                                    class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
-                                            </button>
-                                            <button @click="deleteModal = true; $wire.confirmDelete({{ $session->id }})" 
-                                                    type="button"
-                                                    class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                                    title="Hapus Sesi">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        </div>
-                                    </td>
-                                </tr>
-                            @empty
-                                <tr>
+                <tbody class="divide-y divide-slate-100 text-slate-700">
+                    @forelse ($sessions as $session)
+                        <tr class="hover:bg-slate-50/50 transition">
+                            <td class="py-2.5 px-3 font-medium text-slate-900">
+                                <div>{{ $session->weigh_date->translatedFormat('d M Y') }}</div>
+                                <div class="text-[10px] text-slate-400 font-normal">{{ $session->created_at->format('H:i') }} WIB</div>
+                            </td>
+                            <td class="py-2.5 px-3 truncate">
+                                <div class="font-semibold text-slate-900 truncate" title="{{ $session->campus->name }}">{{ $session->campus->name }}</div>
+                                <div class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5 truncate" title="{{ $session->wasteSource?->name ?? 'Titik Kampus Umum' }}">
+                                    <svg class="w-3 h-3 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                                    </svg>
+                                    <span class="truncate">{{ $session->wasteSource?->name ?? 'Titik Kampus Umum' }}</span>
+                                </div>
+                            </td>
+                            <td class="py-2.5 px-3">
+                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
+                                    <span>{{ $session->items->count() }} Jenis Tervalidasi</span>
+                                </div>
+                            </td>
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-sm">
+                                {{ number_format($session->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
+                            </td>
+                            <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate" title="{{ $session->creator?->name ?? 'Sistem' }}">
+                                {{ $session->creator?->name ?? 'Sistem' }}
+                            </td>
+                            <td class="py-2.5 px-2 text-center">
+                                <div class="flex items-center justify-center gap-1">
+                                    <button wire:click="viewSession({{ $session->id }})" 
+                                            type="button"
+                                            title="Lihat Rincian Sesi Timbang"
+                                            class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                        </svg>
+                                    </button>
+                                    <button @click="deleteModal = true; $wire.confirmDelete({{ $session->id }})" 
+                                            type="button"
+                                            class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                            title="Hapus Sesi">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    @empty
+                        <tr>
+                            <td colspan="6" class="py-8 text-center text-slate-400">
+                                <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                                <span>Belum ada data penimbangan untuk filter yang dipilih.</span>
+                            </td>
+                        </tr>
+                    @endforelse
+                </tbody>
+            </table>
+        </div>
                                     <td colspan="6" class="py-8 text-center text-slate-400">
                                         <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />

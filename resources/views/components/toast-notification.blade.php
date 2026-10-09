@@ -2,8 +2,13 @@
     toasts: [],
     add(message, type = 'success') {
         if (!message) return;
-        const id = Date.now() + Math.random();
-        this.toasts.push({ id, message, type });
+        const now = Date.now();
+        // Prevent duplicate toast with identical message within 2 seconds
+        if (this.toasts.some(t => t.message === message && (now - (t.timestamp || 0)) < 2000)) {
+            return;
+        }
+        const id = now + Math.random();
+        this.toasts.push({ id, message, type, timestamp: now });
         setTimeout(() => this.remove(id), 4000);
     },
     remove(id) {

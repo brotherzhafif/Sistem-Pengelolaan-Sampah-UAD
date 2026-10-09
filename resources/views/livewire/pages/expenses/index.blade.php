@@ -352,46 +352,46 @@ class="space-y-6">
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600">
+                    <table class="w-full text-left text-xs text-slate-600 table-fixed">
                         <thead class="bg-slate-50/75 border-b border-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                             <tr>
-                                <th class="py-3 px-4">Tanggal</th>
-                                <th class="py-3 px-4">Kampus</th>
-                                <th class="py-3 px-4">Kategori Biaya</th>
-                                <th class="py-3 px-4">Keterangan / Deskripsi</th>
-                                <th class="py-3 px-4 text-right">Nominal (Rp)</th>
-                                <th class="py-3 px-4">Petugas</th>
-                                <th class="py-3 px-4 text-center">Aksi</th>
+                                <th class="py-3 px-3 w-[13%]">Tanggal</th>
+                                <th class="py-3 px-3 w-[17%]">Kampus</th>
+                                <th class="py-3 px-3 w-[17%]">Kategori Biaya</th>
+                                <th class="py-3 px-3 w-[25%]">Keterangan / Deskripsi</th>
+                                <th class="py-3 px-3 text-right w-[14%]">Nominal (Rp)</th>
+                                <th class="py-3 px-3 w-[8%]">Petugas</th>
+                                <th class="py-3 px-2 text-center w-[6%]">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                             @forelse ($expenses as $e)
                                 <tr class="hover:bg-slate-50/60 transition">
-                                    <td class="py-2.5 px-4 whitespace-nowrap">
+                                    <td class="py-2.5 px-3">
                                         <div class="font-semibold text-slate-800">{{ $e->expense_date->format('d M Y') }}</div>
                                         <div class="text-[10px] text-slate-400">{{ $e->created_at->format('H:i') }} WIB</div>
                                     </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap">
-                                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700">
+                                    <td class="py-2.5 px-3 truncate">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 truncate" title="{{ $e->campus->name }}">
                                             {{ $e->campus->name }}
                                         </span>
                                     </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap">
+                                    <td class="py-2.5 px-3">
                                         <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
-                                            <span>{{ $e->category->name }}</span>
+                                            <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
+                                            <span class="truncate">{{ $e->category->name }}</span>
                                         </span>
                                     </td>
-                                    <td class="py-2.5 px-4 max-w-xs truncate text-slate-700">
+                                    <td class="py-2.5 px-3 truncate text-slate-700" title="{{ $e->description }}">
                                         {{ $e->description }}
                                     </td>
-                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-rose-600 whitespace-nowrap text-sm">
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-rose-600 text-sm">
                                         Rp {{ number_format($e->amount, 0, ',', '.') }}
                                     </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                                    <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate" title="{{ $e->creator?->name ?? 'Sistem' }}">
                                         {{ $e->creator?->name ?? 'Sistem' }}
                                     </td>
-                                    <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                    <td class="py-2.5 px-2 text-center">
                                         <div class="flex items-center justify-center gap-1">
                                             <!-- Detail Eye Action Button -->
                                             <button @click="detailModal = true; $wire.viewExpense({{ $e->id }})"

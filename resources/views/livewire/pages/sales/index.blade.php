@@ -405,50 +405,50 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse text-xs">
+                    <table class="w-full text-left border-collapse text-xs table-fixed">
                         <thead>
                             <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                                <th class="py-3 px-4">Tanggal</th>
-                                <th class="py-3 px-4">Kampus & Pembeli / Pengepul</th>
-                                <th class="py-3 px-4">Rincian Sampah Terjual</th>
-                                <th class="py-3 px-4 text-right">Total Berat</th>
-                                <th class="py-3 px-4 text-right">Total Nilai (Rp)</th>
-                                <th class="py-3 px-4">Petugas</th>
-                                <th class="py-3 px-4 text-center">Aksi</th>
+                                <th class="py-3 px-3 w-[13%]">Tanggal</th>
+                                <th class="py-3 px-3 w-[23%]">Kampus & Pembeli</th>
+                                <th class="py-3 px-3 w-[18%]">Rincian Sampah Terjual</th>
+                                <th class="py-3 px-3 text-right w-[14%]">Total Berat</th>
+                                <th class="py-3 px-3 text-right w-[16%]">Total Nilai (Rp)</th>
+                                <th class="py-3 px-3 w-[10%]">Petugas</th>
+                                <th class="py-3 px-2 text-center w-[6%]">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             @forelse ($sales as $sale)
                                 <tr class="hover:bg-slate-50/50 transition">
-                                    <td class="py-2.5 px-4 whitespace-nowrap font-medium text-slate-900">
+                                    <td class="py-2.5 px-3 font-medium text-slate-900">
                                         <div>{{ $sale->sale_date->translatedFormat('d M Y') }}</div>
                                         <div class="text-[10px] text-slate-400 font-normal">{{ $sale->created_at->format('H:i') }} WIB</div>
                                     </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap">
-                                        <div class="font-semibold text-slate-900">{{ $sale->campus->name }}</div>
-                                        <div class="text-[11px] text-sky-700 flex items-center gap-1 mt-0.5 font-medium">
-                                            <svg class="w-3 h-3 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <td class="py-2.5 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="{{ $sale->campus->name }}">{{ $sale->campus->name }}</div>
+                                        <div class="text-[11px] text-sky-700 flex items-center gap-1 mt-0.5 font-medium truncate" title="{{ $sale->buyer->name }}">
+                                            <svg class="w-3 h-3 text-sky-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                                             </svg>
-                                            <span>{{ $sale->buyer->name }}</span>
+                                            <span class="truncate">{{ $sale->buyer->name }}</span>
                                         </div>
                                     </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap">
+                                    <td class="py-2.5 px-3">
                                         <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
-                                            <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                            <span class="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"></span>
                                             <span>{{ $sale->items->count() }} Jenis Terpilah</span>
                                         </div>
                                     </td>
-                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-sm">
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-sm">
                                         {{ number_format($sale->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
                                     </td>
-                                    <td class="py-2.5 px-4 text-right font-mono font-bold text-emerald-600 whitespace-nowrap text-sm">
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600 text-sm">
                                         Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
                                     </td>
-                                    <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                                    <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate" title="{{ $sale->creator?->name ?? 'Sistem' }}">
                                         {{ $sale->creator?->name ?? 'Sistem' }}
                                     </td>
-                                    <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                    <td class="py-2.5 px-2 text-center">
                                         <div class="flex items-center justify-center gap-1">
                                             <button wire:click="viewSale({{ $sale->id }})" 
                                                     type="button"

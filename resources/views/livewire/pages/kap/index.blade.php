@@ -153,7 +153,7 @@ new #[Layout('layouts.app')] class extends Component
             <div class="flex items-center gap-2">
                 <button type="button" 
                         x-data="{ copied: false }"
-                        @click="if (window.copyToClipboard) { window.copyToClipboard('{{ url('/survei-kap') }}', 'Tautan survei KAP berhasil disalin ke clipboard!'); } else if (navigator.clipboard) { navigator.clipboard.writeText('{{ url('/survei-kap') }}').then(() => { window.dispatchEvent(new CustomEvent('toast', { detail: { message: 'Tautan survei KAP berhasil disalin ke clipboard!', type: 'success' } })); }); } copied = true; setTimeout(() => copied = false, 2500);"
+                        @click.stop="window.copyToClipboard ? window.copyToClipboard('{{ url('/survei-kap') }}', 'Tautan survei KAP berhasil disalin ke clipboard!') : navigator.clipboard.writeText('{{ url('/survei-kap') }}'); copied = true; setTimeout(() => copied = false, 2500);"
                         class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-2xs transition flex items-center gap-1.5 active:scale-95 cursor-pointer">
                     <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
@@ -448,64 +448,64 @@ new #[Layout('layouts.app')] class extends Component
                     </div>
 
                     <!-- Table -->
-                    <table class="w-full text-left text-xs">
+                    <table class="w-full text-left text-xs table-fixed">
                         <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
                             <tr>
-                                <th class="py-3 px-4">Tanggal</th>
-                                <th class="py-3 px-4">Responden</th>
-                                <th class="py-3 px-4">Kampus & Unit</th>
-                                <th class="py-3 px-4 text-center">Pengetahuan</th>
-                                <th class="py-3 px-4 text-center">Sikap</th>
-                                <th class="py-3 px-4 text-center">Perilaku</th>
-                                <th class="py-3 px-4 text-right">Skor KAP</th>
-                                <th class="py-3 px-4 text-center">Kategori</th>
-                                <th class="py-3 px-4 text-center">Aksi</th>
+                                <th class="py-3 px-3 w-[11%]">Tanggal</th>
+                                <th class="py-3 px-3 w-[20%]">Responden</th>
+                                <th class="py-3 px-3 w-[20%]">Kampus & Unit</th>
+                                <th class="py-3 px-2 text-center w-[9%]">Pengetahuan</th>
+                                <th class="py-3 px-2 text-center w-[9%]">Sikap</th>
+                                <th class="py-3 px-2 text-center w-[9%]">Perilaku</th>
+                                <th class="py-3 px-2 text-right w-[9%]">Skor KAP</th>
+                                <th class="py-3 px-2 text-center w-[9%]">Kategori</th>
+                                <th class="py-3 px-1 text-center w-[4%]">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($surveys as $survey)
                                 <tr class="hover:bg-slate-50/70 transition">
-                                    <td class="py-3 px-4 whitespace-nowrap text-slate-500 font-mono text-[11px]">
+                                    <td class="py-3 px-3 text-slate-500 font-mono text-[11px]">
                                         {{ $survey->survey_date->format('d/m/Y') }}
                                     </td>
-                                    <td class="py-3 px-4">
-                                        <div class="font-semibold text-slate-900">
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-semibold text-slate-900 truncate" title="{{ $survey->respondent_name ?? 'Anonim' }}">
                                             {{ $survey->respondent_name ?? 'Anonim' }}
                                         </div>
-                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium">
+                                        <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5 truncate">
+                                            <span class="px-1.5 py-0.2 rounded bg-slate-100 text-slate-600 font-medium shrink-0">
                                                 {{ $survey->role_label }}
                                             </span>
                                             @if($survey->respondent_identifier)
-                                                <span>&bull; {{ $survey->respondent_identifier }}</span>
+                                                <span class="truncate">&bull; {{ $survey->respondent_identifier }}</span>
                                             @endif
                                         </div>
                                     </td>
-                                    <td class="py-3 px-4">
-                                        <div class="font-medium text-slate-800">{{ $survey->campus->name }}</div>
-                                        <div class="text-[11px] text-slate-400 truncate max-w-xs">{{ $survey->faculty_unit }}</div>
+                                    <td class="py-3 px-3 truncate">
+                                        <div class="font-medium text-slate-800 truncate" title="{{ $survey->campus->name }}">{{ $survey->campus->name }}</div>
+                                        <div class="text-[11px] text-slate-400 truncate" title="{{ $survey->faculty_unit }}">{{ $survey->faculty_unit }}</div>
                                     </td>
-                                    <td class="py-3 px-4 text-center font-mono font-bold text-sky-700">
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-sky-700">
                                         {{ number_format($survey->knowledge_score, 0) }}%
                                     </td>
-                                    <td class="py-3 px-4 text-center font-mono font-bold text-teal-700">
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-teal-700">
                                         {{ number_format($survey->attitude_score, 0) }}%
                                     </td>
-                                    <td class="py-3 px-4 text-center font-mono font-bold text-amber-700">
+                                    <td class="py-3 px-2 text-center font-mono font-bold text-amber-700">
                                         {{ number_format($survey->practice_score, 0) }}%
                                     </td>
-                                    <td class="py-3 px-4 text-right">
+                                    <td class="py-3 px-2 text-right">
                                         <span class="font-mono text-sm font-bold text-slate-900">{{ number_format($survey->overall_score, 1) }}</span>
                                     </td>
-                                    <td class="py-3 px-4 text-center">
-                                        <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold {{ $survey->category === 'sangat_baik' ? 'bg-emerald-100 text-emerald-800' : ($survey->category === 'sedang' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800') }}">
+                                    <td class="py-3 px-2 text-center">
+                                        <span class="inline-flex px-1.5 py-0.5 rounded text-[10px] font-bold {{ $survey->category === 'sangat_baik' ? 'bg-emerald-100 text-emerald-800' : ($survey->category === 'sedang' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800') }}">
                                             {{ $survey->category_label }}
                                         </span>
                                     </td>
-                                    <td class="py-3 px-4 text-center">
+                                    <td class="py-3 px-1 text-center">
                                         <button type="button" 
                                                 wire:click="viewSurvey({{ $survey->id }})" 
-                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center"
+                                                class="w-7 h-7 rounded-md border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
                                                 title="Lihat Rincian Jawaban Responden">
                                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

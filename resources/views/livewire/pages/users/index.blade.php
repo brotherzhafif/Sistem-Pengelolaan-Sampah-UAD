@@ -353,38 +353,38 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs">
+                    <table class="w-full text-left text-xs table-fixed">
                         <thead class="bg-slate-50 border-b border-slate-200 text-slate-600 font-semibold uppercase tracking-wider text-[10px]">
                             <tr>
-                                <th class="py-3 px-4">Pengguna</th>
-                                <th class="py-3 px-4">Peran (Role Akses)</th>
-                                <th class="py-3 px-4">Unit Penugasan</th>
-                                <th class="py-3 px-4">Tanggal Dibuat</th>
-                                <th class="py-3 px-4 text-center">Aksi</th>
+                                <th class="py-3 px-3 w-[32%]">Pengguna</th>
+                                <th class="py-3 px-3 w-[22%]">Peran (Role Akses)</th>
+                                <th class="py-3 px-3 w-[20%]">Unit Penugasan</th>
+                                <th class="py-3 px-3 w-[14%]">Tanggal Dibuat</th>
+                                <th class="py-3 px-2 text-center w-[12%]">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
                             @forelse($users as $userItem)
                                 <tr class="hover:bg-slate-50/70 transition">
-                                    <td class="py-3.5 px-4">
-                                        <div class="flex items-center gap-3">
+                                    <td class="py-3.5 px-3 truncate">
+                                        <div class="flex items-center gap-2.5 truncate">
                                             <div class="w-8 h-8 rounded-full bg-slate-100 border border-slate-200 text-slate-700 font-bold flex items-center justify-center text-xs shrink-0">
                                                 {{ strtoupper(substr($userItem->name, 0, 1)) }}
                                             </div>
-                                            <div>
-                                                <div class="font-bold text-slate-900 flex items-center gap-1.5">
-                                                    <span>{{ $userItem->name }}</span>
+                                            <div class="truncate">
+                                                <div class="font-bold text-slate-900 flex items-center gap-1.5 truncate">
+                                                    <span class="truncate" title="{{ $userItem->name }}">{{ $userItem->name }}</span>
                                                     @if($userItem->id === auth()->id())
-                                                        <span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold">Anda</span>
+                                                        <span class="px-1.5 py-0.2 rounded bg-emerald-100 text-emerald-800 text-[9px] font-bold shrink-0">Anda</span>
                                                     @endif
                                                 </div>
-                                                <div class="text-[11px] text-slate-500 font-mono">
+                                                <div class="text-[11px] text-slate-500 font-mono truncate" title="{{ $userItem->email }}">
                                                     {{ $userItem->email }}
                                                 </div>
                                             </div>
                                         </div>
                                     </td>
-                                    <td class="py-3.5 px-4">
+                                    <td class="py-3.5 px-3">
                                         @php
                                             $roleName = $userItem->roles->first()?->name ?? 'User';
                                             $badgeClasses = match($roleName) {
@@ -396,21 +396,21 @@ new #[Layout('layouts.app')] class extends Component
                                                 default => 'bg-slate-100 text-slate-700 border-slate-200'
                                             };
                                         @endphp
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-md text-[10px] font-bold border {{ $badgeClasses }}">
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $badgeClasses }} truncate">
                                             {{ ucfirst(str_replace('_', ' ', $roleName)) }}
                                         </span>
                                     </td>
-                                    <td class="py-3.5 px-4">
+                                    <td class="py-3.5 px-3 truncate">
                                         @if($userItem->campus)
-                                            <span class="font-medium text-slate-800">{{ $userItem->campus->name }}</span>
+                                            <span class="font-medium text-slate-800 truncate" title="{{ $userItem->campus->name }}">{{ $userItem->campus->name }}</span>
                                         @else
                                             <span class="text-slate-500 italic">Semua Kampus (Pusat)</span>
                                         @endif
                                     </td>
-                                    <td class="py-3.5 px-4 text-slate-500 font-mono text-[11px]">
+                                    <td class="py-3.5 px-3 text-slate-500 font-mono text-[11px]">
                                         {{ $userItem->created_at ? $userItem->created_at->format('d/m/Y') : '-' }}
                                     </td>
-                                    <td class="py-3.5 px-4 text-center">
+                                    <td class="py-3.5 px-2 text-center">
                                         <div class="inline-flex items-center gap-1.5">
                                             <!-- Edit User Button -->
                                             <button type="button" 
