@@ -250,7 +250,9 @@ new #[Layout('layouts.app')] class extends Component
 <div x-data="{
     formModal: @entangle('isFormModalOpen'),
     deleteModal: @entangle('isDeleteModalOpen'),
-}">
+}"
+@open-user-modal.window="formModal = true; $wire.openCreateModal()"
+@close-user-modal.window="formModal = false">
 
     <!-- Topbar Header (Clean Header tanpa span badge redundan) -->
     <x-slot name="header">
@@ -264,11 +266,11 @@ new #[Layout('layouts.app')] class extends Component
                 </p>
             </div>
 
-            <!-- Tombol Aksi Tambah Pengguna -->
+            <!-- Tombol Aksi Tambah Pengguna (Header) -->
             <div>
                 <button type="button" 
-                        wire:click="openCreateModal"
-                        class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer">
+                        onclick="window.dispatchEvent(new CustomEvent('open-user-modal'))"
+                        class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
                     </svg>
@@ -282,7 +284,7 @@ new #[Layout('layouts.app')] class extends Component
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
 
             <!-- Filter & Pencarian Bar -->
-            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs">
+            <div class="bg-white rounded-2xl p-4 border border-slate-200 shadow-2xs space-y-3">
                 <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <!-- Search Input -->
                     <div>
@@ -319,6 +321,21 @@ new #[Layout('layouts.app')] class extends Component
                             @endforeach
                         </select>
                     </div>
+                </div>
+
+                <!-- Toolbar Bawah: Info & Tombol Tambah Pengguna Body -->
+                <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-3 border-t border-slate-100">
+                    <div class="text-xs text-slate-500 font-medium">
+                        Total <span class="font-bold text-slate-800">{{ $users->total() }}</span> akun pengguna terdaftar
+                    </div>
+                    <button type="button" 
+                            @click="formModal = true; $wire.openCreateModal()"
+                            class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center justify-center gap-1.5 cursor-pointer active:scale-95">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                        <span>+ Tambah Pengguna Baru</span>
+                    </button>
                 </div>
             </div>
 
