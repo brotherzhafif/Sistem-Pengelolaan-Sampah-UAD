@@ -227,6 +227,23 @@ flowchart TD
   - [x] Komponen Livewire `pages.kap.survey` & `pages.kap.index`.
   - [x] Menu sidebar & quick card dashboard terhubung.
 
-### 📌 Phase 10: Laporan, Ekspor & Audit Trail (SRS M8, M9, M10)
-- Ekspor PDF & Excel (rekap penimbangan, buku kas, buku besar).
-- Notifikasi stok & audit log.
+### ✅ Phase 10: Laporan & Ekspor Data Lengkap (SRS M8 - Prototype UI Alignment) (STATUS: SELESAI & TERUJI)
+- **Fitur Utama**:
+  - Penyelarasan penuh 6 Tab Kanonikal sesuai Prototipe (`ref/PS2_UAD_Prototype_UI.html`) dan SRS M8:
+    1. **Penimbangan**: 4 Metric Cards (Total Sesi, Total Berat, Total Volume, Rata-rata/Hari), Grafik Tren Bobot Sampah Masuk Harian Full-Width SVG, Rekap per Kategori Sampah (dengan kolom Kategori, Total Kg, Volume m³, % Komposisi, Avg/Hari), Rekap per Sumber Sampah (Top 6 Titik Sumber bersih tanpa duplikasi nama, Total Kg, Total m³, Sesi, % Kontribusi), Tabel Riwayat Sesi Penimbangan (Tanggal, Kampus & Lokasi Sumber, Badge pill `X Jenis Tervalidasi`, Total Berat, Petugas, Aksi Eye Button ➔ Modal Detail Rincian Komposisi Item).
+    2. **Penjualan**: 4 Metric Cards (Total Pemasukan, Volume Terjual, Transaksi, Avg Harga), Distribusi Bar Penjualan per Kategori Sampah, Tabel Riwayat Penjualan (Tanggal, Kampus & Pembeli, Badge pill `X Jenis Terpilah`, Total Berat, Total Nilai Rp, Petugas, Aksi Eye Button ➔ Modal Detail Faktur Penjualan & Rincian Item).
+    3. **Pengangkutan**: 4 Metric Cards (Total Diangkut, Total Biaya Angkut, Frekuensi Ritase, Avg Biaya/Kg), Tabel Perbandingan Kinerja Vendor, Tabel Riwayat Pengangkutan (Tanggal, Kampus & Vendor, Armada/Driver, Volume kg, Tarif/kg, Total Biaya Rp, Petugas, Aksi Eye Button ➔ Modal Detail Pengangkutan Residu).
+    4. **Keuangan**: 3 Metric Cards (Pemasukan Kredit, Pengeluaran Debet, Surplus/Defisit Periode), Bar Alokasi Komposisi Pengeluaran, Tabel Mutasi Kas & Buku Kas Harian (Tanggal, Badge Mutasi `+ KREDIT (MASUK)` / `- DEBET (KELUAR)`, Kampus & Sumber, Keterangan, Nominal Rp, Petugas, Aksi Eye Button ➔ Modal Detail Jurnal Kas).
+    5. **Persentase**: 4 KPI Rasion (Residu ke TPA, Terjual Circular, Organik Terolah, Diangkut Vendor), Grafik Tren Penurunan Residu Year-over-Year (YoY), Matriks Komparasi Antar Kampus (Kampus 1 s.d. 6 UAD) + Agregat Universitas.
+    6. **KAP (Perilaku Civitas)**: 3 KPI Cards (Total Responden, Pernah Edukasi %, Bersedia Relawan %), Evaluasi Indeks Konstruk (Pengetahuan, Sikap, Perilaku), Akurasi Pengetahuan K1-K6, Matriks Komparasi KAP Antar Kampus, Tabel Riwayat Respons Civitas (Tanggal, Responden, Kampus & Unit, Skor K, A, P, Skor KAP, Kategori, Aksi Eye Button ➔ Modal Detail Evaluasi Responden).
+  - **Toolbar Ekspor Di Bagian Atas**: Tombol Ekspor Excel (.xlsx) dan PDF (.pdf) resmi di Header Slot dan Filter Bar atas.
+  - **UI/UX Standar**:
+    - Seluruh tombol tab menggunakan icon SVG modern, bersih tanpa raw emoji.
+    - Semua tabel dibatasi tepat 8 baris per halaman (`paginate(8)`).
+    - Seluruh 5 modal rincian diteleportasi ke body (`<template x-teleport="body">`) dengan `z-[9999]` dan backdrop blur 100%.
+- **Checklist Uji**:
+  - [x] E2E UX Test (`scratch/test_reports_ux.py`): Lolos 100%.
+  - [x] All 6 Tabs Switching & Export Endpoint Test (`scratch/test_reports_module.py`): Lolos 100% PDF & CSV/Excel.
+  - [x] All 5 Detail Modals Interactive Verification (`scratch/verify_all_report_modals.py`): Lolos 100%.
+  - [x] SRS Alignment Global Test (`scratch/test_srs_alignment.py`): Seluruh 11 modul lulus verifikasi 100%.
+
