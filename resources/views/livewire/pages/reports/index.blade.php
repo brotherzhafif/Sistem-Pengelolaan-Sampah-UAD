@@ -27,8 +27,12 @@ new #[Layout('layouts.app')] class extends Component
     public ?string $filterDateTo = '';
     public string $presetPeriod = 'this_month'; // 'this_month', 'last_month', 'q_this', 'this_year', 'all', 'custom'
 
-    // Modal Detail Sesi Penimbangan
+    // Detail Modals state (Uniform with respective modules)
     public ?int $viewSessionId = null;
+    public ?int $viewSaleId = null;
+    public ?int $viewPickupId = null;
+    public ?int $viewSurveyId = null;
+    public ?int $viewKeuanganId = null;
 
     public function mount(): void
     {
@@ -47,6 +51,7 @@ new #[Layout('layouts.app')] class extends Component
     public function setTab(string $tab): void
     {
         $this->activeTab = $tab;
+        $this->closeViewModal();
         $this->resetPage();
     }
 
@@ -105,14 +110,20 @@ new #[Layout('layouts.app')] class extends Component
         $this->resetPage();
     }
 
-    public function viewSession(int $id): void
-    {
-        $this->viewSessionId = $id;
-    }
+    // Modal Triggers
+    public function viewSession(int $id): void { $this->viewSessionId = $id; }
+    public function viewSale(int $id): void { $this->viewSaleId = $id; }
+    public function viewPickup(int $id): void { $this->viewPickupId = $id; }
+    public function viewSurvey(int $id): void { $this->viewSurveyId = $id; }
+    public function viewKeuangan(int $id): void { $this->viewKeuanganId = $id; }
 
     public function closeViewModal(): void
     {
         $this->viewSessionId = null;
+        $this->viewSaleId = null;
+        $this->viewPickupId = null;
+        $this->viewSurveyId = null;
+        $this->viewKeuanganId = null;
     }
 
     public function with(LedgerService $ledgerService): array
@@ -139,9 +150,25 @@ new #[Layout('layouts.app')] class extends Component
         $pagedData = null;
         $tabData = [];
 
-        // Selected Session for View Modal
+        // Fetch Selected Model for Active Modal
         $selectedSession = $this->viewSessionId
             ? WeighingSession::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])->find($this->viewSessionId)
+            : null;
+
+        $selectedSale = $this->viewSaleId
+            ? Sale::with(['campus', 'buyer', 'creator', 'items.wasteType'])->find($this->viewSaleId)
+            : null;
+
+        $selectedPickup = $this->viewPickupId
+            ? Pickup::with(['campus', 'vendor', 'creator'])->find($this->viewPickupId)
+            : null;
+
+        $selectedSurvey = $this->viewSurveyId
+            ? KapSurvey::with('campus')->find($this->viewSurveyId)
+            : null;
+
+        $selectedKeuangan = $this->viewKeuanganId
+            ? Keuangan::with(['campus', 'creator'])->find($this->viewKeuanganId)
             : null;
 
         // ══════════════════════════════════════════════════════════════
@@ -247,32 +274,34 @@ new #[Layout('layouts.app')] class extends Component
             }
             usort($categoryRecap, fn($a, $b) => $b['kg'] <=> $a['kg']);
 
-            // Rekap per Sumber Sampah
-            $sourceQuery = (clone $baseQuery)
-                ->select('waste_source_id', DB::raw('count(id) as sessions_count'))
-                ->groupBy('waste_source_id')
+            // Rekap per Sumber Sampah (Distinct Name grouping to avoid duplicates across campuses)
+            $sourceQuery = WeighingSession::query()
+                ->join('waste_sources', 'weighing_sessions.waste_source_id', '=', 'waste_sources.id')
+                ->join('weighing_items', 'weighing_sessions.id', '=', 'weighing_items.weighing_session_id')
+                ->when($campusId, fn($q) => $q->where('weighing_sessions.campus_id', $campusId))
+                ->when($this->filterDateFrom, fn($q) => $q->whereDate('weighing_sessions.weigh_date', '>=', $this->filterDateFrom))
+                ->when($this->filterDateTo, fn($q) => $q->whereDate('weighing_sessions.weigh_date', '<=', $this->filterDateTo))
+                ->select(
+                    'waste_sources.name',
+                    DB::raw('SUM(weighing_items.weight_kg) as total_kg'),
+                    DB::raw('COUNT(DISTINCT weighing_sessions.id) as sessions_count')
+                )
+                ->groupBy('waste_sources.name')
+                ->orderByDesc('total_kg')
+                ->take(6)
                 ->get();
 
             $sourceRecap = [];
-            $allSources = WasteSource::all()->keyBy('id');
             foreach ($sourceQuery as $sq) {
-                $sName = $allSources->get($sq->waste_source_id)?->name ?? 'Lainnya';
-                $sKg = (float) WeighingItem::whereIn('weighing_session_id', function($q) use ($sq, $baseQuery) {
-                    $q->select('id')->from('weighing_sessions')
-                        ->where('waste_source_id', $sq->waste_source_id)
-                        ->whereIn('id', (clone $baseQuery)->pluck('id'));
-                })->sum('weight_kg');
-
-                $sM3 = round($sKg * 0.0038, 1);
+                $sKg = (float) $sq->total_kg;
                 $sourceRecap[] = [
-                    'name' => $sName,
+                    'name' => $sq->name,
                     'kg' => $sKg,
-                    'm3' => $sM3,
-                    'sessions' => $sq->sessions_count,
+                    'm3' => round($sKg * 0.0038, 1),
+                    'sessions' => (int) $sq->sessions_count,
                     'pct' => $totalKg > 0 ? round(($sKg / $totalKg) * 100, 1) : 0,
                 ];
             }
-            usort($sourceRecap, fn($a, $b) => $b['kg'] <=> $a['kg']);
 
             $tabData = [
                 'total_sessions' => $totalSessions,
@@ -386,7 +415,7 @@ new #[Layout('layouts.app')] class extends Component
                 ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo));
 
             $pagedData = (clone $baseQuery)
-                ->with('campus')
+                ->with(['campus', 'creator'])
                 ->orderBy('tanggal', 'desc')
                 ->orderBy('id', 'desc')
                 ->paginate(8);
@@ -589,6 +618,11 @@ new #[Layout('layouts.app')] class extends Component
             'tabData' => $tabData,
             'items' => $pagedData,
             'selectedSession' => $selectedSession,
+            'selectedSale' => $selectedSale,
+            'selectedPickup' => $selectedPickup,
+            'selectedSurvey' => $selectedSurvey,
+            'selectedKeuangan' => $selectedKeuangan,
+            'viewKeuanganId' => $this->viewKeuanganId,
         ];
     }
 };
@@ -906,6 +940,7 @@ new #[Layout('layouts.app')] class extends Component
                                                 <th class="py-3 px-4 text-right">Total Kg</th>
                                                 <th class="py-3 px-4 text-right">Volume (m³)</th>
                                                 <th class="py-3 px-4 text-right">% Komposisi</th>
+                                                <th class="py-3 px-4 text-right">Avg/Hari</th>
                                             </tr>
                                         </thead>
                                         <tbody class="divide-y divide-slate-100 text-slate-700">
@@ -919,9 +954,10 @@ new #[Layout('layouts.app')] class extends Component
                                                             {{ number_format($row['pct'], 1) }}%
                                                         </span>
                                                     </td>
+                                                    <td class="py-2.5 px-4 text-right font-mono text-slate-600">{{ number_format($row['avg_day'], 1, ',', '.') }} kg</td>
                                                 </tr>
                                             @empty
-                                                <tr><td colspan="4" class="text-center py-6 text-slate-400">Belum ada data kategori.</td></tr>
+                                                <tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada data kategori.</td></tr>
                                             @endforelse
                                         </tbody>
                                     </table>
@@ -929,12 +965,12 @@ new #[Layout('layouts.app')] class extends Component
                             </div>
                         </div>
 
-                        <!-- Rekap per Sumber Sampah -->
+                        <!-- Rekap per Sumber Sampah (Distinct Sources Top List) -->
                         <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden flex flex-col justify-between">
                             <div>
                                 <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-                                    <h3 class="text-sm font-bold text-slate-900">Rekap per Sumber Pengumpulan</h3>
-                                    <span class="text-xs text-slate-400">{{ count($tabData['source_recap'] ?? []) }} Titik</span>
+                                    <h3 class="text-sm font-bold text-slate-900">Rekap per Sumber Sampah</h3>
+                                    <span class="text-xs text-slate-400">Top {{ count($tabData['source_recap'] ?? []) }} Titik Sumber</span>
                                 </div>
                                 <div class="overflow-x-auto">
                                     <table class="w-full text-left text-xs">
@@ -942,6 +978,7 @@ new #[Layout('layouts.app')] class extends Component
                                             <tr>
                                                 <th class="py-3 px-4">Titik Sumber</th>
                                                 <th class="py-3 px-4 text-right">Total Kg</th>
+                                                <th class="py-3 px-4 text-right">Total m³</th>
                                                 <th class="py-3 px-4 text-right">Sesi</th>
                                                 <th class="py-3 px-4 text-right">% Kontribusi</th>
                                             </tr>
@@ -951,6 +988,7 @@ new #[Layout('layouts.app')] class extends Component
                                                 <tr class="hover:bg-slate-50/50 transition">
                                                     <td class="py-2.5 px-4 font-semibold text-slate-900">{{ $row['name'] }}</td>
                                                     <td class="py-2.5 px-4 text-right font-mono font-medium text-slate-800">{{ number_format($row['kg'], 1, ',', '.') }}</td>
+                                                    <td class="py-2.5 px-4 text-right font-mono text-slate-600">{{ number_format($row['m3'], 2, ',', '.') }}</td>
                                                     <td class="py-2.5 px-4 text-right font-mono text-slate-600">{{ $row['sessions'] }} kali</td>
                                                     <td class="py-2.5 px-4 text-right">
                                                         <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-sky-50 text-sky-700">
@@ -959,7 +997,7 @@ new #[Layout('layouts.app')] class extends Component
                                                     </td>
                                                 </tr>
                                             @empty
-                                                <tr><td colspan="4" class="text-center py-6 text-slate-400">Belum ada data sumber.</td></tr>
+                                                <tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada data sumber.</td></tr>
                                             @endforelse
                                         </tbody>
                                     </table>
@@ -968,16 +1006,13 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
 
-                    <!-- Riwayat Sesi Penimbangan Detail (Daftar Sesi Penimbangan Terbaru) -->
+                    <!-- Riwayat Sesi Penimbangan Detail (Uniform with weighing/index.blade.php) -->
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                         <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
                             <div>
-                                <h3 class="text-sm font-bold text-slate-900">Daftar Sesi Penimbangan Terbaru</h3>
-                                <p class="text-xs text-slate-400 mt-0.5">Riwayat sesi timbang dengan ringkasan komposisi dan rincian item</p>
+                                <h3 class="text-sm font-bold text-slate-900">Riwayat Sesi Penimbangan</h3>
+                                <p class="text-xs text-slate-400 mt-0.5">({{ $items->total() }} Sesi Terdata)</p>
                             </div>
-                            <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-                                Total: {{ $items->total() }} Sesi
-                            </span>
                         </div>
 
                         <div class="overflow-x-auto">
@@ -985,10 +1020,9 @@ new #[Layout('layouts.app')] class extends Component
                                 <thead class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                                     <tr>
                                         <th class="py-3 px-4 whitespace-nowrap">Tanggal</th>
-                                        <th class="py-3 px-4 whitespace-nowrap">Kampus</th>
-                                        <th class="py-3 px-4 whitespace-nowrap">Sumber</th>
-                                        <th class="py-3 px-4">Rincian Bobot Item</th>
-                                        <th class="py-3 px-4 text-right whitespace-nowrap">Total Kg</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Kampus & Lokasi Sumber</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Rincian Komposisi Sampah</th>
+                                        <th class="py-3 px-4 text-right whitespace-nowrap">Total Berat</th>
                                         <th class="py-3 px-4 whitespace-nowrap">Petugas</th>
                                         <th class="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
                                     </tr>
@@ -996,49 +1030,36 @@ new #[Layout('layouts.app')] class extends Component
                                 <tbody class="divide-y divide-slate-100 text-slate-700">
                                     @forelse($items as $session)
                                         <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="py-3 px-4 whitespace-nowrap font-medium text-slate-900">
-                                                <div>{{ $session->weigh_date ? $session->weigh_date->format('d/m/Y') : '-' }}</div>
+                                            <td class="py-2.5 px-4 whitespace-nowrap font-medium text-slate-900">
+                                                <div>{{ $session->weigh_date ? $session->weigh_date->translatedFormat('d M Y') : '-' }}</div>
                                                 <div class="text-[10px] text-slate-400 font-normal">{{ $session->created_at->format('H:i') }} WIB</div>
                                             </td>
-                                            <td class="py-3 px-4 whitespace-nowrap font-semibold text-slate-900">
-                                                {{ $session->campus?->name ?? '-' }}
-                                            </td>
-                                            <td class="py-3 px-4 whitespace-nowrap">
-                                                <span class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg text-[11px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <div class="font-semibold text-slate-900">{{ $session->campus?->name ?? '-' }}</div>
+                                                <div class="text-[11px] text-slate-500 flex items-center gap-1 mt-0.5">
                                                     <svg class="w-3 h-3 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     </svg>
-                                                    <span>{{ $session->wasteSource?->name ?? '-' }}</span>
-                                                </span>
-                                            </td>
-                                            <td class="py-3 px-4">
-                                                <div class="flex flex-wrap items-center gap-1.5 max-w-lg">
-                                                    <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
-                                                        {{ $session->items->count() }} Jenis
-                                                    </span>
-                                                    @foreach($session->items->sortByDesc('weight_kg')->take(3) as $it)
-                                                        <span class="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-700 border border-slate-200">
-                                                            {{ $it->wasteType?->name }}: <strong class="ml-1 font-mono text-slate-900">{{ number_format($it->weight_kg, 1, ',', '.') }}kg</strong>
-                                                        </span>
-                                                    @endforeach
-                                                    @if($session->items->count() > 3)
-                                                        <button type="button" wire:click="viewSession({{ $session->id }})" class="text-[10px] font-semibold text-emerald-600 hover:text-emerald-700 cursor-pointer">
-                                                            +{{ $session->items->count() - 3 }} lainnya
-                                                        </button>
-                                                    @endif
+                                                    <span>{{ $session->wasteSource?->name ?? 'Titik Kampus Umum' }}</span>
                                                 </div>
                                             </td>
-                                            <td class="py-3 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-sm">
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                    <span>{{ $session->items->count() }} Jenis Tervalidasi</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-sm">
                                                 {{ number_format($session->total_weight, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
                                             </td>
-                                            <td class="py-3 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                                            <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
                                                 {{ $session->creator?->name ?? 'Petugas TPS' }}
                                             </td>
-                                            <td class="py-3 px-4 text-center whitespace-nowrap">
+                                            <td class="py-2.5 px-4 text-center whitespace-nowrap">
                                                 <button wire:click="viewSession({{ $session->id }})"
                                                         type="button"
-                                                        title="Lihat Rincian Sesi Timbang Lengkap"
+                                                        title="Lihat Rincian Sesi Timbang"
                                                         class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
                                                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -1049,7 +1070,7 @@ new #[Layout('layouts.app')] class extends Component
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="7" class="py-8 text-center text-slate-400">Belum ada catatan penimbangan pada periode ini.</td>
+                                            <td colspan="6" class="py-8 text-center text-slate-400">Belum ada catatan penimbangan pada periode ini.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -1148,38 +1169,72 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
 
-                    <!-- Riwayat Transaksi Penjualan Table -->
+                    <!-- Riwayat Penjualan Table (Uniform with sales/index.blade.php) -->
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                         <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-                            <h3 class="text-sm font-bold text-slate-900">Riwayat Transaksi Penjualan</h3>
+                            <h3 class="text-sm font-bold text-slate-900">Riwayat Penjualan Sampah</h3>
                             <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-                                Total: {{ $items->total() }} Transaksi
+                                ({{ $items->total() }} Transaksi Terdata)
                             </span>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-100">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                                     <tr>
-                                        <th class="py-3 px-4">Tanggal</th>
-                                        <th class="py-3 px-4">Pembeli / Mitra</th>
-                                        <th class="py-3 px-4">Kampus</th>
-                                        <th class="py-3 px-4 text-right">Item</th>
-                                        <th class="py-3 px-4 text-right">Total Kg</th>
-                                        <th class="py-3 px-4 text-right">Penerimaan</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Tanggal</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Kampus & Pembeli / Pengepul</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Rincian Sampah Terjual</th>
+                                        <th class="py-3 px-4 text-right whitespace-nowrap">Total Berat</th>
+                                        <th class="py-3 px-4 text-right whitespace-nowrap">Total Nilai (Rp)</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Petugas</th>
+                                        <th class="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 text-slate-700">
-                                    @forelse($items as $s)
+                                    @forelse($items as $sale)
                                         <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="py-3 px-4 font-mono font-medium">{{ $s->sale_date ? $s->sale_date->format('d/m/Y') : '-' }}</td>
-                                            <td class="py-3 px-4 font-bold text-slate-900">{{ $s->buyer?->name ?? '-' }}</td>
-                                            <td class="py-3 px-4">{{ $s->campus?->name ?? '-' }}</td>
-                                            <td class="py-3 px-4 text-right font-mono">{{ $s->items->count() }}</td>
-                                            <td class="py-3 px-4 text-right font-mono font-medium">{{ number_format($s->items->sum('weight_kg'), 1, ',', '.') }} kg</td>
-                                            <td class="py-3 px-4 text-right font-mono font-bold text-emerald-600">Rp {{ number_format($s->total_amount, 0, ',', '.') }}</td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap font-medium text-slate-900">
+                                                <div>{{ $sale->sale_date ? $sale->sale_date->translatedFormat('d M Y') : '-' }}</div>
+                                                <div class="text-[10px] text-slate-400 font-normal">{{ $sale->created_at->format('H:i') }} WIB</div>
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <div class="font-semibold text-slate-900">{{ $sale->campus?->name ?? '-' }}</div>
+                                                <div class="text-[11px] text-sky-700 flex items-center gap-1 mt-0.5 font-medium">
+                                                    <svg class="w-3 h-3 text-sky-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                                                    </svg>
+                                                    <span>{{ $sale->buyer?->name ?? '-' }}</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-sky-500"></span>
+                                                    <span>{{ $sale->items->count() }} Jenis Terpilah</span>
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-sm">
+                                                {{ number_format($sale->total_weight, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right font-mono font-bold text-emerald-600 whitespace-nowrap text-sm">
+                                                Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                                                {{ $sale->creator?->name ?? 'Petugas TPS' }}
+                                            </td>
+                                            <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                                <button wire:click="viewSale({{ $sale->id }})"
+                                                        type="button"
+                                                        title="Lihat Rincian Penjualan"
+                                                        class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                </button>
+                                            </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada transaksi penjualan.</td></tr>
+                                        <tr><td colspan="7" class="text-center py-6 text-slate-400">Belum ada transaksi penjualan pada periode ini.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -1276,40 +1331,75 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
 
-                    <!-- Riwayat Pengangkutan Table -->
+                    <!-- Riwayat Pengangkutan Table (Uniform with pickups/index.blade.php) -->
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                         <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
-                            <h3 class="text-sm font-bold text-slate-900">Riwayat Pengangkutan Residu ke TPA</h3>
+                            <h3 class="text-sm font-bold text-slate-900">Riwayat Pengangkutan Residu</h3>
                             <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-                                Total: {{ $items->total() }} Ritase
+                                ({{ $items->total() }} Log Pengangkutan Terdata)
                             </span>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-100">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                                     <tr>
-                                        <th class="py-3 px-4">Tanggal</th>
-                                        <th class="py-3 px-4">Vendor</th>
-                                        <th class="py-3 px-4">Kampus</th>
-                                        <th class="py-3 px-4 text-right">Volume (Kg)</th>
-                                        <th class="py-3 px-4 text-right">Tarif/Kg</th>
-                                        <th class="py-3 px-4 text-right">Total Biaya</th>
-                                        <th class="py-3 px-4">Driver / Plat</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Tanggal</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Kampus & Vendor</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Armada / Driver</th>
+                                        <th class="py-3 px-4 text-right whitespace-nowrap">Volume (kg)</th>
+                                        <th class="py-3 px-4 text-right whitespace-nowrap">Tarif / kg</th>
+                                        <th class="py-3 px-4 text-right whitespace-nowrap">Total Biaya (Rp)</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Petugas</th>
+                                        <th class="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 text-slate-700">
                                     @forelse($items as $p)
                                         <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="py-3 px-4 font-mono font-medium">{{ $p->pickup_date ? $p->pickup_date->format('d/m/Y') : '-' }}</td>
-                                            <td class="py-3 px-4 font-bold text-slate-900">{{ $p->vendor?->name ?? '-' }}</td>
-                                            <td class="py-3 px-4">{{ $p->campus?->name ?? '-' }}</td>
-                                            <td class="py-3 px-4 text-right font-mono font-medium">{{ number_format($p->volume_kg, 1, ',', '.') }} kg</td>
-                                            <td class="py-3 px-4 text-right font-mono">Rp {{ number_format($p->cost_per_kg, 0, ',', '.') }}</td>
-                                            <td class="py-3 px-4 text-right font-mono font-bold text-rose-600">Rp {{ number_format($p->total_cost, 0, ',', '.') }}</td>
-                                            <td class="py-3 px-4 text-slate-500">{{ $p->driver_name ?? '-' }} ({{ $p->vehicle_plate ?? '-' }})</td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap font-medium text-slate-900">
+                                                <div>{{ $p->pickup_date ? $p->pickup_date->translatedFormat('d M Y') : '-' }}</div>
+                                                <div class="text-[10px] text-slate-400 font-normal">{{ $p->created_at->format('H:i') }} WIB</div>
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 mb-0.5">
+                                                    {{ $p->campus?->name ?? '-' }}
+                                                </span>
+                                                <div class="font-semibold text-slate-800">{{ $p->vendor?->name ?? '-' }}</div>
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <div class="text-slate-800">{{ $p->driver_name ?: '-' }}</div>
+                                                @if ($p->vehicle_plate)
+                                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600">
+                                                        {{ $p->vehicle_plate }}
+                                                    </span>
+                                                @endif
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right font-mono font-bold text-slate-900 whitespace-nowrap text-sm">
+                                                {{ number_format($p->volume_kg, 1, ',', '.') }} kg
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right font-mono text-slate-600 whitespace-nowrap">
+                                                Rp {{ number_format($p->cost_per_kg, 0, ',', '.') }}
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right font-mono font-bold text-rose-600 whitespace-nowrap text-sm">
+                                                Rp {{ number_format($p->total_cost, 0, ',', '.') }}
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                                                {{ $p->creator?->name ?? 'Petugas TPS' }}
+                                            </td>
+                                            <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                                <button wire:click="viewPickup({{ $p->id }})"
+                                                        type="button"
+                                                        title="Lihat Rincian Pengangkutan"
+                                                        class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                </button>
+                                            </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="7" class="text-center py-6 text-slate-400">Belum ada catatan ritase pengangkutan.</td></tr>
+                                        <tr><td colspan="8" class="text-center py-6 text-slate-400">Belum ada catatan ritase pengangkutan pada periode ini.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -1394,35 +1484,63 @@ new #[Layout('layouts.app')] class extends Component
                             </span>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-100">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                                     <tr>
-                                        <th class="py-3 px-4">Tanggal</th>
-                                        <th class="py-3 px-4">Tipe</th>
-                                        <th class="py-3 px-4">Kampus</th>
-                                        <th class="py-3 px-4">Keterangan</th>
-                                        <th class="py-3 px-4 text-right">Nominal</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Tanggal</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Tipe / Mutasi</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Kampus & Sumber</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Keterangan</th>
+                                        <th class="py-3 px-4 text-right whitespace-nowrap">Nominal (Rp)</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Petugas</th>
+                                        <th class="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 text-slate-700">
                                     @forelse($items as $row)
                                         <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="py-3 px-4 font-mono font-medium">{{ $row->tanggal ? $row->tanggal->format('d/m/Y') : '-' }}</td>
-                                            <td class="py-3 px-4">
+                                            <td class="py-2.5 px-4 whitespace-nowrap font-medium text-slate-900">
+                                                <div>{{ $row->tanggal ? $row->tanggal->translatedFormat('d M Y') : '-' }}</div>
+                                                <div class="text-[10px] text-slate-400 font-normal">{{ $row->created_at->format('H:i') }} WIB</div>
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
                                                 @if ($row->jenis === 'K')
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800">KREDIT</span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800">
+                                                        + KREDIT (MASUK)
+                                                    </span>
                                                 @else
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-rose-100 text-rose-800">DEBET</span>
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-800">
+                                                        - DEBET (KELUAR)
+                                                    </span>
                                                 @endif
                                             </td>
-                                            <td class="py-3 px-4">{{ $row->campus?->name ?? '-' }}</td>
-                                            <td class="py-3 px-4 text-slate-600">{{ $row->keterangan }}</td>
-                                            <td class="py-3 px-4 text-right font-mono font-bold {{ $row->jenis === 'K' ? 'text-emerald-600' : 'text-rose-600' }}">
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <div class="font-semibold text-slate-900">{{ $row->campus?->name ?? '-' }}</div>
+                                                <div class="text-[10px] text-slate-500 capitalize">{{ str_replace('_', ' ', $row->sumber) }}</div>
+                                            </td>
+                                            <td class="py-2.5 px-4 text-slate-600 max-w-xs truncate" title="{{ $row->keterangan }}">
+                                                {{ $row->keterangan }}
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right font-mono font-bold whitespace-nowrap text-sm {{ $row->jenis === 'K' ? 'text-emerald-600' : 'text-rose-600' }}">
                                                 {{ $row->jenis === 'K' ? '+' : '-' }}Rp {{ number_format($row->nominal, 0, ',', '.') }}
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap text-slate-500 text-[11px]">
+                                                {{ $row->creator?->name ?? 'Petugas Kas' }}
+                                            </td>
+                                            <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                                <button wire:click="viewKeuangan({{ $row->id }})"
+                                                        type="button"
+                                                        title="Lihat Rincian Mutasi Kas"
+                                                        class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                </button>
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="5" class="text-center py-6 text-slate-400">Belum ada mutasi arus kas.</td></tr>
+                                        <tr><td colspan="7" class="text-center py-6 text-slate-400">Belum ada mutasi arus kas pada periode ini.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -1685,49 +1803,83 @@ new #[Layout('layouts.app')] class extends Component
                         </div>
                     </div>
 
-                    <!-- Riwayat Respons Civitas Detail Table -->
+                    <!-- Riwayat Respons Civitas Detail Table (Uniform with kap/index.blade.php) -->
                     <div class="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
                         <div class="p-4 sm:p-5 border-b border-slate-100 flex items-center justify-between">
                             <h3 class="text-sm font-bold text-slate-900">Riwayat Respons Civitas Akademika</h3>
                             <span class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-100 text-slate-700">
-                                Total: {{ $items->total() }} Responden
+                                ({{ $items->total() }} Responden Terdata)
                             </span>
                         </div>
                         <div class="overflow-x-auto">
-                            <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-100">
+                            <table class="w-full text-left text-xs border-collapse">
+                                <thead class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                                     <tr>
-                                        <th class="py-3 px-4">Tanggal</th>
-                                        <th class="py-3 px-4">Responden</th>
-                                        <th class="py-3 px-4">Peran</th>
-                                        <th class="py-3 px-4">Kampus & Unit</th>
-                                        <th class="py-3 px-4 text-right">Skor Total</th>
-                                        <th class="py-3 px-4 text-center">Kategori</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Tanggal</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Responden</th>
+                                        <th class="py-3 px-4 whitespace-nowrap">Kampus & Unit</th>
+                                        <th class="py-3 px-4 text-center whitespace-nowrap">Pengetahuan</th>
+                                        <th class="py-3 px-4 text-center whitespace-nowrap">Sikap</th>
+                                        <th class="py-3 px-4 text-center whitespace-nowrap">Perilaku</th>
+                                        <th class="py-3 px-4 text-right whitespace-nowrap">Skor KAP</th>
+                                        <th class="py-3 px-4 text-center whitespace-nowrap">Kategori</th>
+                                        <th class="py-3 px-4 text-center whitespace-nowrap">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100 text-slate-700">
-                                    @forelse($items as $surv)
+                                    @forelse($items as $survey)
                                         <tr class="hover:bg-slate-50/50 transition">
-                                            <td class="py-3 px-4 font-mono font-medium">{{ $surv->survey_date ? $surv->survey_date->format('d/m/Y') : '-' }}</td>
-                                            <td class="py-3 px-4 font-bold text-slate-900">{{ $surv->respondent_name ?: 'Anonim' }}</td>
-                                            <td class="py-3 px-4">
-                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700">
-                                                    {{ ucfirst($surv->respondent_role) }}
+                                            <td class="py-2.5 px-4 whitespace-nowrap font-mono text-slate-500 text-[11px]">
+                                                {{ $survey->survey_date ? $survey->survey_date->format('d/m/Y') : '-' }}
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <div class="font-semibold text-slate-900">
+                                                    {{ $survey->respondent_name ?: 'Anonim' }}
+                                                </div>
+                                                <div class="text-[10px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                                    <span class="px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-medium">
+                                                        {{ $survey->role_label }}
+                                                    </span>
+                                                    @if($survey->respondent_identifier)
+                                                        <span>&bull; {{ $survey->respondent_identifier }}</span>
+                                                    @endif
+                                                </div>
+                                            </td>
+                                            <td class="py-2.5 px-4 whitespace-nowrap">
+                                                <div class="font-medium text-slate-800">{{ $survey->campus?->name ?? '-' }}</div>
+                                                <div class="text-[11px] text-slate-400 truncate max-w-xs">{{ $survey->faculty_unit ?? '-' }}</div>
+                                            </td>
+                                            <td class="py-2.5 px-4 text-center font-mono font-bold text-sky-700 whitespace-nowrap">
+                                                {{ number_format($survey->knowledge_score, 0) }}%
+                                            </td>
+                                            <td class="py-2.5 px-4 text-center font-mono font-bold text-teal-700 whitespace-nowrap">
+                                                {{ number_format($survey->attitude_score, 0) }}%
+                                            </td>
+                                            <td class="py-2.5 px-4 text-center font-mono font-bold text-amber-700 whitespace-nowrap">
+                                                {{ number_format($survey->practice_score, 0) }}%
+                                            </td>
+                                            <td class="py-2.5 px-4 text-right whitespace-nowrap">
+                                                <span class="font-mono text-sm font-bold text-slate-900">{{ number_format($survey->overall_score, 1) }}</span>
+                                            </td>
+                                            <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                                <span class="inline-flex px-2 py-0.5 rounded text-[10px] font-bold {{ $survey->category === 'Baik' || $survey->category === 'sangat_baik' ? 'bg-emerald-100 text-emerald-800' : ($survey->category === 'Cukup' || $survey->category === 'sedang' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800') }}">
+                                                    {{ $survey->category_label }}
                                                 </span>
                                             </td>
-                                            <td class="py-3 px-4">
-                                                <div class="font-medium text-slate-800">{{ $surv->campus?->name ?? '-' }}</div>
-                                                <div class="text-[10px] text-slate-400">{{ $surv->faculty_unit ?? '-' }}</div>
-                                            </td>
-                                            <td class="py-3 px-4 text-right font-mono font-bold text-emerald-600">{{ number_format($surv->overall_score, 1) }}</td>
-                                            <td class="py-3 px-4 text-center">
-                                                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-[10px] font-bold {{ $surv->category === 'Baik' ? 'bg-emerald-100 text-emerald-800' : ($surv->category === 'Cukup' ? 'bg-amber-100 text-amber-800' : 'bg-rose-100 text-rose-800') }}">
-                                                    {{ $surv->category }}
-                                                </span>
+                                            <td class="py-2.5 px-4 text-center whitespace-nowrap">
+                                                <button type="button"
+                                                        wire:click="viewSurvey({{ $survey->id }})"
+                                                        class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer"
+                                                        title="Lihat Rincian Jawaban Responden">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
+                                                </button>
                                             </td>
                                         </tr>
                                     @empty
-                                        <tr><td colspan="6" class="text-center py-6 text-slate-400">Belum ada data respons kuesioner.</td></tr>
+                                        <tr><td colspan="9" class="text-center py-6 text-slate-400">Belum ada data respons kuesioner pada periode ini.</td></tr>
                                     @endforelse
                                 </tbody>
                             </table>
@@ -1742,7 +1894,11 @@ new #[Layout('layouts.app')] class extends Component
         </div>
     </div>
 
-    <!-- Modal Detail Sesi Penimbangan (Teleported to Body for 100% Full Viewport Backdrop) -->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+    <!-- UNIFIED MODALS DETAIL (Teleported to Body, Uniform with System)-->
+    <!-- ══════════════════════════════════════════════════════════════ -->
+
+    <!-- 1. Modal Detail Sesi Penimbangan -->
     @if ($viewSessionId && $selectedSession)
         <template x-teleport="body">
             <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
@@ -1866,4 +2022,329 @@ new #[Layout('layouts.app')] class extends Component
             </div>
         </template>
     @endif
+
+    <!-- 2. Modal Detail Transaksi Penjualan -->
+    @if ($viewSaleId && $selectedSale)
+        <template x-teleport="body">
+            <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
+                 x-data
+                 @keydown.escape.window="$wire.closeViewModal()">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <!-- Header Modal Detail -->
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-sky-100 text-sky-800 font-mono">
+                                    FAKTUR #SALE-{{ str_pad($selectedSale->id, 5, '0', STR_PAD_LEFT) }}
+                                </span>
+                                <span class="text-xs text-slate-400 font-medium">
+                                    {{ $selectedSale->sale_date ? $selectedSale->sale_date->translatedFormat('d F Y') : '-' }}
+                                </span>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900 mt-1">Rincian Transaksi Penjualan</h3>
+                        </div>
+                        <button wire:click="closeViewModal" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Body Modal Detail -->
+                    <div class="p-6 space-y-5">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                                <span class="text-[11px] font-medium text-slate-500">Total Berat Terjual</span>
+                                <div class="font-mono text-xl font-bold text-slate-900 mt-0.5">
+                                    {{ number_format($selectedSale->total_weight, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
+                                </div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-emerald-50/60 border border-emerald-200/60">
+                                <span class="text-[11px] font-medium text-emerald-700">Total Nilai Penjualan</span>
+                                <div class="font-mono text-xl font-bold text-emerald-700 mt-0.5">
+                                    Rp {{ number_format($selectedSale->total_amount, 0, ',', '.') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-xs">
+                            <div class="px-4 py-2.5 flex justify-between bg-slate-50/50">
+                                <span class="text-slate-500 font-medium">Kampus Asal</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedSale->campus?->name }}</span>
+                            </div>
+                            <div class="px-4 py-2.5 flex justify-between">
+                                <span class="text-slate-500 font-medium">Pembeli / Pengepul Mitra</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedSale->buyer?->name }}</span>
+                            </div>
+                            <div class="px-4 py-2.5 flex justify-between bg-slate-50/50">
+                                <span class="text-slate-500 font-medium">Petugas Pencatat</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedSale->creator?->name ?? 'Petugas TPS' }}</span>
+                            </div>
+                        </div>
+
+                        <!-- Tabel Items -->
+                        <div class="rounded-xl border border-slate-200 overflow-hidden text-xs">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50 text-slate-600 font-bold border-b border-slate-200 text-[11px]">
+                                    <tr>
+                                        <th class="py-2.5 px-3">Jenis Sampah</th>
+                                        <th class="py-2.5 px-3 text-right">Berat (kg)</th>
+                                        <th class="py-2.5 px-3 text-right">Harga / kg</th>
+                                        <th class="py-2.5 px-3 text-right">Subtotal</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100 text-slate-700">
+                                    @foreach ($selectedSale->items as $it)
+                                        <tr>
+                                            <td class="py-2.5 px-3 font-semibold">{{ $it->wasteType?->name }}</td>
+                                            <td class="py-2.5 px-3 text-right font-mono">{{ number_format($it->weight_kg, 1, ',', '.') }} kg</td>
+                                            <td class="py-2.5 px-3 text-right font-mono">Rp {{ number_format($it->price_per_kg, 0, ',', '.') }}</td>
+                                            <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600">Rp {{ number_format($it->subtotal, 0, ',', '.') }}</td>
+                                        </tr>
+                                    @endforeach
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                        <button type="button" wire:click="closeViewModal" class="py-2 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer">
+                            Tutup Rincian
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    @endif
+
+    <!-- 3. Modal Detail Pengangkutan Residu -->
+    @if ($viewPickupId && $selectedPickup)
+        <template x-teleport="body">
+            <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
+                 x-data
+                 @keydown.escape.window="$wire.closeViewModal()">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-xl max-h-[90vh] overflow-y-auto">
+                    <!-- Header Modal Detail -->
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 font-mono">
+                                    LOG #{{ $selectedPickup->id }}
+                                </span>
+                                <span class="text-xs text-slate-400 font-medium">
+                                    {{ $selectedPickup->pickup_date ? $selectedPickup->pickup_date->translatedFormat('d F Y') : '-' }}
+                                </span>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900 mt-1">Rincian Pengangkutan Residu</h3>
+                        </div>
+                        <button wire:click="closeViewModal" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Body Modal Detail -->
+                    <div class="p-6 space-y-5">
+                        <div class="grid grid-cols-2 gap-3">
+                            <div class="p-3.5 rounded-xl bg-slate-50 border border-slate-200/60">
+                                <span class="text-[11px] font-medium text-slate-500">Volume Muatan Terangkut</span>
+                                <div class="font-mono text-xl font-bold text-slate-900 mt-0.5">
+                                    {{ number_format($selectedPickup->volume_kg, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
+                                </div>
+                            </div>
+                            <div class="p-3.5 rounded-xl bg-rose-50/60 border border-rose-200/60">
+                                <span class="text-[11px] font-medium text-rose-600">Total Biaya Operasional</span>
+                                <div class="font-mono text-xl font-bold text-rose-700 mt-0.5">
+                                    Rp {{ number_format($selectedPickup->total_cost, 0, ',', '.') }}
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-xs">
+                            <div class="px-4 py-2.5 flex justify-between bg-slate-50/50">
+                                <span class="text-slate-500 font-medium">Kampus Asal</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedPickup->campus?->name }}</span>
+                            </div>
+                            <div class="px-4 py-2.5 flex justify-between">
+                                <span class="text-slate-500 font-medium">Vendor Pengangkut</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedPickup->vendor?->name }}</span>
+                            </div>
+                            <div class="px-4 py-2.5 flex justify-between bg-slate-50/50">
+                                <span class="text-slate-500 font-medium">Tarif Satuan</span>
+                                <span class="font-mono font-semibold text-slate-800">Rp {{ number_format($selectedPickup->cost_per_kg, 0, ',', '.') }} /kg</span>
+                            </div>
+                            <div class="px-4 py-2.5 flex justify-between">
+                                <span class="text-slate-500 font-medium">Armada & Pengemudi</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedPickup->driver_name ?: '-' }} ({{ $selectedPickup->vehicle_plate ?: '-' }})</span>
+                            </div>
+                            <div class="px-4 py-2.5 flex justify-between bg-slate-50/50">
+                                <span class="text-slate-500 font-medium">Petugas Pencatat</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedPickup->creator?->name ?? 'Petugas TPS' }}</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                        <button type="button" wire:click="closeViewModal" class="py-2 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer">
+                            Tutup Rincian
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    @endif
+
+    <!-- 4. Modal Detail Survei KAP -->
+    @if ($viewSurveyId && $selectedSurvey)
+        <template x-teleport="body">
+            <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
+                 x-data
+                 @keydown.escape.window="$wire.closeViewModal()">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                    <!-- Header Modal Detail -->
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                        <div>
+                            <div class="flex items-center gap-2">
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 font-mono">
+                                    SURVEI #{{ $selectedSurvey->id }}
+                                </span>
+                                <span class="text-xs text-slate-400 font-medium">
+                                    {{ $selectedSurvey->survey_date ? $selectedSurvey->survey_date->translatedFormat('d F Y') : '-' }}
+                                </span>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900 mt-1">Rincian Evaluasi KAP Responden</h3>
+                        </div>
+                        <button wire:click="closeViewModal" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Body Modal Detail -->
+                    <div class="p-6 space-y-5">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center text-xs">
+                            <div class="p-2.5 rounded-xl bg-sky-50 border border-sky-100">
+                                <span class="block text-[10px] text-sky-800 font-semibold uppercase">Knowledge</span>
+                                <span class="font-mono text-base font-bold text-slate-900">{{ number_format($selectedSurvey->knowledge_score, 1) }}%</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-teal-50 border border-teal-100">
+                                <span class="block text-[10px] text-teal-800 font-semibold uppercase">Attitude</span>
+                                <span class="font-mono text-base font-bold text-slate-900">{{ number_format($selectedSurvey->attitude_score, 1) }}%</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-amber-50 border border-amber-100">
+                                <span class="block text-[10px] text-amber-800 font-semibold uppercase">Practice</span>
+                                <span class="font-mono text-base font-bold text-slate-900">{{ number_format($selectedSurvey->practice_score, 1) }}%</span>
+                            </div>
+                            <div class="p-2.5 rounded-xl bg-emerald-50 border border-emerald-100">
+                                <span class="block text-[10px] text-emerald-800 font-semibold uppercase">Skor KAP</span>
+                                <span class="font-mono text-base font-bold text-emerald-800">{{ number_format($selectedSurvey->overall_score, 1) }}</span>
+                            </div>
+                        </div>
+
+                        <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-xs">
+                            <div class="px-4 py-2.5 flex justify-between bg-slate-50/50">
+                                <span class="text-slate-500 font-medium">Nama Responden</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedSurvey->respondent_name ?: 'Anonim' }}</span>
+                            </div>
+                            <div class="px-4 py-2.5 flex justify-between">
+                                <span class="text-slate-500 font-medium">Status / Peran</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedSurvey->role_label }}</span>
+                            </div>
+                            <div class="px-4 py-2.5 flex justify-between bg-slate-50/50">
+                                <span class="text-slate-500 font-medium">Kampus & Fakultas / Unit</span>
+                                <span class="font-semibold text-slate-800">{{ $selectedSurvey->campus?->name }} - {{ $selectedSurvey->faculty_unit }}</span>
+                            </div>
+                            @if ($selectedSurvey->feedback)
+                                <div class="px-4 py-2.5 flex justify-between">
+                                    <span class="text-slate-500 font-medium">Masukan & Saran</span>
+                                    <span class="text-slate-700 italic max-w-sm text-right">{{ $selectedSurvey->feedback }}</span>
+                                </div>
+                            @endif
+                        </div>
+                    </div>
+
+                    <div class="px-6 py-3.5 border-t border-slate-100 bg-slate-50/50 flex justify-end">
+                        <button type="button" wire:click="closeViewModal" class="py-2 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer">
+                            Tutup Rincian
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </template>
+    @endif
+
+    <!-- 5. Modal Detail Transaksi Jurnal Buku Kas -->
+    @if ($viewKeuanganId && $selectedKeuangan)
+        <template x-teleport="body">
+            <div class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn"
+                 x-data
+                 @keydown.escape.window="$wire.closeViewModal()">
+                <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-lg overflow-hidden">
+                    <!-- Header Modal Detail -->
+                    <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div class="flex items-center gap-2">
+                            <span class="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-800 font-mono">
+                                MUTASI #KAS-{{ str_pad($selectedKeuangan->id, 5, '0', STR_PAD_LEFT) }}
+                            </span>
+                            <h3 class="text-sm font-bold text-slate-900">Rincian Transaksi Jurnal Buku Kas</h3>
+                        </div>
+                        <button wire:click="closeViewModal" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+
+                    <!-- Body Modal Detail -->
+                    <div class="p-6 space-y-4">
+                        <div class="grid grid-cols-2 gap-3 p-3.5 rounded-xl bg-slate-50 border border-slate-100 text-xs">
+                            <div>
+                                <span class="text-[11px] text-slate-400 block">Unit Kampus</span>
+                                <span class="font-bold text-slate-900">{{ $selectedKeuangan->campus?->name ?? '-' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[11px] text-slate-400 block">Tanggal Jurnal</span>
+                                <span class="font-bold text-slate-900">{{ $selectedKeuangan->tanggal ? $selectedKeuangan->tanggal->translatedFormat('d F Y') : '-' }}</span>
+                            </div>
+                            <div>
+                                <span class="text-[11px] text-slate-400 block">Jenis Mutasi</span>
+                                <span class="font-bold {{ $selectedKeuangan->jenis === 'K' ? 'text-emerald-700' : 'text-rose-600' }}">
+                                    {{ $selectedKeuangan->jenis === 'K' ? 'Kredit (Pemasukan)' : 'Debet (Pengeluaran)' }}
+                                </span>
+                            </div>
+                            <div>
+                                <span class="text-[11px] text-slate-400 block">Sumber Transaksi</span>
+                                <span class="font-bold text-slate-800 capitalize">{{ str_replace('_', ' ', $selectedKeuangan->sumber) }}</span>
+                            </div>
+                        </div>
+
+                        <div class="p-3.5 rounded-xl border {{ $selectedKeuangan->jenis === 'K' ? 'border-emerald-200 bg-emerald-50/40' : 'border-rose-200 bg-rose-50/40' }}">
+                            <span class="text-[11px] uppercase font-semibold tracking-wider block mb-1 {{ $selectedKeuangan->jenis === 'K' ? 'text-emerald-700' : 'text-rose-600' }}">
+                                Nominal Mutasi
+                            </span>
+                            <div class="text-2xl font-mono font-bold {{ $selectedKeuangan->jenis === 'K' ? 'text-emerald-700' : 'text-rose-600' }}">
+                                {{ $selectedKeuangan->jenis === 'K' ? '+' : '-' }} Rp {{ number_format($selectedKeuangan->nominal, 0, ',', '.') }}
+                            </div>
+                            @if ($selectedKeuangan->ref_id)
+                                <span class="text-[10px] text-slate-400 mt-1 block">ID Referensi: #{{ $selectedKeuangan->ref_id }} (Terkait modul {{ $selectedKeuangan->sumber }})</span>
+                            @endif
+                        </div>
+
+                        <div>
+                            <span class="text-xs font-bold text-slate-700 block mb-1">Keterangan Transaksi</span>
+                            <p class="text-xs text-slate-600 bg-slate-50 p-3 rounded-lg border border-slate-200/80 leading-relaxed">
+                                {{ $selectedKeuangan->keterangan ?: 'Tidak ada keterangan tambahan.' }}
+                            </p>
+                        </div>
+
+                        <div class="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-100">
+                            <span>Petugas: <strong class="text-slate-600">{{ $selectedKeuangan->creator?->name ?? 'Petugas TPS' }}</strong></span>
+                            <span>Tercatat: {{ $selectedKeuangan->created_at->format('d/m/Y H:i') }} WIB</span>
+                        </div>
+
+                        <div class="pt-3 border-t border-slate-100 flex justify-end">
+                            <button wire:click="closeViewModal" type="button" class="py-2 px-4 rounded-xl border border-slate-300 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold cursor-pointer">
+                                Tutup Rincian
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </template>
+    @endif
+
 </div>
