@@ -61,23 +61,24 @@ Sistem ini dikembangkan mengacu pada spesifikasi resmi **`PS2 SRS New.pdf` (Anal
 - **M8 — Laporan & Ekspor:**
   - Rekapitulasi timbang, angkut, penjualan, buku kas, dan buku besar dalam format **Excel (.xlsx)** dan **PDF**.
 - **M9 — Manajemen Pengguna & Hak Akses (Spatie RBAC):**
-  - **Super Admin**: Akses penuh ke seluruh kampus dan konfigurasi sistem.
-  - **Admin Kampus / Koordinator TPS3R**: Mengelola operasional timbang, angkut, bank sampah, dan laporan di kampusnya.
-  - **Petugas TPS / Operator Penimbangan**: Input timbangan harian per titik lokasi.
+  - **Super Admin**: Akses penuh ke seluruh modul, seluruh unit kampus, master data global, dan manajemen pengguna.
+  - **Admin Kampus / Koordinator TPS3R**: Mengelola operasional timbang, penjualan, residu, keuangan, kas, laporan, dan staf kampusnya (terisolasi di unit kampus masing-masing).
+  - **Petugas TPS / Operator Penimbangan**: Input timbangan harian dan pengangkutan residu (hanya operasional lapangan).
   - **Petugas Penjualan / Pengurus Bank Sampah**: Input transaksi penjualan sampah terpilah ke pengepul.
-  - **Keuangan**: Input pengeluaran operasional dan monitoring buku kas/buku besar.
-  - **Auditor / Pimpinan**: Akses analitik, audit log, perbandingan antar kampus, dan laporan.
+  - **Petugas Keuangan**: Input pengeluaran operasional, monitoring buku kas & buku besar, serta laporan keuangan.
+  - **Auditor / Pimpinan (Viewer)**: Akses analitik komparatif antar kampus, laporan, dan monitoring read-only tanpa hak manipulasi data.
 - **M10 — Notifikasi & Alerts:**
-  - Pengingat input harian, alert stok menumpuk, alert saldo menipis, dan alert residu tinggi.
+  - Floating bell notification di header dengan dropdown 3 notifikasi ringkas terbaru dan tautan ke halaman riwayat notifikasi terpadu (`/notifications`).
+  - Reminder input harian, alert stok menumpuk, alert saldo menipis, dan alert residu tinggi.
 - **M11 — Modul & Dashboard Survei KAP:**
-  - Kuesioner publik responsif mobile via link/QR Code (Demografi, Knowledge, Attitude, Practice, Satisfaction, Fasilitas & Hambatan).
-  - Skoring indeks otomatis (0–100) dan analitik visualisasi hasil survei civitas UAD.
+  - Kuesioner publik responsif mobile via link/QR Code (`/survei-kap`) mencakup 4 dimensi: Demografi, Knowledge, Attitude, Practice, dan Satisfaction.
+  - Skoring indeks otomatis (0–100%) dan dashboard analitik internal (`/kap`) dengan visualisasi komparatif antar kampus UAD.
 
 ---
 
 ## 🎨 Desain Antarmuka (Dribbble Clean Style)
 
-* **Layout:** Sidebar navigasi kiri (`slate-950`) terstruktur rapi dengan badge unit kampus aktif dan profile footer.
+* **Layout:** Sidebar navigasi kiri fixed setinggi layar (`h-screen overflow-hidden`) dengan badge unit kampus aktif, menu terorganisir per peran, dan konten utama yang dapat di-scroll mandiri.
 * **Palette:** Sage Green (`#3a9d6e`), Sky Blue (`#3b82f6`), Amber (`#e5a520`), Coral (`#ef6b4a`), background bersih `#f5f7fa`.
 * **Typography:** **DM Sans** untuk elemen UI dan **JetBrains Mono** untuk angka keuangan & bobot timbangan.
 
@@ -86,11 +87,11 @@ Sistem ini dikembangkan mengacu pada spesifikasi resmi **`PS2 SRS New.pdf` (Anal
 ## 🛠️ Tech Stack & Arsitektur
 
 * **Backend:** Laravel 12.x (PHP 8.3)
-* **Frontend:** Blade + Livewire 3 + Volt
+* **Frontend:** Blade + Livewire 3 + Volt + Alpine.js
 * **CSS & UI:** Tailwind CSS 3 + DaisyUI v4
 * **Database:** MySQL 8.0
 * **Log Viewer:** Dozzle
-* **Export:** Maatwebsite Excel + DomPDF
+* **Export:** DomPDF + CSV/Excel Stream
 * **Auth & Permission:** Laravel Breeze + Spatie Laravel Permission
 * **Containerization:** Docker Compose (`ps2-app`, `ps2-web`, `ps2-db`, `ps2-vite`, `ps2-dozzle`)
 * **CI/CD:** GitHub Actions dengan Self-Hosted Runner ke VPS Oracle (`https://ps2.brotherzhafif.my.id`)
@@ -101,13 +102,14 @@ Sistem ini dikembangkan mengacu pada spesifikasi resmi **`PS2 SRS New.pdf` (Anal
 
 Semua akun demo menggunakan password: **`password123`**
 
-| Role | Email | Unit Kampus |
-| :--- | :--- | :--- |
-| **Super Admin** | `superadmin@uad.ac.id` | Global / Seluruh Kampus |
-| **Operator Timbangan** | `operator@uad.ac.id` | Kampus 4 UAD (Utama) |
-| **Koordinator TPS3R** | `koordinator@uad.ac.id` | Kampus 4 UAD (Utama) |
-| **Pengurus Bank Sampah** | `banksampah@uad.ac.id` | Kampus 4 UAD (Utama) |
-| **Auditor / Pimpinan** | `pimpinan@uad.ac.id` | Global / Seluruh Kampus |
+| Role | Email | Unit Penugasan | Hak Akses Utama |
+| :--- | :--- | :--- | :--- |
+| **Super Admin** | `superadmin@uad.ac.id` | Global / Seluruh Kampus | Akses Penuh (All Modules & Settings) |
+| **Operator Timbangan** | `operator@uad.ac.id` | Kampus 4 UAD (Utama) | Penimbangan & Pengangkutan Residu |
+| **Koordinator TPS3R** | `koordinator@uad.ac.id` | Kampus 4 UAD (Utama) | Seluruh Operasional Kampus 4 & Staf Lokal |
+| **Pengurus Bank Sampah** | `banksampah@uad.ac.id` | Kampus 4 UAD (Utama) | Penjualan Daur Ulang & Bank Sampah |
+| **Petugas Keuangan** | `keuangan@uad.ac.id` | Kampus 4 UAD (Utama) | Biaya Operasional, Buku Kas, Buku Besar, Laporan |
+| **Auditor / Pimpinan** | `pimpinan@uad.ac.id` | Global / Seluruh Kampus | Monitoring Read-Only Seluruh Modul & Laporan |
 
 ---
 

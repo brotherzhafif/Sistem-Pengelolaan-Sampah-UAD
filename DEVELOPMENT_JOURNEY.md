@@ -100,15 +100,15 @@ flowchart TD
 - [x] Tema clean light Dribbble (`#f5f7fa`, aksen Sage Green `#3a9d6e`, font DM Sans).
 - [x] Favicon & Logo terstandarisasi PS2 UAD.
 
-### ⏳ Phase 1: Multi-Campus & RBAC Foundation (STATUS: KODE SELESAI - MENUNGGU MIGRASI SERVER)
+### ✅ Phase 1: Multi-Campus & RBAC Foundation (STATUS: SELESAI & AKTIF)
 - [x] Migration `campuses` & foreign key `users.campus_id`.
 - [x] Model `Campus` & relasi `User`.
 - [x] Seeder `CampusSeeder` (Kampus 1–6 UAD).
-- [x] Seeder `RolePermissionSeeder` (5 Roles & 5 Akun demo).
-- [x] Dropdown kampus di halaman Register.
+- [x] Seeder `RolePermissionSeeder` (6 Canonical Roles & 6 Akun demo lengkap dengan Petugas Keuangan).
+- [x] Dropdown kampus di halaman Register & Manajemen Pengguna.
 - [x] Header dashboard menampilkan badge unit kampus & role.
 
-### ⏳ Phase 2: Master Data Management (SRS M7) (STATUS: KODE SELESAI - MENUNGGU MIGRASI SERVER)
+### ✅ Phase 2: Master Data Management (STATUS: SELESAI & AKTIF)
 - **Tabel**:
   - `waste_sources` (Sumber sampah: Area Taman, Kantin, Asrama, Rektorat, dll. per kampus).
   - `waste_types` (9 kategori granular: Organik Sisa Makanan, Sampah Taman, Kardus, Karton, Kertas HVS, Plastik Keras, Plastik Multilayer, Logam & Kaca, Residu; `default_price_per_kg`, `is_sellable`).
@@ -119,12 +119,12 @@ flowchart TD
   - Halaman terpadu `livewire.pages.master.index` dengan navigasi tab Dribbble clean.
   - CRUD Livewire dengan validasi ganda, sanitasi teks, dan konfirmasi hapus data.
 - **Checklist Uji**:
-  - [ ] Migration jalan tanpa error (`2026_10_08_000002_create_master_data_tables.php`).
-  - [ ] Seeder `MasterDataSeeder` mengisi data awal dengan benar.
-  - [ ] Tab navigasi berfungsi berpindah antar master data tanpa reload.
-  - [ ] Tambah & edit titik sumber sampah, jenis sampah, vendor, dan pengepul berjalan realtime.
+  - [x] Migration jalan tanpa error (`2026_10_08_000002_create_master_data_tables.php`).
+  - [x] Seeder `MasterDataSeeder` mengisi data awal dengan benar.
+  - [x] Tab navigasi berfungsi berpindah antar master data tanpa reload.
+  - [x] Tambah & edit titik sumber sampah, jenis sampah, vendor, dan pengepul berjalan realtime.
 
-### ⏳ Phase 3: Penimbangan Sampah Harian (SRS M2) (STATUS: KODE SELESAI - MENUNGGU MIGRASI SERVER)
+### ✅ Phase 3: Penimbangan Sampah Harian (STATUS: SELESAI & AKTIF)
 - **Tabel**: `weighing_sessions` & `weighing_items`.
 - **Fitur**:
   - Form input penimbangan harian per kampus dan titik sumber lokasi.
@@ -141,7 +141,7 @@ flowchart TD
   - [x] Sidebar menu penimbangan aktif dan tersinkronisasi.
   - [x] Seeder `WeighingSeeder` dibuat dan didaftarkan ke `DatabaseSeeder`.
 
-### ⏳ Phase 4: Penjualan Sampah & Kredit Kas (SRS M3) (STATUS: KODE SELESAI - MENUNGGU MIGRASI SERVER)
+### ✅ Phase 4: Penjualan Sampah & Kredit Kas (STATUS: SELESAI & AKTIF)
 - **Tabel**: `sales`, `sale_items`, `keuangan` (Buku Kas K/D), dan `buku_besar` (Saldo Harian Per Kampus).
 - **Fitur**:
   - Validasi batas stok terpilah (`StockService::getAvailableStock`): Penjualan tidak boleh melebihi stok yang ada di TPS kampus.
@@ -241,9 +241,25 @@ flowchart TD
     - Seluruh tombol tab menggunakan icon SVG modern, bersih tanpa raw emoji.
     - Semua tabel dibatasi tepat 8 baris per halaman (`paginate(8)`).
     - Seluruh 5 modal rincian diteleportasi ke body (`<template x-teleport="body">`) dengan `z-[9999]` dan backdrop blur 100%.
+### ✅ Phase 11: Pembersihan Notasi Teknis, RBAC Separation of Duties, & Multi-Campus Isolation (STATUS: SELESAI & AKTIF)
+- **Pembersihan Notasi Teknis UI**:
+  - Menghapus seluruh label kode modul internal ("SRS", "SRS M9", dll.) dari semua antarmuka pengguna agar selaras dengan standar profesional Dribbble Clean.
+- **Pemisahan Peran Ketat (RBAC Separation of Duties)**:
+  - **Keuangan (`keuangan`)**: Khusus operasional pengeluaran, buku kas, buku besar, dan laporan keuangan. Diblokir total (403) dari penimbangan, penjualan, residu, pengguna, dan master data.
+  - **Petugas TPS (`petugas_tps`)**: Khusus penimbangan sampah masuk dan pengangkutan residu.
+  - **Petugas Penjualan (`petugas_penjualan`)**: Khusus transaksi penjualan sampah terpilah / bank sampah.
+  - **Koordinator TPS3R (`admin_kampus`)**: Mengelola operasional timbang, penjualan, residu, keuangan, kas, laporan, dan staf lokal kampusnya.
+  - **Super Admin (`super_admin`)**: Akses penuh ke seluruh modul dan unit kampus (Pusat).
+  - **Viewer / Auditor (`viewer`)**: Pengawasan analitik agregat lintas kampus dalam mode baca (*read-only*).
+- **Isolasi Data Per Kampus (Multi-Campus Data Isolation)**:
+  - Akun yang bertugas di Kampus 4 hanya dapat melihat dan menginput data Kampus 4 di seluruh modul (`weighing`, `sales`, `pickups`, `expenses`, `finance`, `reports`, `users`).
+  - Pada halaman manajemen pengguna (`/users`), akun Super Administrator dan pengguna kampus lain otomatis disaring dan disembunyikan untuk Koordinator Kampus 4.
+  - Dropdown unit kampus pada formulir input otomatis terkunci ke unit kampus penugasan pengguna.
+- **Optimasi Layout & Navigasi**:
+  - Sidebar fixed setinggi layar penuh (`h-screen overflow-hidden`) tanpa scrollbar pada sidebar; konten utama di kanan dapat di-scroll secara independen sehingga tombol Logout di footer selalu terlihat.
+  - Pusat Notifikasi & Floating Bell: Floating bell notification di header dengan batas 3 notifikasi ringkas terbaru + link ke halaman riwayat notifikasi lengkap (`/notifications`).
 - **Checklist Uji**:
-  - [x] E2E UX Test (`scratch/test_reports_ux.py`): Lolos 100%.
-  - [x] All 6 Tabs Switching & Export Endpoint Test (`scratch/test_reports_module.py`): Lolos 100% PDF & CSV/Excel.
-  - [x] All 5 Detail Modals Interactive Verification (`scratch/verify_all_report_modals.py`): Lolos 100%.
-  - [x] SRS Alignment Global Test (`scratch/test_srs_alignment.py`): Seluruh 11 modul lulus verifikasi 100%.
-
+  - [x] Otorisasi `mount()` pada seluruh modul diperketat.
+  - [x] Query scoping `where('campus_id', $user->campus_id)` ditegakkan jika bukan Super Admin.
+  - [x] Dropdown unit kampus terkunci untuk non-Super Admin.
+  - [x] Export controller PDF & Excel mematuhi scope kampus yang berwenang.
