@@ -113,6 +113,21 @@ Semua akun demo menggunakan password: **`password123`**
 
 ---
 
+## 🧪 Pengujian Otomatis (E2E Verification)
+
+Sistem dilengkapi automated test suite Python untuk menguji seluruh rute, Livewire RPC, 6 tab laporan, alur kuesioner KAP, dan keselarasan SRS:
+
+```bash
+# Menjalankan verifikasi keselarasan 11 modul SRS v2
+python tests/e2e/test_srs_alignment.py
+
+# Menjalankan smoke test seluruh halaman utama
+python tests/e2e/verify_all_pages.py
+```
+Panduan detail dan daftar script pengujian dapat dilihat pada **[`tests/e2e/README.md`](./tests/e2e/README.md)**.
+
+---
+
 ## 📖 Dokumentasi Pengembangan Bertahap
 
 Untuk melihat roadmap detail fase per fase, checklist pengujian, dan riwayat changelog pengerjaan, lihat:
