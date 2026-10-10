@@ -69,6 +69,11 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
+        $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R']) && !$user->can('master.manage')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus data master.');
+        }
+
         switch ($this->deleteType) {
             case 'source':
                 WasteSource::findOrFail($this->deleteTargetId)->delete();
@@ -98,6 +103,10 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R']) && !$user->can('master.manage')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mengakses Pengaturan Master Data.');
+        }
+
         if ($user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id) {
             $this->selectedCampusId = session('active_campus_id') ?? $user->campus_id ?? Campus::first()?->id;
         } else {

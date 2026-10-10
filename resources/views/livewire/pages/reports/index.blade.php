@@ -36,12 +36,16 @@ new #[Layout('layouts.app')] class extends Component
 
     public function mount(): void
     {
+        $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'pengurus_bank_sampah', 'Pengurus Bank Sampah', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('report.view')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Laporan & Ekspor.');
+        }
+
         $requestedTab = request()->query('tab');
         if ($requestedTab && in_array($requestedTab, ['weighing', 'sales', 'pickups', 'finance', 'persen', 'kap'])) {
             $this->activeTab = $requestedTab;
         }
 
-        $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
 
         if (!$isSuperAdmin && $user->campus_id) {

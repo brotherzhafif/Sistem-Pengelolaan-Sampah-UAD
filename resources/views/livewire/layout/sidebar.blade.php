@@ -43,11 +43,37 @@ new class extends Component
     public function with(): array
     {
         $user = auth()->user();
-        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']) || !$user->campus_id;
+        $isAuditor = $user->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']);
+        $isAdminKampus = $user->hasRole(['admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R']);
+        $isPetugasTps = $user->hasRole(['petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']);
+        $isPetugasPenjualan = $user->hasRole(['petugas_penjualan', 'Petugas Penjualan', 'pengurus_bank_sampah']);
+        $isKeuangan = $user->hasRole(['keuangan', 'Keuangan']);
+
+        // Hak Akses Modul Berdasarkan RBAC SRS (M9)
+        $canWeighing = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor || $user->can('weighing.view');
+        $canSales = $isSuperAdmin || $isAdminKampus || $isPetugasPenjualan || $isAuditor || $user->can('bank_sampah.view');
+        $canPickups = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor || $user->can('logistics.view');
+        $canExpenses = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isPetugasPenjualan || $isAuditor || $user->can('bank_sampah.expense.create');
+        $canFinance = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isAuditor;
+        $canKap = $isSuperAdmin || $isAdminKampus || $isAuditor || $user->can('kap.survey.view');
+        $canReports = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isAuditor || $user->can('report.view');
+        $canMaster = $isSuperAdmin || $isAdminKampus || $user->can('master.view');
+        $canUsers = $isSuperAdmin || $isAdminKampus || $user->can('user.view');
+
         $activeCampus = $this->activeCampusId ? Campus::find($this->activeCampusId) : $user->campus;
 
         return [
-            'isSuperAdmin' => $isSuperAdmin,
+            'isSuperAdmin' => $isSuperAdmin || $isAuditor,
+            'canWeighing' => $canWeighing,
+            'canSales' => $canSales,
+            'canPickups' => $canPickups,
+            'canExpenses' => $canExpenses,
+            'canFinance' => $canFinance,
+            'canKap' => $canKap,
+            'canReports' => $canReports,
+            'canMaster' => $canMaster,
+            'canUsers' => $canUsers,
             'activeCampus' => $activeCampus,
             'campuses' => Campus::where('is_active', true)->orderBy('id')->get(),
         ];
@@ -68,7 +94,7 @@ new class extends Component
         </div>
     </div>
 
-    <!-- Active Campus Selector (Interactive Dropdown for Super Admin) -->
+    <!-- Active Campus Selector (Interactive Dropdown for Super Admin & Auditor) -->
     <div class="mx-3 my-2 relative" x-data="{ open: false }">
         @if ($isSuperAdmin)
             <!-- Super Admin Dropdown Trigger -->
@@ -156,91 +182,109 @@ new class extends Component
                 </a>
 
                 <!-- Penimbangan -->
-                <a href="{{ route('weighing') }}" 
-                   class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('weighing') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
-                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('weighing') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                    </svg>
-                    <span>Penimbangan</span>
-                </a>
+                @if ($canWeighing)
+                    <a href="{{ route('weighing') }}" 
+                       class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('weighing') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('weighing') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                        </svg>
+                        <span>Penimbangan</span>
+                    </a>
+                @endif
 
                 <!-- Penjualan -->
-                <a href="{{ route('sales') }}" 
-                   class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('sales') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
-                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('sales') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span>Penjualan</span>
-                </a>
+                @if ($canSales)
+                    <a href="{{ route('sales') }}" 
+                       class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('sales') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('sales') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span>Penjualan</span>
+                    </a>
+                @endif
 
                 <!-- Pengangkutan -->
-                <a href="{{ route('pickups') }}" 
-                   class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('pickups') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
-                   title="Pengangkutan Residu">
-                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('pickups') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
-                    </svg>
-                    <span>Pengangkutan</span>
-                </a>
+                @if ($canPickups)
+                    <a href="{{ route('pickups') }}" 
+                       class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('pickups') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
+                       title="Pengangkutan Residu">
+                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('pickups') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
+                        </svg>
+                        <span>Pengangkutan</span>
+                    </a>
+                @endif
             </div>
         </div>
 
         <!-- Section: KEUANGAN -->
-        <div>
-            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                Keuangan
-            </div>
-            <div class="space-y-0.5">
-                <!-- Pengeluaran -->
-                <a href="{{ route('expenses') }}" 
-                   class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('expenses') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
-                   title="Pengeluaran Operasional TPS">
-                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('expenses') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Pengeluaran</span>
-                </a>
+        @if ($canExpenses || $canFinance)
+            <div>
+                <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                    Keuangan
+                </div>
+                <div class="space-y-0.5">
+                    <!-- Pengeluaran -->
+                    @if ($canExpenses)
+                        <a href="{{ route('expenses') }}" 
+                           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('expenses') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
+                           title="Pengeluaran Operasional TPS">
+                            <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('expenses') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Pengeluaran</span>
+                        </a>
+                    @endif
 
-                <!-- Buku Kas & Buku Besar -->
-                <a href="{{ route('finance') }}" 
-                   class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('finance') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
-                   title="Buku Kas & Buku Besar">
-                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('finance') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
-                    </svg>
-                    <span>Buku Kas</span>
-                </a>
+                    <!-- Buku Kas & Buku Besar -->
+                    @if ($canFinance)
+                        <a href="{{ route('finance') }}" 
+                           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('finance') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
+                           title="Buku Kas & Buku Besar">
+                            <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('finance') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                            </svg>
+                            <span>Buku Kas</span>
+                        </a>
+                    @endif
+                </div>
             </div>
-        </div>
+        @endif
 
         <!-- Section: ANALITIK -->
-        <div>
-            <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">
-                Analitik
-            </div>
-            <div class="space-y-0.5">
-                <!-- Survei KAP -->
-                <a href="{{ route('kap') }}" 
-                   class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('kap') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
-                   title="Survei Perilaku (KAP)">
-                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('kap') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Survei KAP</span>
-                </a>
+        @if ($canKap || $canReports)
+            <div>
+                <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">
+                    Analitik
+                </div>
+                <div class="space-y-0.5">
+                    <!-- Survei KAP -->
+                    @if ($canKap)
+                        <a href="{{ route('kap') }}" 
+                           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('kap') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
+                           title="Survei Perilaku (KAP)">
+                            <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('kap') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Survei KAP</span>
+                        </a>
+                    @endif
 
-                <!-- Laporan & Ekspor Data -->
-                <a href="{{ route('reports') }}" 
-                   class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('reports') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
-                   title="Laporan & Ekspor Data">
-                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('reports') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                    </svg>
-                    <span>Laporan</span>
-                </a>
+                    <!-- Laporan & Ekspor Data -->
+                    @if ($canReports)
+                        <a href="{{ route('reports') }}" 
+                           class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('reports') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
+                           title="Laporan & Ekspor Data">
+                            <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('reports') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                            </svg>
+                            <span>Laporan</span>
+                        </a>
+                    @endif
+                </div>
             </div>
-        </div>
+        @endif
 
         <!-- Section: SISTEM -->
         <div>
@@ -249,17 +293,19 @@ new class extends Component
             </div>
             <div class="space-y-0.5">
                 <!-- Master Data -->
-                <a href="{{ route('master-data') }}" 
-                   class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('master-data') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
-                    <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('master-data') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                    </svg>
-                    <span>Master Data</span>
-                </a>
+                @if ($canMaster)
+                    <a href="{{ route('master-data') }}" 
+                       class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('master-data') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}">
+                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('master-data') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        <span>Master Data</span>
+                    </a>
+                @endif
 
                 <!-- Pengguna -->
-                @if ($isSuperAdmin || auth()->user()->can('user.view'))
+                @if ($canUsers)
                     <a href="{{ route('users.index') }}" 
                        class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('users.*') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
                        title="Manajemen Pengguna">

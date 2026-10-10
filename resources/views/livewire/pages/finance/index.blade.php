@@ -35,6 +35,10 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('finance.view')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Keuangan.');
+        }
+
         if ($user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id) {
             $activeCampus = session('active_campus_id');
             $this->selectedCampusId = !empty($activeCampus) ? (int) $activeCampus : null;
@@ -77,6 +81,11 @@ new #[Layout('layouts.app')] class extends Component
 
     public function saveInitialBalance(LedgerService $ledgerService): void
     {
+        $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan']) && !$user->can('finance.create')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menetapkan saldo awal.');
+        }
+
         $this->validate([
             'initialCampusId' => ['required', 'exists:campuses,id'],
             'initialDate' => ['required', 'date'],
@@ -119,6 +128,7 @@ new #[Layout('layouts.app')] class extends Component
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
+        $canManageBalance = $user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan']) || $user->can('finance.create');
 
         $campusQueryId = $isSuperAdmin 
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
@@ -171,6 +181,7 @@ new #[Layout('layouts.app')] class extends Component
 
         return [
             'isSuperAdmin' => $isSuperAdmin,
+            'canManageBalance' => $canManageBalance,
             'campuses' => Campus::where('is_active', true)->orderBy('id')->get(),
             'totalKredit' => $totalKredit,
             'totalDebet' => $totalDebet,
@@ -302,7 +313,9 @@ class="space-y-6">
                                 @endforeach
                             </select>
                         </div>
+                    @endif
 
+                    @if ($canManageBalance)
                         <button @click="balanceModal = true; $wire.openBalanceModal()" 
                                 type="button" 
                                 class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold shadow-xs transition active:scale-95 cursor-pointer">

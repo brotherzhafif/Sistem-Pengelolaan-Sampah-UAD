@@ -24,13 +24,44 @@ new #[Layout('layouts.app')] class extends Component
     public string $name = '';
     public string $email = '';
     public string $password = '';
-    public string $selectedRole = 'operator_timbangan';
+    public string $selectedRole = 'petugas_tps';
     public ?int $selectedCampusId = null;
 
     // Delete Confirmation Modal
     public bool $isDeleteModalOpen = false;
     public ?int $deleteUserId = null;
     public string $deleteUserName = '';
+
+    public function getRoleLabel(string $role): string
+    {
+        return match ($role) {
+            'super_admin' => 'Super Admin (Pusat / Semua Kampus)',
+            'admin_kampus' => 'Admin Kampus (Koordinator TPS3R)',
+            'petugas_tps' => 'Petugas TPS (Timbang & Angkut)',
+            'petugas_penjualan' => 'Petugas Penjualan (Bank Sampah)',
+            'keuangan' => 'Keuangan (Pengeluaran Operasional)',
+            'viewer' => 'Viewer (Auditor & Pimpinan UAD)',
+            // Alias Kompatibilitas Sistem
+            'operator_timbangan' => 'Operator Timbangan (Petugas TPS)',
+            'koordinator_tps3r' => 'Koordinator TPS3R (Admin Kampus)',
+            'pengurus_bank_sampah' => 'Pengurus Bank Sampah (Penjualan/Kas)',
+            'auditor_pimpinan' => 'Pimpinan & Auditor UAD (Viewer)',
+            default => ucfirst(str_replace('_', ' ', $role)),
+        };
+    }
+
+    public function getRoleDescription(string $role): string
+    {
+        return match ($role) {
+            'super_admin' => 'Akses penuh ke semua modul dan seluruh 6 kampus UAD tanpa batasan.',
+            'admin_kampus', 'koordinator_tps3r' => 'Pengelola operasional kampus: mengelola penimbangan, pengangkutan, penjualan, pengeluaran, buku kas, dan laporan di kampusnya.',
+            'petugas_tps', 'operator_timbangan' => 'Petugas lapangan TPS: khusus mencatat penimbangan harian (M2) dan pengangkutan residu (M4) di kampusnya.',
+            'petugas_penjualan' => 'Petugas transaksi penjualan: khusus mencatat penjualan sampah terpilah/daur ulang ke pembeli/pengepul (M3).',
+            'keuangan' => 'Petugas keuangan: khusus mencatat pengeluaran operasional (M5) dan memantau buku kas & buku besar kampus (M6).',
+            'viewer', 'auditor_pimpinan' => 'Hak akses audit (Read-Only): hanya dapat memantau dashboard, laporan, survei KAP, dan riwayat transaksi tanpa hak input/ubah.',
+            default => 'Hak akses pengguna sesuai penugasan peran.',
+        };
+    }
 
     public function mount(): void
     {
@@ -75,7 +106,7 @@ new #[Layout('layouts.app')] class extends Component
         $this->name = $user->name;
         $this->email = $user->email;
         $this->password = '';
-        $this->selectedRole = $user->roles->first()?->name ?? 'operator_timbangan';
+        $this->selectedRole = $user->roles->first()?->name ?? 'petugas_tps';
         $this->selectedCampusId = $user->campus_id;
         $this->isFormModalOpen = true;
     }
@@ -92,13 +123,18 @@ new #[Layout('layouts.app')] class extends Component
         $this->name = '';
         $this->email = '';
         $this->password = '';
-        $this->selectedRole = 'operator_timbangan';
+        $this->selectedRole = 'petugas_tps';
         $this->selectedCampusId = Campus::first()?->id;
         $this->resetValidation();
     }
 
     public function saveUser(): void
     {
+        $currentUser = auth()->user();
+        if (!$currentUser->hasRole(['super_admin', 'Super Admin']) && !$currentUser->can('user.manage')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menyimpan atau memperbarui akun pengguna.');
+        }
+
         $isCreate = $this->editUserId === null;
 
         $rules = [
@@ -198,6 +234,11 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
+        $currentUser = auth()->user();
+        if (!$currentUser->hasRole(['super_admin', 'Super Admin']) && !$currentUser->can('user.manage')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus akun pengguna.');
+        }
+
         $user = User::findOrFail($this->deleteUserId);
         $userName = $user->name;
         $user->delete();
@@ -208,6 +249,11 @@ new #[Layout('layouts.app')] class extends Component
 
     public function resetPasswordDefault(int $id): void
     {
+        $currentUser = auth()->user();
+        if (!$currentUser->hasRole(['super_admin', 'Super Admin']) && !$currentUser->can('user.manage')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mereset kata sandi pengguna.');
+        }
+
         $user = User::findOrFail($id);
         $user->update([
             'password' => Hash::make('password123'),
@@ -236,7 +282,19 @@ new #[Layout('layouts.app')] class extends Component
         // Aturan Baku: Tepat 8 baris per halaman
         $users = $query->paginate(8);
 
-        $roles = Role::orderBy('name')->get();
+        $rolePriority = [
+            'super_admin' => 1,
+            'admin_kampus' => 2,
+            'petugas_tps' => 3,
+            'petugas_penjualan' => 4,
+            'keuangan' => 5,
+            'viewer' => 6,
+            'koordinator_tps3r' => 7,
+            'operator_timbangan' => 8,
+            'pengurus_bank_sampah' => 9,
+            'auditor_pimpinan' => 10,
+        ];
+        $roles = Role::all()->sortBy(fn($r) => $rolePriority[$r->name] ?? 99)->values();
         $campuses = Campus::where('is_active', true)->orderBy('id')->get();
 
         return [
@@ -254,29 +312,15 @@ new #[Layout('layouts.app')] class extends Component
 @open-user-modal.window="formModal = true; $wire.openCreateModal()"
 @close-user-modal.window="formModal = false">
 
-    <!-- Topbar Header (Clean Header tanpa span badge redundan) -->
+    <!-- Topbar Header (Single Clean Title & Description) -->
     <x-slot name="header">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-                <h2 class="font-bold text-xl text-slate-900 tracking-tight flex items-center gap-2">
-                    <span>Manajemen Pengguna & Hak Akses</span>
-                </h2>
-                <p class="text-xs text-slate-500 mt-0.5">
-                    Kelola akun petugas timbangan, koordinator TPS3R, pengurus bank sampah, dan auditor kampus UAD.
-                </p>
-            </div>
-
-            <!-- Tombol Aksi Tambah Pengguna (Header) -->
-            <div>
-                <button type="button" 
-                        onclick="window.dispatchEvent(new CustomEvent('open-user-modal'))"
-                        class="px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-1.5 cursor-pointer active:scale-95">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-                    </svg>
-                    <span>Tambah Pengguna Baru</span>
-                </button>
-            </div>
+        <div>
+            <h2 class="font-bold text-xl text-slate-900 tracking-tight flex items-center gap-2">
+                <span>Manajemen Pengguna & Hak Akses</span>
+            </h2>
+            <p class="text-xs text-slate-500 mt-0.5">
+                Kelola akun pengguna dan pembagian hak akses (RBAC) sesuai standar SRS: Super Admin, Admin Kampus, Petugas TPS, Petugas Penjualan, Keuangan, dan Viewer.
+            </p>
         </div>
     </x-slot>
 
@@ -306,7 +350,7 @@ new #[Layout('layouts.app')] class extends Component
                         <select wire:model.live="filterRole" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-white">
                             <option value="">Semua Peran (All Roles)</option>
                             @foreach($roles as $r)
-                                <option value="{{ $r->name }}">{{ ucfirst(str_replace('_', ' ', $r->name)) }}</option>
+                                <option value="{{ $r->name }}">{{ $this->getRoleLabel($r->name) }}</option>
                             @endforeach
                         </select>
                     </div>
@@ -336,6 +380,82 @@ new #[Layout('layouts.app')] class extends Component
                         </svg>
                         <span>Tambah Pengguna Baru</span>
                     </button>
+                </div>
+            </div>
+
+            <!-- Matriks Hak Akses Pengguna (RBAC SRS M9) -->
+            <div x-data="{ openRbac: false }" class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
+                <button type="button" @click="openRbac = !openRbac" class="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50/70 transition cursor-pointer text-left">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-6 h-6 rounded-lg bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
+                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-slate-900">Matriks Hak Akses & Pembagian Peran (RBAC SRS M9)</span>
+                            <span class="text-[11px] text-slate-500 block">Panduan modul dan wewenang untuk 6 peran pengguna di lingkungan kampus UAD</span>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-1.5 text-xs text-slate-500 font-medium">
+                        <span x-text="openRbac ? 'Tutup Matriks' : 'Buka Matriks'"></span>
+                        <svg class="w-4 h-4 transition-transform duration-200" :class="{ 'rotate-180': openRbac }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </div>
+                </button>
+
+                <div x-show="openRbac" x-cloak class="p-4 border-t border-slate-100 bg-slate-50/40 text-xs">
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left table-fixed border border-slate-200 rounded-xl overflow-hidden bg-white text-[11px]">
+                            <thead class="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
+                                <tr>
+                                    <th class="p-2.5 w-[22%]">Peran (Role SRS)</th>
+                                    <th class="p-2.5 w-[18%]">Cakupan Kampus</th>
+                                    <th class="p-2.5 w-[35%]">Modul yang Diizinkan</th>
+                                    <th class="p-2.5 w-[25%]">Karakteristik & Wewenang</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                                <tr>
+                                    <td class="p-2.5 font-bold text-purple-700">Super Admin</td>
+                                    <td class="p-2.5 text-slate-600">Semua Kampus (Pusat)</td>
+                                    <td class="p-2.5 text-slate-800">Semua Modul (M1–M11)</td>
+                                    <td class="p-2.5 text-slate-500">Bypass scope kampus, CRUD penuh & kelola pengguna</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-bold text-teal-700">Admin Kampus</td>
+                                    <td class="p-2.5 text-slate-600">Unit Kampus Sendiri</td>
+                                    <td class="p-2.5 text-slate-800">Timbang, Angkut, Jual, Biaya, Kas, Laporan, Master Lokal</td>
+                                    <td class="p-2.5 text-slate-500">Koordinator TPS3R: kelola operasional & kas kampusnya</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-bold text-amber-700">Petugas TPS</td>
+                                    <td class="p-2.5 text-slate-600">Unit Kampus Sendiri</td>
+                                    <td class="p-2.5 text-slate-800">Penimbangan Harian (M2) & Pengangkutan Residu (M4)</td>
+                                    <td class="p-2.5 text-slate-500">Operasional TPS lapangan; tidak akses kas/penjualan</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-bold text-emerald-700">Petugas Penjualan</td>
+                                    <td class="p-2.5 text-slate-600">Unit Kampus Sendiri</td>
+                                    <td class="p-2.5 text-slate-800">Penjualan Sampah (M3) & Cek Stok Terpilah</td>
+                                    <td class="p-2.5 text-slate-500">Pengurus bank sampah; catat penjualan ke pengepul</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-bold text-blue-700">Keuangan</td>
+                                    <td class="p-2.5 text-slate-600">Unit Kampus Sendiri</td>
+                                    <td class="p-2.5 text-slate-800">Pengeluaran Operasional (M5) & Buku Kas (M6)</td>
+                                    <td class="p-2.5 text-slate-500">Administrasi biaya & pemantauan saldo buku besar</td>
+                                </tr>
+                                <tr>
+                                    <td class="p-2.5 font-bold text-sky-700">Viewer</td>
+                                    <td class="p-2.5 text-slate-600">Semua / Unit Kampus</td>
+                                    <td class="p-2.5 text-slate-800">Dashboard, Laporan & Ekspor, Survei KAP, Buku Kas</td>
+                                    <td class="p-2.5 text-slate-500">Pimpinan & auditor: hak akses pantau (Read-Only)</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
                 </div>
             </div>
 
@@ -389,15 +509,16 @@ new #[Layout('layouts.app')] class extends Component
                                             $roleName = $userItem->roles->first()?->name ?? 'User';
                                             $badgeClasses = match($roleName) {
                                                 'super_admin' => 'bg-purple-50 text-purple-700 border-purple-200',
-                                                'koordinator_tps3r' => 'bg-teal-50 text-teal-700 border-teal-200',
-                                                'operator_timbangan' => 'bg-amber-50 text-amber-700 border-amber-200',
-                                                'pengurus_bank_sampah' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
-                                                'auditor_pimpinan' => 'bg-sky-50 text-sky-700 border-sky-200',
+                                                'admin_kampus', 'koordinator_tps3r' => 'bg-teal-50 text-teal-700 border-teal-200',
+                                                'petugas_tps', 'operator_timbangan' => 'bg-amber-50 text-amber-700 border-amber-200',
+                                                'petugas_penjualan', 'pengurus_bank_sampah' => 'bg-emerald-50 text-emerald-700 border-emerald-200',
+                                                'keuangan' => 'bg-blue-50 text-blue-700 border-blue-200',
+                                                'viewer', 'auditor_pimpinan' => 'bg-sky-50 text-sky-700 border-sky-200',
                                                 default => 'bg-slate-100 text-slate-700 border-slate-200'
                                             };
                                         @endphp
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $badgeClasses }} truncate">
-                                            {{ ucfirst(str_replace('_', ' ', $roleName)) }}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-bold border {{ $badgeClasses }} truncate" title="{{ $this->getRoleLabel($roleName) }}">
+                                            {{ $this->getRoleLabel($roleName) }}
                                         </span>
                                     </td>
                                     <td class="py-3.5 px-3 truncate">
@@ -527,9 +648,13 @@ new #[Layout('layouts.app')] class extends Component
                         <label class="block text-xs font-bold text-slate-800 mb-1">Peran / Role Akses <span class="text-rose-500">*</span></label>
                         <select wire:model.live="selectedRole" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-white">
                             @foreach($roles as $r)
-                                <option value="{{ $r->name }}">{{ ucfirst(str_replace('_', ' ', $r->name)) }}</option>
+                                <option value="{{ $r->name }}">{{ $this->getRoleLabel($r->name) }}</option>
                             @endforeach
                         </select>
+                        <div class="mt-2 p-2.5 rounded-xl bg-slate-50 border border-slate-200/80 text-[11px] text-slate-600 leading-relaxed">
+                            <span class="font-bold text-slate-800 block mb-0.5">Wewenang Akses:</span>
+                            {{ $this->getRoleDescription($selectedRole) }}
+                        </div>
                         @error('selectedRole') <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span> @enderror
                     </div>
 
@@ -578,8 +703,10 @@ new #[Layout('layouts.app')] class extends Component
             <div @click.away="deleteModal = false; $wire.closeDeleteModal()"
                  class="bg-white rounded-2xl max-w-sm w-full p-5 shadow-2xl border border-slate-200 space-y-4 text-center">
                 
-                <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto text-xl">
-                    ⚠️
+                <div class="w-12 h-12 rounded-full bg-rose-50 text-rose-600 flex items-center justify-center mx-auto border border-rose-100 shadow-sm">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                    </svg>
                 </div>
 
                 <div>

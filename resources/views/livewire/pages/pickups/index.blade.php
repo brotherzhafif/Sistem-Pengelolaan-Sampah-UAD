@@ -50,6 +50,10 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('logistics.view')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Pengangkutan.');
+        }
+
         if ($user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id) {
             $activeCampus = session('active_campus_id');
             $this->selectedCampusId = !empty($activeCampus) ? (int) $activeCampus : null;
@@ -126,6 +130,11 @@ new #[Layout('layouts.app')] class extends Component
 
     public function savePickup(StockService $stockService, LedgerService $ledgerService): void
     {
+        $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) && !$user->can('logistics.create')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mencatat data pengangkutan.');
+        }
+
         $this->validate([
             'formCampusId' => ['required', 'exists:campuses,id'],
             'formVendorId' => ['required', 'exists:vendors,id'],
@@ -199,6 +208,11 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
+        $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) && !$user->can('logistics.create')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus data pengangkutan.');
+        }
+
         $pickup = Pickup::findOrFail($this->confirmDeletePickupId);
 
         // Otorisasi kampus
@@ -221,6 +235,7 @@ new #[Layout('layouts.app')] class extends Component
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
+        $canCreate = $user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) || $user->can('logistics.create');
 
         $campusQueryId = $isSuperAdmin 
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
@@ -247,6 +262,7 @@ new #[Layout('layouts.app')] class extends Component
 
         return [
             'isSuperAdmin' => $isSuperAdmin,
+            'canCreate' => $canCreate,
             'campuses' => Campus::orderBy('id')->get(),
             'vendors' => Vendor::where('is_active', true)->orderBy('name')->get(),
             'pickups' => $pickupsQuery->paginate(8),
@@ -356,6 +372,7 @@ new #[Layout('layouts.app')] class extends Component
                     </div>
                 </div>
 
+                @if ($canCreate)
                 <div class="flex items-center gap-2">
                     <button @click="showModal = true; $wire.openCreateModal()"
                             type="button"
@@ -366,6 +383,7 @@ new #[Layout('layouts.app')] class extends Component
                         <span>Catat Pengangkutan</span>
                     </button>
                 </div>
+                @endif
             </div>
 
             <!-- Table Riwayat Pengangkutan Residu -->
@@ -444,6 +462,7 @@ new #[Layout('layouts.app')] class extends Component
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
                                             </button>
+                                            @if ($canCreate)
                                             <button @click="deleteModal = true; $wire.confirmDelete({{ $p->id }})" 
                                                     type="button" 
                                                     title="Hapus Catatan Pengangkutan"
@@ -452,6 +471,7 @@ new #[Layout('layouts.app')] class extends Component
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
                                                 </svg>
                                             </button>
+                                            @endif
                                         </div>
                                     </td>
                                 </tr>

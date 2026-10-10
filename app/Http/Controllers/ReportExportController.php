@@ -35,6 +35,11 @@ class ReportExportController extends Controller
      */
     public function exportPdf(Request $request)
     {
+        $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'pengurus_bank_sampah', 'Pengurus Bank Sampah', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('report.export') && !$user->can('report.view')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki hak akses untuk mengekspor laporan.');
+        }
+
         $type = $request->query('type', 'weighing');
         $campusId = $this->resolveCampusId($request->query('campus_id'));
         $dateFrom = $request->query('date_from');
@@ -346,6 +351,11 @@ class ReportExportController extends Controller
      */
     public function exportExcel(Request $request): StreamedResponse
     {
+        $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'pengurus_bank_sampah', 'Pengurus Bank Sampah', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('report.export') && !$user->can('report.view')) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki hak akses untuk mengekspor laporan.');
+        }
+
         $type = $request->query('type', 'weighing');
         $campusId = $this->resolveCampusId($request->query('campus_id'));
         $dateFrom = $request->query('date_from');
