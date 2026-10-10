@@ -50,7 +50,7 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('logistics.view')) {
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Pengangkutan.');
         }
 
@@ -152,8 +152,8 @@ new #[Layout('layouts.app')] class extends Component
 
         $volume = floatval($this->formVolumeKg);
         $costPerKg = floatval($this->formCostPerKg);
-        $totalCost = round($volume * $costPerKg, 2);
-        $campusId = (int) $this->formCampusId;
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
+        $campusId = $isSuperAdmin ? (int) $this->formCampusId : (int) $user->campus_id;
         $vendorId = (int) $this->formVendorId;
 
         // Validasi ketersediaan stok residu di kampus bersangkutan

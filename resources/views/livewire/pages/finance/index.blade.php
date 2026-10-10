@@ -35,7 +35,7 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('finance.view')) {
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Keuangan.');
         }
 
@@ -97,8 +97,11 @@ new #[Layout('layouts.app')] class extends Component
             'initialAmount.required' => 'Nominal saldo awal wajib diisi.',
         ]);
 
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
+        $targetCampusId = $isSuperAdmin ? (int) $this->initialCampusId : (int) $user->campus_id;
+
         $ledgerService->recordTransaction(
-            campusId: (int) $this->initialCampusId,
+            campusId: $targetCampusId,
             date: $this->initialDate,
             jenis: 'K',
             sumber: 'saldo_awal',

@@ -139,8 +139,11 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
+        $campusToSave = $isSuperAdmin ? (int) $this->formCampusId : (int) $user->campus_id;
+
         $session = WeighingSession::create([
-            'campus_id' => $this->formCampusId,
+            'campus_id' => $campusToSave,
             'waste_source_id' => $this->formSourceId,
             'weigh_date' => $this->formDate,
             'created_by' => auth()->id(),

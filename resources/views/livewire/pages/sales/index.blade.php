@@ -50,7 +50,7 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_penjualan', 'Petugas Penjualan', 'pengurus_bank_sampah', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('bank_sampah.view')) {
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_penjualan', 'Petugas Penjualan', 'pengurus_bank_sampah', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Penjualan.');
         }
 
@@ -148,9 +148,12 @@ new #[Layout('layouts.app')] class extends Component
             $weight = floatval($item['weight_kg'] ?? 0);
             $price = floatval($item['price_per_kg'] ?? 0);
 
-            if ($weight > 0) {
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
+        $targetCampusId = $isSuperAdmin ? (int) $this->formCampusId : (int) $user->campus_id;
+
+        if ($weight > 0) {
                 // Validasi ketersediaan stok aktual di kampus bersangkutan
-                $availableStock = $stockService->getAvailableStock($item['waste_type_id'], $this->formCampusId);
+                $availableStock = $stockService->getAvailableStock($item['waste_type_id'], $targetCampusId);
 
                 if ($weight > $availableStock) {
                     $this->addError(
@@ -177,7 +180,7 @@ new #[Layout('layouts.app')] class extends Component
         $totalAmount = array_sum(array_column($itemsToSell, 'subtotal'));
 
         $sale = Sale::create([
-            'campus_id' => $this->formCampusId,
+            'campus_id' => $targetCampusId,
             'buyer_id' => $this->formBuyerId,
             'sale_date' => $this->formDate,
             'total_amount' => $totalAmount,

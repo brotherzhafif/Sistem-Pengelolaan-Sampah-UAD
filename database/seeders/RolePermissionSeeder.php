@@ -62,11 +62,11 @@ class RolePermissionSeeder extends Seeder
         }
 
         // 2. Define Roles and Assign Permissions
-        // Role: Super Admin (Lembaga/Pusat UAD - SRS M9)
+        // Role: Super Admin (Lembaga/Pusat UAD)
         $superAdmin = Role::firstOrCreate(['name' => 'super_admin']);
         $superAdmin->syncPermissions(Permission::all());
 
-        // Role: Admin Kampus (SRS M9)
+        // Role: Admin Kampus (Koordinator TPS3R)
         $adminKampus = Role::firstOrCreate(['name' => 'admin_kampus']);
         $adminKampus->syncPermissions([
             'weighing.view',
@@ -85,7 +85,7 @@ class RolePermissionSeeder extends Seeder
             'user.view',
         ]);
 
-        // Role: Petugas TPS (Timbang & Angkut - SRS M9)
+        // Role: Petugas TPS (Operasional Timbangan & Pengangkutan)
         $petugasTps = Role::firstOrCreate(['name' => 'petugas_tps']);
         $petugasTps->syncPermissions([
             'weighing.view',
@@ -94,28 +94,24 @@ class RolePermissionSeeder extends Seeder
             'logistics.view',
             'logistics.create',
             'logistics.update',
-            'master.view',
         ]);
 
-        // Role: Petugas Penjualan (SRS M9)
+        // Role: Petugas Penjualan (Bank Sampah)
         $petugasPenjualan = Role::firstOrCreate(['name' => 'petugas_penjualan']);
         $petugasPenjualan->syncPermissions([
             'bank_sampah.view',
             'bank_sampah.sale.create',
-            'weighing.view',
-            'master.view',
         ]);
 
-        // Role: Keuangan (Pengeluaran - SRS M9)
+        // Role: Keuangan (Pengeluaran Operasional & Kas)
         $keuanganRole = Role::firstOrCreate(['name' => 'keuangan']);
         $keuanganRole->syncPermissions([
-            'bank_sampah.view',
             'bank_sampah.expense.create',
             'report.view',
-            'master.view',
+            'report.export',
         ]);
 
-        // Role: Viewer (Audit & Monitoring - SRS M9)
+        // Role: Viewer (Pengawasan & Audit Read-Only)
         $viewerRole = Role::firstOrCreate(['name' => 'viewer']);
         $viewerRole->syncPermissions([
             'weighing.view',
@@ -123,18 +119,19 @@ class RolePermissionSeeder extends Seeder
             'bank_sampah.view',
             'kap.survey.view',
             'report.view',
+            'report.export',
             'audit.view',
         ]);
 
         // Aliases untuk kompatibilitas data existing
         $operator = Role::firstOrCreate(['name' => 'operator_timbangan']);
-        $operator->syncPermissions(['weighing.view', 'weighing.create', 'master.view']);
+        $operator->syncPermissions($petugasTps->permissions);
 
         $koordinator = Role::firstOrCreate(['name' => 'koordinator_tps3r']);
         $koordinator->syncPermissions($adminKampus->permissions);
 
         $bankSampah = Role::firstOrCreate(['name' => 'pengurus_bank_sampah']);
-        $bankSampah->syncPermissions(['weighing.view', 'bank_sampah.view', 'bank_sampah.sale.create', 'bank_sampah.expense.create', 'master.view', 'report.view', 'report.export']);
+        $bankSampah->syncPermissions($petugasPenjualan->permissions);
 
         $auditor = Role::firstOrCreate(['name' => 'auditor_pimpinan']);
         $auditor->syncPermissions($viewerRole->permissions);

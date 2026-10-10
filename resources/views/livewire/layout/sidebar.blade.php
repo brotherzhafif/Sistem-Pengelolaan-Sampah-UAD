@@ -50,16 +50,16 @@ new class extends Component
         $isPetugasPenjualan = $user->hasRole(['petugas_penjualan', 'Petugas Penjualan', 'pengurus_bank_sampah']);
         $isKeuangan = $user->hasRole(['keuangan', 'Keuangan']);
 
-        // Hak Akses Modul Berdasarkan RBAC SRS (M9)
-        $canWeighing = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor || $user->can('weighing.view');
-        $canSales = $isSuperAdmin || $isAdminKampus || $isPetugasPenjualan || $isAuditor || $user->can('bank_sampah.view');
-        $canPickups = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor || $user->can('logistics.view');
-        $canExpenses = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isPetugasPenjualan || $isAuditor || $user->can('bank_sampah.expense.create');
+        // Hak Akses Modul Berdasarkan Logika Peran RBAC
+        $canWeighing = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor;
+        $canSales = $isSuperAdmin || $isAdminKampus || $isPetugasPenjualan || $isAuditor;
+        $canPickups = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor;
+        $canExpenses = $isSuperAdmin || $isAdminKampus || $isKeuangan;
         $canFinance = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isAuditor;
-        $canKap = $isSuperAdmin || $isAdminKampus || $isAuditor || $user->can('kap.survey.view');
-        $canReports = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isAuditor || $user->can('report.view');
-        $canMaster = $isSuperAdmin || $isAdminKampus || $user->can('master.view');
-        $canUsers = $isSuperAdmin || $isAdminKampus || $user->can('user.view');
+        $canKap = $isSuperAdmin || $isAdminKampus || $isAuditor;
+        $canReports = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isAuditor;
+        $canMaster = $isSuperAdmin || $isAdminKampus;
+        $canUsers = $isSuperAdmin || $isAdminKampus;
 
         $activeCampus = $this->activeCampusId ? Campus::find($this->activeCampusId) : $user->campus;
 

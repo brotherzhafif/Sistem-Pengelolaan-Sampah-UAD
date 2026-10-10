@@ -60,16 +60,19 @@ new #[Layout('layouts.app')] class extends Component
 
     public function mount(): void
     {
-        // Hanya Super Admin atau yang memiliki permission user.view yang boleh mengakses
         $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin']) && !$user->can('user.view')) {
-            abort(403, 'Anda tidak memiliki hak akses untuk mengelola data pengguna.');
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R'])) {
+            abort(403, 'Akses ditolak: Anda tidak memiliki hak akses untuk mengelola data pengguna.');
         }
 
-        // Default filter kampus sesuai konteks aktif
-        $sessionCampus = session('active_campus_id');
-        if ($sessionCampus) {
-            $this->filterCampusId = (int) $sessionCampus;
+        // Jika bukan Super Admin, filter kampus terkunci wajib ke kampus user
+        if ($user->hasRole(['super_admin', 'Super Admin'])) {
+            $sessionCampus = session('active_campus_id');
+            if ($sessionCampus) {
+                $this->filterCampusId = (int) $sessionCampus;
+            }
+        } else {
+            $this->filterCampusId = (int) $user->campus_id;
         }
     }
 
@@ -355,6 +358,13 @@ new #[Layout('layouts.app')] class extends Component
         $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
 
         $query = User::with(['campus', 'roles'])
+            ->when(!$isSuperAdmin, function ($q) use ($currentUser) {
+                // Admin Kampus HANYA BISA MELIHAT staf pengguna di kampusnya sendiri
+                $q->where('campus_id', $currentUser->campus_id);
+            })
+            ->when($isSuperAdmin && $this->filterCampusId, function ($q) {
+                $q->where('campus_id', $this->filterCampusId);
+            })
             ->when($this->search, function ($q) {
                 $q->where(function ($sub) {
                     $sub->where('name', 'like', '%' . $this->search . '%')
@@ -363,9 +373,6 @@ new #[Layout('layouts.app')] class extends Component
             })
             ->when($this->filterRole, function ($q) {
                 $q->whereHas('roles', fn($r) => $r->where('name', $this->filterRole));
-            })
-            ->when($this->filterCampusId, function ($q) {
-                $q->where('campus_id', $this->filterCampusId);
             })
             ->orderBy('id', 'asc');
 
@@ -465,12 +472,18 @@ new #[Layout('layouts.app')] class extends Component
                     <!-- Filter Kampus -->
                     <div>
                         <label class="block text-[11px] font-bold text-slate-600 mb-1">Unit Kampus</label>
-                        <select wire:model.live="filterCampusId" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-white">
-                            <option value="">Semua Kampus Unit</option>
-                            @foreach($campuses as $c)
-                                <option value="{{ $c->id }}">{{ $c->name }}</option>
-                            @endforeach
-                        </select>
+                        @if ($isSuperAdmin)
+                            <select wire:model.live="filterCampusId" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-white">
+                                <option value="">Semua Kampus Unit</option>
+                                @foreach($campuses as $c)
+                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                @endforeach
+                            </select>
+                        @else
+                            <div class="px-3 py-2 rounded-xl bg-slate-50 border border-slate-200 text-xs text-slate-700 font-semibold truncate">
+                                {{ auth()->user()->campus?->name ?? 'Kampus Penugasan Anda' }}
+                            </div>
+                        @endif
                     </div>
                 </div>
 

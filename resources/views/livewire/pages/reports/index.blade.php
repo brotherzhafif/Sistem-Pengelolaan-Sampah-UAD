@@ -37,7 +37,7 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'pengurus_bank_sampah', 'Pengurus Bank Sampah', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('report.view')) {
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Laporan & Ekspor.');
         }
 
@@ -139,7 +139,9 @@ new #[Layout('layouts.app')] class extends Component
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
-        $campusId = !empty($this->filterCampusId) ? (int) $this->filterCampusId : null;
+        $campusId = $isSuperAdmin
+            ? (!empty($this->filterCampusId) ? (int) $this->filterCampusId : null)
+            : (int) $user->campus_id;
 
         $campuses = Campus::where('is_active', true)->orderBy('id')->get();
         $activeCampus = $campusId ? $campuses->firstWhere('id', $campusId) : null;

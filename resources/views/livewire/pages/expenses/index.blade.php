@@ -34,7 +34,7 @@ new #[Layout('layouts.app')] class extends Component
     public function mount(): void
     {
         $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'pengurus_bank_sampah', 'Pengurus Bank Sampah', 'viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$user->can('expenses.view')) {
+        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan'])) {
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Pengeluaran.');
         }
 
@@ -101,7 +101,8 @@ new #[Layout('layouts.app')] class extends Component
             'formDescription.required' => 'Keterangan pengeluaran wajib diisi.',
         ]);
 
-        $campusId = (int) $this->formCampusId;
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
+        $campusId = $isSuperAdmin ? (int) $this->formCampusId : (int) $user->campus_id;
         $amount = (float) $this->formAmount;
 
         Expense::create([
