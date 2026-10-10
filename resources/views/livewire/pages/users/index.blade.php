@@ -35,17 +35,12 @@ new #[Layout('layouts.app')] class extends Component
     public function getRoleLabel(string $role): string
     {
         return match ($role) {
-            'super_admin' => 'Super Admin (Pusat / Semua Kampus)',
-            'admin_kampus' => 'Admin Kampus (Koordinator TPS3R)',
-            'petugas_tps' => 'Petugas TPS (Timbang & Angkut)',
-            'petugas_penjualan' => 'Petugas Penjualan (Bank Sampah)',
-            'keuangan' => 'Keuangan (Pengeluaran Operasional)',
-            'viewer' => 'Viewer (Auditor & Pimpinan UAD)',
-            // Alias Kompatibilitas Sistem
-            'operator_timbangan' => 'Operator Timbangan (Petugas TPS)',
-            'koordinator_tps3r' => 'Koordinator TPS3R (Admin Kampus)',
-            'pengurus_bank_sampah' => 'Pengurus Bank Sampah (Penjualan/Kas)',
-            'auditor_pimpinan' => 'Pimpinan & Auditor UAD (Viewer)',
+            'super_admin' => 'Super Admin',
+            'admin_kampus', 'koordinator_tps3r' => 'Admin Kampus',
+            'petugas_tps', 'operator_timbangan' => 'Petugas TPS',
+            'petugas_penjualan', 'pengurus_bank_sampah' => 'Petugas Penjualan',
+            'keuangan' => 'Keuangan',
+            'viewer', 'auditor_pimpinan' => 'Viewer',
             default => ucfirst(str_replace('_', ' ', $role)),
         };
     }
@@ -53,12 +48,12 @@ new #[Layout('layouts.app')] class extends Component
     public function getRoleDescription(string $role): string
     {
         return match ($role) {
-            'super_admin' => 'Akses penuh ke semua modul dan seluruh 6 kampus UAD tanpa batasan.',
+            'super_admin' => 'Akses penuh ke semua modul dan seluruh unit kampus UAD tanpa batasan.',
             'admin_kampus', 'koordinator_tps3r' => 'Pengelola operasional kampus: mengelola penimbangan, pengangkutan, penjualan, pengeluaran, buku kas, dan laporan di kampusnya.',
-            'petugas_tps', 'operator_timbangan' => 'Petugas lapangan TPS: khusus mencatat penimbangan harian (M2) dan pengangkutan residu (M4) di kampusnya.',
-            'petugas_penjualan' => 'Petugas transaksi penjualan: khusus mencatat penjualan sampah terpilah/daur ulang ke pembeli/pengepul (M3).',
-            'keuangan' => 'Petugas keuangan: khusus mencatat pengeluaran operasional (M5) dan memantau buku kas & buku besar kampus (M6).',
-            'viewer', 'auditor_pimpinan' => 'Hak akses audit (Read-Only): hanya dapat memantau dashboard, laporan, survei KAP, dan riwayat transaksi tanpa hak input/ubah.',
+            'petugas_tps', 'operator_timbangan' => 'Petugas lapangan TPS: mencatat penimbangan harian dan pengangkutan residu di kampusnya.',
+            'petugas_penjualan' => 'Petugas transaksi penjualan: mencatat penjualan sampah terpilah dan daur ulang ke pembeli/pengepul.',
+            'keuangan' => 'Petugas keuangan: mencatat pengeluaran operasional serta memantau buku kas dan buku besar kampus.',
+            'viewer', 'auditor_pimpinan' => 'Hak akses audit (Read-Only): memantau dashboard, laporan, survei KAP, dan riwayat transaksi tanpa hak input atau ubah.',
             default => 'Hak akses pengguna sesuai penugasan peran.',
         };
     }
@@ -319,7 +314,7 @@ new #[Layout('layouts.app')] class extends Component
                 <span>Manajemen Pengguna & Hak Akses</span>
             </h2>
             <p class="text-xs text-slate-500 mt-0.5">
-                Kelola akun pengguna dan pembagian hak akses (RBAC) sesuai standar SRS: Super Admin, Admin Kampus, Petugas TPS, Petugas Penjualan, Keuangan, dan Viewer.
+                Kelola akun petugas timbangan, koordinator TPS3R, pengurus bank sampah, keuangan, dan pimpinan kampus UAD.
             </p>
         </div>
     </x-slot>
@@ -383,7 +378,7 @@ new #[Layout('layouts.app')] class extends Component
                 </div>
             </div>
 
-            <!-- Matriks Hak Akses Pengguna (RBAC SRS M9) -->
+            <!-- Matriks Hak Akses Pengguna -->
             <div x-data="{ openRbac: false }" class="bg-white rounded-2xl border border-slate-200 shadow-2xs overflow-hidden">
                 <button type="button" @click="openRbac = !openRbac" class="w-full px-4 py-3 flex items-center justify-between hover:bg-slate-50/70 transition cursor-pointer text-left">
                     <div class="flex items-center gap-2.5">
@@ -393,7 +388,7 @@ new #[Layout('layouts.app')] class extends Component
                             </svg>
                         </div>
                         <div>
-                            <span class="text-xs font-bold text-slate-900">Matriks Hak Akses & Pembagian Peran (RBAC SRS M9)</span>
+                            <span class="text-xs font-bold text-slate-900">Matriks Hak Akses & Pembagian Peran</span>
                             <span class="text-[11px] text-slate-500 block">Panduan modul dan wewenang untuk 6 peran pengguna di lingkungan kampus UAD</span>
                         </div>
                     </div>
@@ -410,9 +405,9 @@ new #[Layout('layouts.app')] class extends Component
                         <table class="w-full text-left table-fixed border border-slate-200 rounded-xl overflow-hidden bg-white text-[11px]">
                             <thead class="bg-slate-100/80 text-slate-700 font-bold border-b border-slate-200">
                                 <tr>
-                                    <th class="p-2.5 w-[22%]">Peran (Role SRS)</th>
+                                    <th class="p-2.5 w-[20%]">Peran Pengguna</th>
                                     <th class="p-2.5 w-[18%]">Cakupan Kampus</th>
-                                    <th class="p-2.5 w-[35%]">Modul yang Diizinkan</th>
+                                    <th class="p-2.5 w-[37%]">Modul yang Diizinkan</th>
                                     <th class="p-2.5 w-[25%]">Karakteristik & Wewenang</th>
                                 </tr>
                             </thead>
@@ -420,8 +415,8 @@ new #[Layout('layouts.app')] class extends Component
                                 <tr>
                                     <td class="p-2.5 font-bold text-purple-700">Super Admin</td>
                                     <td class="p-2.5 text-slate-600">Semua Kampus (Pusat)</td>
-                                    <td class="p-2.5 text-slate-800">Semua Modul (M1–M11)</td>
-                                    <td class="p-2.5 text-slate-500">Bypass scope kampus, CRUD penuh & kelola pengguna</td>
+                                    <td class="p-2.5 text-slate-800">Semua Modul & Pengaturan Sistem</td>
+                                    <td class="p-2.5 text-slate-500">Bypass scope kampus, kelola penuh data & akun pengguna</td>
                                 </tr>
                                 <tr>
                                     <td class="p-2.5 font-bold text-teal-700">Admin Kampus</td>
@@ -432,19 +427,19 @@ new #[Layout('layouts.app')] class extends Component
                                 <tr>
                                     <td class="p-2.5 font-bold text-amber-700">Petugas TPS</td>
                                     <td class="p-2.5 text-slate-600">Unit Kampus Sendiri</td>
-                                    <td class="p-2.5 text-slate-800">Penimbangan Harian (M2) & Pengangkutan Residu (M4)</td>
-                                    <td class="p-2.5 text-slate-500">Operasional TPS lapangan; tidak akses kas/penjualan</td>
+                                    <td class="p-2.5 text-slate-800">Penimbangan Harian & Pengangkutan Residu</td>
+                                    <td class="p-2.5 text-slate-500">Operasional TPS lapangan; tidak akses kas atau penjualan</td>
                                 </tr>
                                 <tr>
                                     <td class="p-2.5 font-bold text-emerald-700">Petugas Penjualan</td>
                                     <td class="p-2.5 text-slate-600">Unit Kampus Sendiri</td>
-                                    <td class="p-2.5 text-slate-800">Penjualan Sampah (M3) & Cek Stok Terpilah</td>
+                                    <td class="p-2.5 text-slate-800">Penjualan Sampah & Cek Stok Terpilah</td>
                                     <td class="p-2.5 text-slate-500">Pengurus bank sampah; catat penjualan ke pengepul</td>
                                 </tr>
                                 <tr>
                                     <td class="p-2.5 font-bold text-blue-700">Keuangan</td>
                                     <td class="p-2.5 text-slate-600">Unit Kampus Sendiri</td>
-                                    <td class="p-2.5 text-slate-800">Pengeluaran Operasional (M5) & Buku Kas (M6)</td>
+                                    <td class="p-2.5 text-slate-800">Pengeluaran Operasional & Buku Kas</td>
                                     <td class="p-2.5 text-slate-500">Administrasi biaya & pemantauan saldo buku besar</td>
                                 </tr>
                                 <tr>

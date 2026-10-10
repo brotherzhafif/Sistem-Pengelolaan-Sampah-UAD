@@ -151,9 +151,9 @@ class RolePermissionSeeder extends Seeder
                 'campus_id' => null,
             ]
         );
-        $userSuperAdmin->assignRole('super_admin');
+        $userSuperAdmin->syncRoles(['super_admin']);
 
-        // Operator Timbangan Kampus 4
+        // Petugas TPS (Operator Timbangan Kampus 4)
         $userOperator = User::firstOrCreate(
             ['email' => 'operator@uad.ac.id'],
             [
@@ -162,9 +162,9 @@ class RolePermissionSeeder extends Seeder
                 'campus_id' => $kampus4?->id,
             ]
         );
-        $userOperator->assignRole('operator_timbangan');
+        $userOperator->syncRoles(['petugas_tps', 'operator_timbangan']);
 
-        // Koordinator TPS3R Kampus 4
+        // Admin Kampus (Koordinator TPS3R Kampus 4)
         $userKoordinator = User::firstOrCreate(
             ['email' => 'koordinator@uad.ac.id'],
             [
@@ -173,9 +173,9 @@ class RolePermissionSeeder extends Seeder
                 'campus_id' => $kampus4?->id,
             ]
         );
-        $userKoordinator->assignRole('koordinator_tps3r');
+        $userKoordinator->syncRoles(['admin_kampus', 'koordinator_tps3r']);
 
-        // Pengurus Bank Sampah Kampus 4
+        // Petugas Penjualan (Pengurus Bank Sampah Kampus 4)
         $userBankSampah = User::firstOrCreate(
             ['email' => 'banksampah@uad.ac.id'],
             [
@@ -184,9 +184,20 @@ class RolePermissionSeeder extends Seeder
                 'campus_id' => $kampus4?->id,
             ]
         );
-        $userBankSampah->assignRole('pengurus_bank_sampah');
+        $userBankSampah->syncRoles(['petugas_penjualan', 'pengurus_bank_sampah']);
 
-        // Auditor / Pimpinan UAD
+        // Petugas Keuangan Kampus 4
+        $userKeuangan = User::firstOrCreate(
+            ['email' => 'keuangan@uad.ac.id'],
+            [
+                'name' => 'Petugas Keuangan Kampus 4',
+                'password' => Hash::make('password123'),
+                'campus_id' => $kampus4?->id,
+            ]
+        );
+        $userKeuangan->syncRoles(['keuangan']);
+
+        // Auditor & Pimpinan UAD (Viewer)
         $userAuditor = User::firstOrCreate(
             ['email' => 'pimpinan@uad.ac.id'],
             [
@@ -195,7 +206,7 @@ class RolePermissionSeeder extends Seeder
                 'campus_id' => null,
             ]
         );
-        $userAuditor->assignRole('auditor_pimpinan');
+        $userAuditor->syncRoles(['viewer', 'auditor_pimpinan']);
     }
 }
 
