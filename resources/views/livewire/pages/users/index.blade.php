@@ -96,7 +96,25 @@ new #[Layout('layouts.app')] class extends Component
 
     public function openEditModal(int $id): void
     {
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
         $user = User::with('roles')->findOrFail($id);
+
+        if (!$isSuperAdmin && $user->id !== $currentUser->id) {
+            if ($user->hasRole(['super_admin', 'Super Admin'])) {
+                $this->dispatch('toast', message: 'Anda tidak memiliki hak untuk mengubah data akun Super Administrator.', type: 'error');
+                return;
+            }
+            if ($user->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
+                $this->dispatch('toast', message: 'Anda tidak memiliki hak untuk mengubah data akun Pimpinan & Auditor.', type: 'error');
+                return;
+            }
+            if ($user->campus_id !== $currentUser->campus_id) {
+                $this->dispatch('toast', message: 'Anda hanya dapat mengelola data pengguna di unit kampus Anda sendiri.', type: 'error');
+                return;
+            }
+        }
+
         $this->editUserId = $user->id;
         $this->name = $user->name;
         $this->email = $user->email;
@@ -114,20 +132,41 @@ new #[Layout('layouts.app')] class extends Component
 
     public function resetForm(): void
     {
+        $currentUser = auth()->user();
         $this->editUserId = null;
         $this->name = '';
         $this->email = '';
         $this->password = '';
         $this->selectedRole = 'petugas_tps';
-        $this->selectedCampusId = Campus::first()?->id;
+        $this->selectedCampusId = $currentUser->campus_id ? (int) $currentUser->campus_id : Campus::first()?->id;
         $this->resetValidation();
     }
 
     public function saveUser(): void
     {
         $currentUser = auth()->user();
-        if (!$currentUser->hasRole(['super_admin', 'Super Admin']) && !$currentUser->can('user.manage')) {
+        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
+
+        if (!$isSuperAdmin && !$currentUser->hasRole(['admin_kampus', 'koordinator_tps3r'])) {
             abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menyimpan atau memperbarui akun pengguna.');
+        }
+
+        // Jika bukan Super Admin, batasi hak peran dan kampus penugasan
+        if (!$isSuperAdmin) {
+            if (!in_array($this->selectedRole, ['petugas_tps', 'petugas_penjualan', 'keuangan'])) {
+                abort(403, 'Akses ditolak: Koordinator TPS hanya diizinkan mengelola akun Petugas TPS, Petugas Penjualan, dan Keuangan.');
+            }
+            $this->selectedCampusId = $currentUser->campus_id;
+
+            if ($this->editUserId) {
+                $target = User::findOrFail($this->editUserId);
+                if ($target->hasRole(['super_admin', 'Super Admin']) || $target->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
+                    abort(403, 'Akses ditolak: Anda tidak diizinkan mengubah akun tingkat pusat.');
+                }
+                if ($target->campus_id !== $currentUser->campus_id && $target->id !== $currentUser->id) {
+                    abort(403, 'Akses ditolak: Anda hanya dapat mengubah akun di unit kampus Anda sendiri.');
+                }
+            }
         }
 
         $isCreate = $this->editUserId === null;
@@ -164,12 +203,14 @@ new #[Layout('layouts.app')] class extends Component
             'selectedCampusId.required' => 'Pilih unit kampus penugasan pengguna.',
         ]);
 
+        $campusToSave = $this->selectedRole === 'super_admin' ? null : ($isSuperAdmin ? $this->selectedCampusId : $currentUser->campus_id);
+
         if ($isCreate) {
             $user = User::create([
                 'name' => strip_tags(trim($this->name)),
                 'email' => strtolower(trim($this->email)),
                 'password' => Hash::make($this->password),
-                'campus_id' => $this->selectedRole === 'super_admin' ? null : $this->selectedCampusId,
+                'campus_id' => $campusToSave,
             ]);
 
             $user->syncRoles([$this->selectedRole]);
@@ -181,7 +222,7 @@ new #[Layout('layouts.app')] class extends Component
             $updateData = [
                 'name' => strip_tags(trim($this->name)),
                 'email' => strtolower(trim($this->email)),
-                'campus_id' => $this->selectedRole === 'super_admin' ? null : $this->selectedCampusId,
+                'campus_id' => $campusToSave,
             ];
 
             if (!empty($this->password)) {
@@ -189,7 +230,11 @@ new #[Layout('layouts.app')] class extends Component
             }
 
             $user->update($updateData);
-            $user->syncRoles([$this->selectedRole]);
+
+            // Hanya Super Admin yang bisa ubah role tingkat pusat
+            if ($isSuperAdmin || in_array($this->selectedRole, ['petugas_tps', 'petugas_penjualan', 'keuangan'])) {
+                $user->syncRoles([$this->selectedRole]);
+            }
 
             $this->dispatch('toast', message: "Data pengguna '{$user->name}' berhasil diperbarui!", type: 'success');
         }
@@ -199,16 +244,35 @@ new #[Layout('layouts.app')] class extends Component
 
     public function confirmDelete(int $id): void
     {
-        if ($id === auth()->id()) {
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
+
+        if ($id === $currentUser->id) {
             $this->dispatch('toast', message: 'Anda tidak dapat menghapus akun Anda sendiri yang sedang aktif!', type: 'error');
             return;
         }
 
         $user = User::findOrFail($id);
 
-        if ($user->hasRole('super_admin') && User::role('super_admin')->count() <= 1) {
-            $this->dispatch('toast', message: 'Tidak dapat menghapus satu-satunya akun Super Admin sistem!', type: 'error');
+        if ($user->hasRole(['super_admin', 'Super Admin'])) {
+            $this->dispatch('toast', message: 'Akun Super Administrator tidak dapat dihapus oleh peran mana pun!', type: 'error');
             return;
+        }
+
+        if ($user->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
+            $this->dispatch('toast', message: 'Akun Pimpinan & Auditor hanya dapat dikelola oleh Super Administrator!', type: 'error');
+            return;
+        }
+
+        if (!$isSuperAdmin) {
+            if ($user->hasRole(['admin_kampus', 'koordinator_tps3r'])) {
+                $this->dispatch('toast', message: 'Anda tidak dapat menghapus akun sesama Koordinator / Admin Kampus.', type: 'error');
+                return;
+            }
+            if ($user->campus_id !== $currentUser->campus_id) {
+                $this->dispatch('toast', message: 'Anda hanya dapat mengelola akun di unit kampus Anda sendiri.', type: 'error');
+                return;
+            }
         }
 
         $this->deleteUserId = $user->id;
@@ -230,11 +294,26 @@ new #[Layout('layouts.app')] class extends Component
         }
 
         $currentUser = auth()->user();
-        if (!$currentUser->hasRole(['super_admin', 'Super Admin']) && !$currentUser->can('user.manage')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus akun pengguna.');
+        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
+        $user = User::findOrFail($this->deleteUserId);
+
+        if ($user->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Akun Super Administrator tidak dapat dihapus.');
         }
 
-        $user = User::findOrFail($this->deleteUserId);
+        if ($user->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$isSuperAdmin) {
+            abort(403, 'Akses ditolak: Akun Pimpinan & Auditor hanya dapat dikelola oleh Super Administrator.');
+        }
+
+        if (!$isSuperAdmin) {
+            if ($user->hasRole(['admin_kampus', 'koordinator_tps3r'])) {
+                abort(403, 'Akses ditolak: Anda tidak dapat menghapus sesama akun Koordinator.');
+            }
+            if ($user->campus_id !== $currentUser->campus_id) {
+                abort(403, 'Akses ditolak: Anda hanya dapat menghapus akun di unit kampus Anda sendiri.');
+            }
+        }
+
         $userName = $user->name;
         $user->delete();
 
@@ -245,11 +324,24 @@ new #[Layout('layouts.app')] class extends Component
     public function resetPasswordDefault(int $id): void
     {
         $currentUser = auth()->user();
-        if (!$currentUser->hasRole(['super_admin', 'Super Admin']) && !$currentUser->can('user.manage')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mereset kata sandi pengguna.');
+        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
+        $user = User::findOrFail($id);
+
+        if (!$isSuperAdmin) {
+            if ($user->hasRole(['super_admin', 'Super Admin'])) {
+                $this->dispatch('toast', message: 'Anda tidak memiliki hak untuk mereset kata sandi Super Administrator!', type: 'error');
+                return;
+            }
+            if ($user->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
+                $this->dispatch('toast', message: 'Anda tidak memiliki hak untuk mereset kata sandi Pimpinan & Auditor!', type: 'error');
+                return;
+            }
+            if ($user->campus_id !== $currentUser->campus_id) {
+                $this->dispatch('toast', message: 'Anda hanya dapat mereset kata sandi akun di unit kampus Anda sendiri.', type: 'error');
+                return;
+            }
         }
 
-        $user = User::findOrFail($id);
         $user->update([
             'password' => Hash::make('password123'),
         ]);
@@ -259,6 +351,9 @@ new #[Layout('layouts.app')] class extends Component
 
     public function with(): array
     {
+        $currentUser = auth()->user();
+        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
+
         $query = User::with(['campus', 'roles'])
             ->when($this->search, function ($q) {
                 $q->where(function ($sub) {
@@ -289,12 +384,29 @@ new #[Layout('layouts.app')] class extends Component
             'pengurus_bank_sampah' => 9,
             'auditor_pimpinan' => 10,
         ];
-        $roles = Role::all()->sortBy(fn($r) => $rolePriority[$r->name] ?? 99)->values();
+        
+        $roles = Role::whereIn('name', ['super_admin', 'admin_kampus', 'petugas_tps', 'petugas_penjualan', 'keuangan', 'viewer'])
+            ->get()
+            ->sortBy(fn($r) => $rolePriority[$r->name] ?? 99)
+            ->values();
+
+        // Pilihan peran di modal form:
+        // Super Admin bisa pilih semua 6 peran
+        // Admin Kampus HANYA bisa pilih petugas operasional di kampusnya
+        $formRoles = $isSuperAdmin
+            ? $roles
+            : Role::whereIn('name', ['petugas_tps', 'petugas_penjualan', 'keuangan'])
+                ->get()
+                ->sortBy(fn($r) => $rolePriority[$r->name] ?? 99)
+                ->values();
+
         $campuses = Campus::where('is_active', true)->orderBy('id')->get();
 
         return [
+            'isSuperAdmin' => $isSuperAdmin,
             'users' => $users,
             'roles' => $roles,
+            'formRoles' => $formRoles,
             'campuses' => $campuses,
         ];
     }
@@ -527,40 +639,68 @@ new #[Layout('layouts.app')] class extends Component
                                         {{ $userItem->created_at ? $userItem->created_at->format('d/m/Y') : '-' }}
                                     </td>
                                     <td class="py-3.5 px-2 text-center">
-                                        <div class="inline-flex items-center gap-1.5">
-                                            <!-- Edit User Button -->
-                                            <button type="button" 
-                                                    wire:click="openEditModal({{ $userItem->id }})"
-                                                    class="w-7 h-7 rounded-lg border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
-                                                    title="Ubah Pengguna">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
-                                                </svg>
-                                            </button>
+                                        @php
+                                            $currentUser = auth()->user();
+                                            $isCurrentSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
+                                            $isTargetSuperAdmin = $userItem->hasRole(['super_admin', 'Super Admin']);
+                                            $isTargetViewer = $userItem->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']);
+                                            $isSameCampus = $currentUser->campus_id && ($currentUser->campus_id === $userItem->campus_id);
+                                            $isSelf = $userItem->id === $currentUser->id;
 
-                                            <!-- Reset Password Button -->
-                                            <button type="button" 
-                                                    wire:click="resetPasswordDefault({{ $userItem->id }})"
-                                                    wire:confirm="Yakin ingin mereset password pengguna ini ke default (password123)?"
-                                                    class="w-7 h-7 rounded-lg border border-slate-200 text-slate-600 hover:text-amber-700 hover:border-amber-300 hover:bg-amber-50 transition inline-flex items-center justify-center cursor-pointer"
-                                                    title="Reset Password ke password123">
-                                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
-                                                </svg>
-                                            </button>
+                                            // Hak Ubah: Super Admin bisa ubah siapa pun. Koordinator hanya bisa ubah staf di kampusnya sendiri atau profil dirinya sendiri.
+                                            $canEditThis = $isCurrentSuperAdmin || (!$isTargetSuperAdmin && !$isTargetViewer && $isSameCampus) || $isSelf;
 
-                                            <!-- Delete User Button -->
-                                            @if($userItem->id !== auth()->id())
-                                                <button type="button" 
-                                                        wire:click="confirmDelete({{ $userItem->id }})"
-                                                        class="w-7 h-7 rounded-lg border border-slate-200 text-slate-600 hover:text-rose-700 hover:border-rose-300 hover:bg-rose-50 transition inline-flex items-center justify-center cursor-pointer"
-                                                        title="Hapus Pengguna">
-                                                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                    </svg>
-                                                </button>
-                                            @endif
-                                        </div>
+                                            // Hak Reset Password: Super Admin bisa reset siapa pun. Koordinator hanya bisa reset staf di kampusnya (bukan Super Admin, bukan Viewer, bukan dirinya sendiri).
+                                            $canResetThis = $isCurrentSuperAdmin || (!$isTargetSuperAdmin && !$isTargetViewer && $isSameCampus && !$isSelf);
+
+                                            // Hak Hapus: Super Admin bisa hapus selain dirinya dan bukan satu-satunya super admin. Koordinator HANYA bisa hapus staf di kampusnya (bukan Super Admin, bukan Viewer, bukan sesama koordinator, dan bukan dirinya sendiri).
+                                            $canDeleteThis = ($isCurrentSuperAdmin && !$isSelf) || (!$isTargetSuperAdmin && !$isTargetViewer && !$userItem->hasRole(['admin_kampus', 'koordinator_tps3r']) && $isSameCampus && !$isSelf);
+                                        @endphp
+
+                                        @if($canEditThis || $canResetThis || $canDeleteThis)
+                                            <div class="inline-flex items-center gap-1.5">
+                                                @if($canEditThis)
+                                                    <!-- Edit User Button -->
+                                                    <button type="button" 
+                                                            wire:click="openEditModal({{ $userItem->id }})"
+                                                            class="w-7 h-7 rounded-lg border border-slate-200 text-slate-600 hover:text-emerald-700 hover:border-emerald-300 hover:bg-emerald-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                            title="Ubah Pengguna">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                @endif
+
+                                                @if($canResetThis)
+                                                    <!-- Reset Password Button -->
+                                                    <button type="button" 
+                                                            wire:click="resetPasswordDefault({{ $userItem->id }})"
+                                                            wire:confirm="Yakin ingin mereset password pengguna ini ke default (password123)?"
+                                                            class="w-7 h-7 rounded-lg border border-slate-200 text-slate-600 hover:text-amber-700 hover:border-amber-300 hover:bg-amber-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                            title="Reset Password ke password123">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 7a2 2 0 012 2m4 0a6 6 0 01-7.743 5.743L11 17H9v2H7v2H4a1 1 0 01-1-1v-2.586a1 1 0 01.293-.707l5.964-5.964A6 6 0 1121 9z" />
+                                                        </svg>
+                                                    </button>
+                                                @endif
+
+                                                @if($canDeleteThis)
+                                                    <!-- Delete User Button -->
+                                                    <button type="button" 
+                                                            wire:click="confirmDelete({{ $userItem->id }})"
+                                                            class="w-7 h-7 rounded-lg border border-slate-200 text-slate-600 hover:text-rose-700 hover:border-rose-300 hover:bg-rose-50 transition inline-flex items-center justify-center cursor-pointer"
+                                                            title="Hapus Pengguna">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                @endif
+                                            </div>
+                                        @else
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200" title="Akses terproteksi tingkat pusat">
+                                                Terkunci
+                                            </span>
+                                        @endif
                                     </td>
                                 </tr>
                             @empty
@@ -642,7 +782,7 @@ new #[Layout('layouts.app')] class extends Component
                     <div>
                         <label class="block text-xs font-bold text-slate-800 mb-1">Peran / Role Akses <span class="text-rose-500">*</span></label>
                         <select wire:model.live="selectedRole" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-white">
-                            @foreach($roles as $r)
+                            @foreach($formRoles as $r)
                                 <option value="{{ $r->name }}">{{ $this->getRoleLabel($r->name) }}</option>
                             @endforeach
                         </select>
@@ -654,20 +794,26 @@ new #[Layout('layouts.app')] class extends Component
                     </div>
 
                     <!-- Unit Kampus -->
-                    @if($selectedRole !== 'super_admin')
-                        <div>
-                            <label class="block text-xs font-bold text-slate-800 mb-1">Unit Kampus Penugasan <span class="text-rose-500">*</span></label>
-                            <select wire:model.defer="selectedCampusId" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-white">
-                                <option value="">Pilih Kampus...</option>
-                                @foreach($campuses as $c)
-                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
-                                @endforeach
-                            </select>
-                            @error('selectedCampusId') <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span> @enderror
-                        </div>
+                    @if($isSuperAdmin)
+                        @if($selectedRole !== 'super_admin')
+                            <div>
+                                <label class="block text-xs font-bold text-slate-800 mb-1">Unit Kampus Penugasan <span class="text-rose-500">*</span></label>
+                                <select wire:model.defer="selectedCampusId" class="w-full px-3.5 py-2.5 rounded-xl border border-slate-200 text-xs text-slate-800 focus:border-emerald-500 focus:ring-2 focus:ring-emerald-500/20 bg-white">
+                                    <option value="">Pilih Kampus...</option>
+                                    @foreach($campuses as $c)
+                                        <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('selectedCampusId') <span class="text-[11px] text-rose-500 block mt-1">{{ $message }}</span> @enderror
+                            </div>
+                        @else
+                            <div class="p-2.5 rounded-xl bg-purple-50 border border-purple-100 text-[11px] text-purple-700">
+                                <strong>Info:</strong> Akun Super Admin memiliki akses global tanpa terikat unit kampus tertentu.
+                            </div>
+                        @endif
                     @else
-                        <div class="p-2.5 rounded-xl bg-purple-50 border border-purple-100 text-[11px] text-purple-700">
-                            <strong>Info:</strong> Akun Super Admin memiliki akses global tanpa terikat unit kampus tertentu.
+                        <div class="p-2.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] text-slate-700">
+                            <strong>Unit Kampus:</strong> {{ auth()->user()->campus?->name ?? 'Kampus Penugasan Anda' }} <span class="text-slate-400 font-normal">(Otomatis terkunci)</span>
                         </div>
                     @endif
 

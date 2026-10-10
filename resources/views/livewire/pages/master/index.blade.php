@@ -70,29 +70,50 @@ new #[Layout('layouts.app')] class extends Component
         }
 
         $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R']) && !$user->can('master.manage')) {
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
+
+        if (!$isSuperAdmin && !$user->hasRole(['admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R']) && !$user->can('master.manage')) {
             abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus data master.');
+        }
+
+        if (!$isSuperAdmin) {
+            if ($this->deleteType !== 'source') {
+                $this->dispatch('toast', message: 'Hanya Super Administrator yang berhak menghapus master data global sistem.', type: 'error');
+                $this->cancelDelete();
+                return;
+            }
+            $source = WasteSource::findOrFail($this->deleteTargetId);
+            if ($source->campus_id !== $user->campus_id) {
+                $this->dispatch('toast', message: 'Anda hanya dapat menghapus titik sumber di unit kampus Anda sendiri.', type: 'error');
+                $this->cancelDelete();
+                return;
+            }
         }
 
         switch ($this->deleteType) {
             case 'source':
                 WasteSource::findOrFail($this->deleteTargetId)->delete();
+                $this->dispatch('toast', message: 'Titik sumber sampah berhasil dihapus.', type: 'success');
                 session()->flash('message', 'Titik sumber sampah berhasil dihapus.');
                 break;
             case 'type':
                 WasteType::findOrFail($this->deleteTargetId)->delete();
+                $this->dispatch('toast', message: 'Jenis sampah berhasil dihapus.', type: 'success');
                 session()->flash('message', 'Jenis sampah berhasil dihapus.');
                 break;
             case 'vendor':
                 Vendor::findOrFail($this->deleteTargetId)->delete();
+                $this->dispatch('toast', message: 'Vendor pengangkut berhasil dihapus.', type: 'success');
                 session()->flash('message', 'Vendor pengangkut berhasil dihapus.');
                 break;
             case 'buyer':
                 Buyer::findOrFail($this->deleteTargetId)->delete();
+                $this->dispatch('toast', message: 'Pembeli/Pengepul berhasil dihapus.', type: 'success');
                 session()->flash('message', 'Pembeli/Pengepul berhasil dihapus.');
                 break;
             case 'category':
                 ExpenseCategory::findOrFail($this->deleteTargetId)->delete();
+                $this->dispatch('toast', message: 'Kategori pengeluaran berhasil dihapus.', type: 'success');
                 session()->flash('message', 'Kategori pengeluaran berhasil dihapus.');
                 break;
         }
@@ -116,9 +137,14 @@ new #[Layout('layouts.app')] class extends Component
 
     public function with(): array
     {
+        $user = auth()->user();
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
+        $effectiveCampusId = $isSuperAdmin ? $this->selectedCampusId : $user->campus_id;
+
         return [
+            'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::orderBy('id')->get(),
-            'sources' => WasteSource::when(!empty($this->selectedCampusId), fn($q) => $q->where('campus_id', (int) $this->selectedCampusId))->orderBy('name')->get(),
+            'sources' => WasteSource::when(!empty($effectiveCampusId), fn($q) => $q->where('campus_id', (int) $effectiveCampusId))->orderBy('name')->get(),
             'wasteTypes' => WasteType::orderBy('category')->orderBy('name')->get(),
             'vendors' => Vendor::orderBy('name')->get(),
             'buyers' => Buyer::orderBy('name')->get(),
@@ -129,8 +155,11 @@ new #[Layout('layouts.app')] class extends Component
     // --- Action: Waste Source ---
     public function saveSource(): void
     {
+        $user = auth()->user();
+        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
+        $targetCampusId = $isSuperAdmin ? $this->selectedCampusId : $user->campus_id;
+
         $this->validate([
-            'selectedCampusId' => ['required', 'exists:campuses,id'],
             'sourceName' => ['required', 'string', 'max:100'],
             'sourceDescription' => ['nullable', 'string', 'max:255'],
         ], [
@@ -138,10 +167,17 @@ new #[Layout('layouts.app')] class extends Component
             'sourceName.max' => 'Nama maksimal 100 karakter.',
         ]);
 
+        if ($this->editingSourceId && !$isSuperAdmin) {
+            $existing = WasteSource::findOrFail($this->editingSourceId);
+            if ($existing->campus_id !== $user->campus_id) {
+                abort(403, 'Akses ditolak: Anda hanya dapat mengelola titik sumber di unit kampus Anda sendiri.');
+            }
+        }
+
         WasteSource::updateOrCreate(
             ['id' => $this->editingSourceId],
             [
-                'campus_id' => $this->selectedCampusId,
+                'campus_id' => $targetCampusId,
                 'name' => strip_tags(trim($this->sourceName)),
                 'description' => strip_tags(trim($this->sourceDescription)),
                 'is_active' => true,
@@ -155,7 +191,13 @@ new #[Layout('layouts.app')] class extends Component
 
     public function editSource(int $id): void
     {
+        $user = auth()->user();
         $source = WasteSource::findOrFail($id);
+        if (!$user->hasRole(['super_admin', 'Super Admin']) && $source->campus_id !== $user->campus_id) {
+            $this->dispatch('toast', message: 'Anda hanya dapat mengedit titik sumber di unit kampus Anda sendiri.', type: 'error');
+            return;
+        }
+
         $this->editingSourceId = $source->id;
         $this->sourceName = $source->name;
         $this->sourceDescription = $source->description ?? '';
@@ -163,7 +205,14 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteSource(int $id): void
     {
-        WasteSource::findOrFail($id)->delete();
+        $user = auth()->user();
+        $source = WasteSource::findOrFail($id);
+        if (!$user->hasRole(['super_admin', 'Super Admin']) && $source->campus_id !== $user->campus_id) {
+            $this->dispatch('toast', message: 'Anda hanya dapat menghapus titik sumber di unit kampus Anda sendiri.', type: 'error');
+            return;
+        }
+
+        $source->delete();
         $this->dispatch('toast', message: 'Titik sumber sampah berhasil dihapus.', type: 'success');
         session()->flash('message', 'Titik sumber sampah berhasil dihapus.');
     }
@@ -171,6 +220,10 @@ new #[Layout('layouts.app')] class extends Component
     // --- Action: Waste Type ---
     public function saveWasteType(): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi master jenis sampah.');
+        }
+
         $this->validate([
             'typeName' => ['required', 'string', 'max:100'],
             'typeCategory' => ['required', 'string', 'in:Organik,Anorganik,Residu'],
@@ -196,6 +249,11 @@ new #[Layout('layouts.app')] class extends Component
 
     public function editWasteType(int $id): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            $this->dispatch('toast', message: 'Hanya Super Administrator yang berhak mengedit data jenis sampah.', type: 'error');
+            return;
+        }
+
         $type = WasteType::findOrFail($id);
         $this->editingTypeId = $type->id;
         $this->typeName = $type->name;
@@ -206,6 +264,10 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteWasteType(int $id): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak menghapus jenis sampah.');
+        }
+
         WasteType::findOrFail($id)->delete();
         $this->dispatch('toast', message: 'Jenis sampah berhasil dihapus.', type: 'success');
         session()->flash('message', 'Jenis sampah berhasil dihapus.');
@@ -214,6 +276,10 @@ new #[Layout('layouts.app')] class extends Component
     // --- Action: Vendor ---
     public function saveVendor(): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi vendor armada angkut.');
+        }
+
         $this->validate([
             'vendorName' => ['required', 'string', 'max:100'],
             'vendorContact' => ['nullable', 'string', 'max:100'],
@@ -237,6 +303,11 @@ new #[Layout('layouts.app')] class extends Component
 
     public function editVendor(int $id): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            $this->dispatch('toast', message: 'Hanya Super Administrator yang berhak mengedit vendor.', type: 'error');
+            return;
+        }
+
         $vendor = Vendor::findOrFail($id);
         $this->editingVendorId = $vendor->id;
         $this->vendorName = $vendor->name;
@@ -246,6 +317,10 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteVendor(int $id): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak menghapus vendor.');
+        }
+
         Vendor::findOrFail($id)->delete();
         $this->dispatch('toast', message: 'Vendor pengangkut berhasil dihapus.', type: 'success');
         session()->flash('message', 'Vendor pengangkut berhasil dihapus.');
@@ -254,6 +329,10 @@ new #[Layout('layouts.app')] class extends Component
     // --- Action: Buyer ---
     public function saveBuyer(): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi pembeli/pengepul.');
+        }
+
         $this->validate([
             'buyerName' => ['required', 'string', 'max:100'],
             'buyerContact' => ['nullable', 'string', 'max:100'],
@@ -274,6 +353,11 @@ new #[Layout('layouts.app')] class extends Component
 
     public function editBuyer(int $id): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            $this->dispatch('toast', message: 'Hanya Super Administrator yang berhak mengedit pengepul.', type: 'error');
+            return;
+        }
+
         $buyer = Buyer::findOrFail($id);
         $this->editingBuyerId = $buyer->id;
         $this->buyerName = $buyer->name;
@@ -282,6 +366,10 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteBuyer(int $id): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak menghapus pengepul.');
+        }
+
         Buyer::findOrFail($id)->delete();
         $this->dispatch('toast', message: 'Pembeli/Pengepul berhasil dihapus.', type: 'success');
         session()->flash('message', 'Pembeli/Pengepul berhasil dihapus.');
@@ -290,6 +378,10 @@ new #[Layout('layouts.app')] class extends Component
     // --- Action: Expense Category ---
     public function saveCategory(): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi kategori pengeluaran.');
+        }
+
         $this->validate([
             'categoryName' => ['required', 'string', 'max:100'],
         ]);
@@ -306,6 +398,11 @@ new #[Layout('layouts.app')] class extends Component
 
     public function editCategory(int $id): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            $this->dispatch('toast', message: 'Hanya Super Administrator yang berhak mengedit kategori.', type: 'error');
+            return;
+        }
+
         $cat = ExpenseCategory::findOrFail($id);
         $this->editingCategoryId = $cat->id;
         $this->categoryName = $cat->name;
@@ -313,6 +410,10 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteCategory(int $id): void
     {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak menghapus kategori pengeluaran.');
+        }
+
         ExpenseCategory::findOrFail($id)->delete();
         $this->dispatch('toast', message: 'Kategori pengeluaran berhasil dihapus.', type: 'success');
         session()->flash('message', 'Kategori pengeluaran berhasil dihapus.');
@@ -365,12 +466,19 @@ new #[Layout('layouts.app')] class extends Component
                         </h3>
                         <form wire:submit="saveSource" class="space-y-3">
                             <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Pilih Kampus</label>
-                                <select wire:model.live="selectedCampusId" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-emerald-500">
-                                    @foreach($campuses as $campus)
-                                        <option value="{{ $campus->id }}">{{ $campus->name }}</option>
-                                    @endforeach
-                                </select>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus Penugasan</label>
+                                @if ($isSuperAdmin)
+                                    <select wire:model.live="selectedCampusId" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-emerald-500">
+                                        @foreach($campuses as $campus)
+                                            <option value="{{ $campus->id }}">{{ $campus->name }}</option>
+                                        @endforeach
+                                    </select>
+                                @else
+                                    <div class="p-2.5 rounded-lg bg-slate-50 border border-slate-200 text-xs text-slate-700 font-medium">
+                                        {{ auth()->user()->campus?->name ?? 'Kampus Penugasan Anda' }}
+                                        <span class="text-slate-400 font-normal block text-[11px] mt-0.5">(Terkunci sesuai unit kampus)</span>
+                                    </div>
+                                @endif
                             </div>
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Lokasi / Gedung</label>
@@ -433,44 +541,58 @@ new #[Layout('layouts.app')] class extends Component
             <!-- Tab 2: Jenis & Kategori Sampah -->
             @if ($activeTab === 'types')
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <!-- Form -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
-                        <h3 class="font-bold text-sm text-slate-900 mb-3">
-                            {{ $editingTypeId ? 'Edit Jenis Sampah' : 'Tambah Jenis Sampah' }}
-                        </h3>
-                        <form wire:submit="saveWasteType" class="space-y-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jenis Sampah</label>
-                                <input wire:model="typeName" type="text" placeholder="Contoh: Plastik PET" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori Induk</label>
-                                <select wire:model="typeCategory" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-emerald-500">
-                                    <option value="Organik">Organik</option>
-                                    <option value="Anorganik">Anorganik</option>
-                                    <option value="Residu">Residu</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Default / Kg (Rp)</label>
-                                <input wire:model="typePrice" type="number" step="100" min="0" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
-                            </div>
-                            <div class="flex items-center gap-2 pt-1">
-                                <input wire:model="typeIsSellable" type="checkbox" id="is_sellable" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
-                                <label for="is_sellable" class="text-xs text-slate-700 font-medium">Bisa Dijual ke Pengepul (Bank Sampah)</label>
-                            </div>
-                            <div class="flex gap-2 pt-2">
-                                <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
-                                    {{ $editingTypeId ? 'Perbarui Jenis' : 'Simpan Jenis' }}
-                                </button>
-                                @if($editingTypeId)
-                                    <button type="button" wire:click="$set('editingTypeId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                                        Batal
+                    <!-- Form / Info -->
+                    @if ($isSuperAdmin)
+                        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
+                            <h3 class="font-bold text-sm text-slate-900 mb-3">
+                                {{ $editingTypeId ? 'Edit Jenis Sampah' : 'Tambah Jenis Sampah' }}
+                            </h3>
+                            <form wire:submit="saveWasteType" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Jenis Sampah</label>
+                                    <input wire:model="typeName" type="text" placeholder="Contoh: Plastik PET" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kategori Induk</label>
+                                    <select wire:model="typeCategory" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 bg-white focus:outline-none focus:border-emerald-500">
+                                        <option value="Organik">Organik</option>
+                                        <option value="Anorganik">Anorganik</option>
+                                        <option value="Residu">Residu</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Default / Kg (Rp)</label>
+                                    <input wire:model="typePrice" type="number" step="100" min="0" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="flex items-center gap-2 pt-1">
+                                    <input wire:model="typeIsSellable" type="checkbox" id="is_sellable" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                    <label for="is_sellable" class="text-xs text-slate-700 font-medium">Bisa Dijual ke Pengepul (Bank Sampah)</label>
+                                </div>
+                                <div class="flex gap-2 pt-2">
+                                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
+                                        {{ $editingTypeId ? 'Perbarui Jenis' : 'Simpan Jenis' }}
                                     </button>
-                                @endif
+                                    @if($editingTypeId)
+                                        <button type="button" wire:click="$set('editingTypeId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                                            Batal
+                                        </button>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center h-fit">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center mx-auto mb-2.5">
+                                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
                             </div>
-                        </form>
-                    </div>
+                            <h4 class="font-bold text-xs text-slate-800">Master Data Terpusat</h4>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Daftar jenis dan kategori sampah distandardisasi secara terpusat oleh Super Administrator untuk seluruh kampus UAD.
+                            </p>
+                        </div>
+                    @endif
 
                     <!-- Table -->
                     <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -485,7 +607,7 @@ new #[Layout('layouts.app')] class extends Component
                                         <th class="py-2.5 px-4 font-semibold">Kategori</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">Harga Default</th>
                                         <th class="py-2.5 px-4 font-semibold text-center">Status Jual</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">Aksi</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -505,10 +627,18 @@ new #[Layout('layouts.app')] class extends Component
                                                     <span class="text-[10px] text-slate-400 font-medium">Residu/Kompos</span>
                                                 @endif
                                             </td>
-                                            <td class="py-3 px-4 text-right space-x-2">
-                                                <button wire:click="editWasteType({{ $type->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                <button @click="deleteModal = true; $wire.confirmDelete('type', {{ $type->id }}, '{{ addslashes($type->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
-                                            </td>
+                                            @if ($isSuperAdmin)
+                                                <td class="py-3 px-4 text-right space-x-2">
+                                                    <button wire:click="editWasteType({{ $type->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
+                                                    <button @click="deleteModal = true; $wire.confirmDelete('type', {{ $type->id }}, '{{ addslashes($type->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                </td>
+                                            @else
+                                                <td class="py-3 px-4 text-right">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">
+                                                        Pusat
+                                                    </span>
+                                                </td>
+                                            @endif
                                         </tr>
                                     @endforeach
                                 </tbody>
@@ -521,37 +651,51 @@ new #[Layout('layouts.app')] class extends Component
             <!-- Tab 3: Vendors (Pengangkut Residu) -->
             @if ($activeTab === 'vendors')
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <!-- Form -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
-                        <h3 class="font-bold text-sm text-slate-900 mb-3">
-                            {{ $editingVendorId ? 'Edit Vendor Angkut' : 'Tambah Vendor Baru' }}
-                        </h3>
-                        <form wire:submit="saveVendor" class="space-y-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Vendor / Armada</label>
-                                <input wire:model="vendorName" type="text" placeholder="Contoh: Pasti Angkut Mitra" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kontak / Telepon</label>
-                                <input wire:model="vendorContact" type="text" placeholder="0812-xxxx-xxxx" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Angkut / Kg (Rp)</label>
-                                <input wire:model="vendorCost" type="number" step="10" min="0" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
-                                <span class="text-[10px] text-slate-400">Tarif ini dipakai otomatis menghitung debet biaya angkut residu.</span>
-                            </div>
-                            <div class="flex gap-2 pt-2">
-                                <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
-                                    {{ $editingVendorId ? 'Perbarui Vendor' : 'Simpan Vendor' }}
-                                </button>
-                                @if($editingVendorId)
-                                    <button type="button" wire:click="$set('editingVendorId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                                        Batal
+                    <!-- Form / Info -->
+                    @if ($isSuperAdmin)
+                        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
+                            <h3 class="font-bold text-sm text-slate-900 mb-3">
+                                {{ $editingVendorId ? 'Edit Vendor Angkut' : 'Tambah Vendor Baru' }}
+                            </h3>
+                            <form wire:submit="saveVendor" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Vendor / Armada</label>
+                                    <input wire:model="vendorName" type="text" placeholder="Contoh: Pasti Angkut Mitra" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kontak / Telepon</label>
+                                    <input wire:model="vendorContact" type="text" placeholder="0812-xxxx-xxxx" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Angkut / Kg (Rp)</label>
+                                    <input wire:model="vendorCost" type="number" step="10" min="0" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                    <span class="text-[10px] text-slate-400">Tarif ini dipakai otomatis menghitung debet biaya angkut residu.</span>
+                                </div>
+                                <div class="flex gap-2 pt-2">
+                                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
+                                        {{ $editingVendorId ? 'Perbarui Vendor' : 'Simpan Vendor' }}
                                     </button>
-                                @endif
+                                    @if($editingVendorId)
+                                        <button type="button" wire:click="$set('editingVendorId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                                            Batal
+                                        </button>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center h-fit">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center mx-auto mb-2.5">
+                                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
                             </div>
-                        </form>
-                    </div>
+                            <h4 class="font-bold text-xs text-slate-800">Master Data Terpusat</h4>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Rekanan vendor armada pengangkut residu dikelola secara terpusat oleh Super Administrator.
+                            </p>
+                        </div>
+                    @endif
 
                     <!-- Table -->
                     <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -565,7 +709,7 @@ new #[Layout('layouts.app')] class extends Component
                                         <th class="py-2.5 px-4 font-semibold">Nama Vendor</th>
                                         <th class="py-2.5 px-4 font-semibold">Kontak</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">Tarif / Kg</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">Aksi</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -574,10 +718,18 @@ new #[Layout('layouts.app')] class extends Component
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $vendor->name }}</td>
                                             <td class="py-3 px-4 text-slate-500">{{ $vendor->contact ?? '-' }}</td>
                                             <td class="py-3 px-4 text-right font-mono font-medium text-amber-700">Rp {{ number_format($vendor->cost_per_kg, 0, ',', '.') }}</td>
-                                            <td class="py-3 px-4 text-right space-x-2">
-                                                <button wire:click="editVendor({{ $vendor->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                <button @click="deleteModal = true; $wire.confirmDelete('vendor', {{ $vendor->id }}, '{{ addslashes($vendor->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
-                                            </td>
+                                            @if ($isSuperAdmin)
+                                                <td class="py-3 px-4 text-right space-x-2">
+                                                    <button wire:click="editVendor({{ $vendor->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
+                                                    <button @click="deleteModal = true; $wire.confirmDelete('vendor', {{ $vendor->id }}, '{{ addslashes($vendor->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                </td>
+                                            @else
+                                                <td class="py-3 px-4 text-right">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">
+                                                        Pusat
+                                                    </span>
+                                                </td>
+                                            @endif
                                         </tr>
                                     @empty
                                         <tr>
@@ -594,32 +746,46 @@ new #[Layout('layouts.app')] class extends Component
             <!-- Tab 4: Buyers (Pengepul) -->
             @if ($activeTab === 'buyers')
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <!-- Form -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
-                        <h3 class="font-bold text-sm text-slate-900 mb-3">
-                            {{ $editingBuyerId ? 'Edit Pengepul' : 'Tambah Pengepul Baru' }}
-                        </h3>
-                        <form wire:submit="saveBuyer" class="space-y-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Pengepul / Mitra</label>
-                                <input wire:model="buyerName" type="text" placeholder="Contoh: UD Jaya Makmur" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
-                            </div>
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Kontak / Telepon</label>
-                                <input wire:model="buyerContact" type="text" placeholder="0813-xxxx-xxxx" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
-                            </div>
-                            <div class="flex gap-2 pt-2">
-                                <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
-                                    {{ $editingBuyerId ? 'Perbarui Pengepul' : 'Simpan Pengepul' }}
-                                </button>
-                                @if($editingBuyerId)
-                                    <button type="button" wire:click="$set('editingBuyerId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                                        Batal
+                    <!-- Form / Info -->
+                    @if ($isSuperAdmin)
+                        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
+                            <h3 class="font-bold text-sm text-slate-900 mb-3">
+                                {{ $editingBuyerId ? 'Edit Pengepul' : 'Tambah Pengepul Baru' }}
+                            </h3>
+                            <form wire:submit="saveBuyer" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Pengepul / Mitra</label>
+                                    <input wire:model="buyerName" type="text" placeholder="Contoh: UD Jaya Makmur" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kontak / Telepon</label>
+                                    <input wire:model="buyerContact" type="text" placeholder="0813-xxxx-xxxx" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="flex gap-2 pt-2">
+                                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
+                                        {{ $editingBuyerId ? 'Perbarui Pengepul' : 'Simpan Pengepul' }}
                                     </button>
-                                @endif
+                                    @if($editingBuyerId)
+                                        <button type="button" wire:click="$set('editingBuyerId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                                            Batal
+                                        </button>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center h-fit">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center mx-auto mb-2.5">
+                                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
                             </div>
-                        </form>
-                    </div>
+                            <h4 class="font-bold text-xs text-slate-800">Master Data Terpusat</h4>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Rekanan pembeli dan pengepul bank sampah dikelola secara terpusat oleh Super Administrator.
+                            </p>
+                        </div>
+                    @endif
 
                     <!-- Table -->
                     <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -632,7 +798,7 @@ new #[Layout('layouts.app')] class extends Component
                                     <tr>
                                         <th class="py-2.5 px-4 font-semibold">Nama Pengepul</th>
                                         <th class="py-2.5 px-4 font-semibold">Kontak</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">Aksi</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -640,10 +806,18 @@ new #[Layout('layouts.app')] class extends Component
                                         <tr class="hover:bg-slate-50/60">
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $buyer->name }}</td>
                                             <td class="py-3 px-4 text-slate-500">{{ $buyer->contact ?? '-' }}</td>
-                                            <td class="py-3 px-4 text-right space-x-2">
-                                                <button wire:click="editBuyer({{ $buyer->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                <button @click="deleteModal = true; $wire.confirmDelete('buyer', {{ $buyer->id }}, '{{ addslashes($buyer->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
-                                            </td>
+                                            @if ($isSuperAdmin)
+                                                <td class="py-3 px-4 text-right space-x-2">
+                                                    <button wire:click="editBuyer({{ $buyer->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
+                                                    <button @click="deleteModal = true; $wire.confirmDelete('buyer', {{ $buyer->id }}, '{{ addslashes($buyer->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                </td>
+                                            @else
+                                                <td class="py-3 px-4 text-right">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">
+                                                        Pusat
+                                                    </span>
+                                                </td>
+                                            @endif
                                         </tr>
                                     @empty
                                         <tr>
@@ -660,28 +834,42 @@ new #[Layout('layouts.app')] class extends Component
             <!-- Tab 5: Expense Categories -->
             @if ($activeTab === 'categories')
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
-                    <!-- Form -->
-                    <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
-                        <h3 class="font-bold text-sm text-slate-900 mb-3">
-                            {{ $editingCategoryId ? 'Edit Kategori' : 'Tambah Kategori Pengeluaran' }}
-                        </h3>
-                        <form wire:submit="saveCategory" class="space-y-3">
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kategori</label>
-                                <input wire:model="categoryName" type="text" placeholder="Contoh: Upah Pilah TPS" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
-                            </div>
-                            <div class="flex gap-2 pt-2">
-                                <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
-                                    {{ $editingCategoryId ? 'Perbarui Kategori' : 'Simpan Kategori' }}
-                                </button>
-                                @if($editingCategoryId)
-                                    <button type="button" wire:click="$set('editingCategoryId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
-                                        Batal
+                    <!-- Form / Info -->
+                    @if ($isSuperAdmin)
+                        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
+                            <h3 class="font-bold text-sm text-slate-900 mb-3">
+                                {{ $editingCategoryId ? 'Edit Kategori' : 'Tambah Kategori Pengeluaran' }}
+                            </h3>
+                            <form wire:submit="saveCategory" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kategori</label>
+                                    <input wire:model="categoryName" type="text" placeholder="Contoh: Upah Pilah TPS" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="flex gap-2 pt-2">
+                                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
+                                        {{ $editingCategoryId ? 'Perbarui Kategori' : 'Simpan Kategori' }}
                                     </button>
-                                @endif
+                                    @if($editingCategoryId)
+                                        <button type="button" wire:click="$set('editingCategoryId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                                            Batal
+                                        </button>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center h-fit">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center mx-auto mb-2.5">
+                                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
                             </div>
-                        </form>
-                    </div>
+                            <h4 class="font-bold text-xs text-slate-800">Master Data Terpusat</h4>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Kategori pos pengeluaran operasional dikelola secara terpusat oleh Super Administrator.
+                            </p>
+                        </div>
+                    @endif
 
                     <!-- Table -->
                     <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
@@ -693,17 +881,25 @@ new #[Layout('layouts.app')] class extends Component
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
                                     <tr>
                                         <th class="py-2.5 px-4 font-semibold">Nama Kategori</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">Aksi</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($expenseCategories as $category)
                                         <tr class="hover:bg-slate-50/60">
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $category->name }}</td>
-                                            <td class="py-3 px-4 text-right space-x-2">
-                                                <button wire:click="editCategory({{ $category->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                <button @click="deleteModal = true; $wire.confirmDelete('category', {{ $category->id }}, '{{ addslashes($category->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
-                                            </td>
+                                            @if ($isSuperAdmin)
+                                                <td class="py-3 px-4 text-right space-x-2">
+                                                    <button wire:click="editCategory({{ $category->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
+                                                    <button @click="deleteModal = true; $wire.confirmDelete('category', {{ $category->id }}, '{{ addslashes($category->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                </td>
+                                            @else
+                                                <td class="py-3 px-4 text-right">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">
+                                                        Pusat
+                                                    </span>
+                                                </td>
+                                            @endif
                                         </tr>
                                     @empty
                                         <tr>
