@@ -24,7 +24,7 @@ Route::get('expenses', [App\Http\Controllers\ExpenseController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('expenses');
 
-Volt::route('finance', 'pages.finance.index')
+Route::get('finance', [App\Http\Controllers\FinanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('finance');
 

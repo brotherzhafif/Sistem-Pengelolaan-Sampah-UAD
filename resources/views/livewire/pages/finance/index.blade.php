@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\FinanceController;
 use App\Models\BukuBesar;
 use App\Models\Campus;
 use App\Models\Keuangan;
@@ -79,42 +80,27 @@ new #[Layout('layouts.app')] class extends Component
         $this->resetBalanceForm();
     }
 
-    public function saveInitialBalance(LedgerService $ledgerService): void
+    public function saveInitialBalance(FinanceController $controller, LedgerService $ledgerService): void
     {
-        $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan']) && !$user->can('finance.create')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menetapkan saldo awal.');
+        try {
+            $result = $controller->saveInitialBalance([
+                'initialCampusId' => $this->initialCampusId,
+                'initialDate' => $this->initialDate,
+                'initialAmount' => $this->initialAmount,
+                'initialNotes' => $this->initialNotes,
+            ], $ledgerService);
+
+            $this->closeBalanceModal();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('message', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $msg) {
+                    $this->addError($key, $msg);
+                }
+            }
         }
-
-        $this->validate([
-            'initialCampusId' => ['required', 'exists:campuses,id'],
-            'initialDate' => ['required', 'date'],
-            'initialAmount' => ['required', 'numeric', 'min:0'],
-            'initialNotes' => ['nullable', 'string', 'max:255'],
-        ], [
-            'initialCampusId.required' => 'Unit kampus wajib dipilih.',
-            'initialDate.required' => 'Tanggal saldo awal wajib diisi.',
-            'initialAmount.required' => 'Nominal saldo awal wajib diisi.',
-        ]);
-
-        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
-        $targetCampusId = $isSuperAdmin ? (int) $this->initialCampusId : (int) $user->campus_id;
-
-        $ledgerService->recordTransaction(
-            campusId: $targetCampusId,
-            date: $this->initialDate,
-            jenis: 'K',
-            sumber: 'saldo_awal',
-            nominal: (float) $this->initialAmount,
-            keterangan: strip_tags(trim($this->initialNotes)) ?: 'Saldo kas awal pembukuan TPS',
-            refId: null,
-            createdBy: auth()->id()
-        );
-
-        $this->closeBalanceModal();
-        $this->dispatch('close-modal');
-        $this->dispatch('toast', message: 'Saldo kas awal berhasil ditetapkan dan disinkronkan ke Buku Besar.', type: 'success');
-        session()->flash('message', 'Saldo kas awal berhasil ditetapkan dan disinkronkan ke Buku Besar.');
     }
 
     public function viewTransaction(int $id): void
@@ -137,60 +123,38 @@ new #[Layout('layouts.app')] class extends Component
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
-        // KPI Ringkasan
-        $kpiQuery = Keuangan::query()
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('tanggal', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo));
+        $kpis = Keuangan::getFilteredKpis($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
+        $currentSaldoAkhir = BukuBesar::getCurrentBalance($campusQueryId, $kpis['totalKredit'] - $kpis['totalDebet']);
 
-        $totalKredit = (float) (clone $kpiQuery)->where('jenis', 'K')->sum('nominal');
-        $totalDebet = (float) (clone $kpiQuery)->where('jenis', 'D')->sum('nominal');
-        $totalPickupCost = (float) (clone $kpiQuery)->where('sumber', 'pengangkutan')->sum('nominal');
-        $totalExpenseCost = (float) (clone $kpiQuery)->where('sumber', 'operasional')->sum('nominal');
-        $totalSalesIncome = (float) (clone $kpiQuery)->where('sumber', 'penjualan')->sum('nominal');
+        $cashbookEntries = Keuangan::getCashbookEntries(
+            $campusQueryId,
+            $this->filterDateFrom,
+            $this->filterDateTo,
+            $this->filterJenis,
+            $this->filterSumber,
+            8
+        );
 
-        // Saldo Kas Berjalan Terakhir (dari Buku Besar terkini)
-        $latestLedger = BukuBesar::query()
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->orderBy('tanggal', 'desc')
-            ->first();
-
-        $currentSaldoAkhir = $latestLedger ? (float) $latestLedger->saldo_akhir : ($totalKredit - $totalDebet);
-
-        // 1. Data Jurnal Buku Kas (Tabel keuangan)
-        $cashbookQuery = Keuangan::with(['campus', 'creator'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('tanggal', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo))
-            ->when($this->filterJenis, fn($q) => $q->where('jenis', $this->filterJenis))
-            ->when($this->filterSumber, fn($q) => $q->where('sumber', $this->filterSumber))
-            ->orderBy('tanggal', 'desc')
-            ->orderBy('id', 'desc');
-
-        $cashbookEntries = $cashbookQuery->paginate(8, ['*'], 'cashbook_page');
-
-        // 2. Data Saldo Harian Buku Besar (Tabel buku_besar)
-        $ledgerQuery = BukuBesar::with('campus')
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('tanggal', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo))
-            ->orderBy('tanggal', 'desc');
-
-        $ledgerEntries = $ledgerQuery->paginate(8, ['*'], 'ledger_page');
+        $ledgerEntries = BukuBesar::getLedgerEntries(
+            $campusQueryId,
+            $this->filterDateFrom,
+            $this->filterDateTo,
+            8
+        );
 
         $detailedTransaction = $this->viewKeuanganId
-            ? Keuangan::with(['campus', 'creator'])->find($this->viewKeuanganId)
+            ? Keuangan::getDetailedTransaction($this->viewKeuanganId)
             : null;
 
         return [
             'isSuperAdmin' => $isSuperAdmin,
             'canManageBalance' => $canManageBalance,
-            'campuses' => Campus::where('is_active', true)->orderBy('id')->get(),
-            'totalKredit' => $totalKredit,
-            'totalDebet' => $totalDebet,
-            'totalSalesIncome' => $totalSalesIncome,
-            'totalPickupCost' => $totalPickupCost,
-            'totalExpenseCost' => $totalExpenseCost,
+            'campuses' => Campus::getActiveCampuses(),
+            'totalKredit' => $kpis['totalKredit'],
+            'totalDebet' => $kpis['totalDebet'],
+            'totalSalesIncome' => $kpis['totalSalesIncome'],
+            'totalPickupCost' => $kpis['totalPickupCost'],
+            'totalExpenseCost' => $kpis['totalExpenseCost'],
             'currentSaldoAkhir' => $currentSaldoAkhir,
             'cashbookEntries' => $cashbookEntries,
             'ledgerEntries' => $ledgerEntries,

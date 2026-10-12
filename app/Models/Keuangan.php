@@ -39,6 +39,14 @@ class Keuangan extends Model
     }
 
     /**
+     * Scope query berdasarkan ID Kampus.
+     */
+    public function scopeForCampus($query, ?int $campusId)
+    {
+        return $query->when($campusId, fn($q) => $q->where('campus_id', $campusId));
+    }
+
+    /**
      * Menghitung ringkasan pendapatan penjualan, biaya angkut, operasional, total kredit dan debet.
      */
     public static function getFinancialSummary(?int $campusId): array
@@ -52,6 +60,49 @@ class Keuangan extends Model
             'totalKredit' => (float) (clone $finQuery)->where('jenis', 'K')->sum('nominal'),
             'totalDebet' => (float) (clone $finQuery)->where('jenis', 'D')->sum('nominal'),
         ];
+    }
+
+    /**
+     * Mengambil entri Buku Kas terfilter dan terpaginasi.
+     */
+    public static function getCashbookEntries(?int $campusId, ?string $dateFrom, ?string $dateTo, ?string $jenis, ?string $sumber, int $perPage = 8)
+    {
+        return static::with(['campus', 'creator'])
+            ->forCampus($campusId)
+            ->when($dateFrom, fn($q) => $q->whereDate('tanggal', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('tanggal', '<=', $dateTo))
+            ->when($jenis, fn($q) => $q->where('jenis', $jenis))
+            ->when($sumber, fn($q) => $q->where('sumber', $sumber))
+            ->orderBy('tanggal', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage, ['*'], 'cashbook_page');
+    }
+
+    /**
+     * Menghitung nilai KPI finansial terfilter rentang tanggal dan kampus.
+     */
+    public static function getFilteredKpis(?int $campusId, ?string $dateFrom, ?string $dateTo): array
+    {
+        $kpiQuery = static::query()
+            ->forCampus($campusId)
+            ->when($dateFrom, fn($q) => $q->whereDate('tanggal', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('tanggal', '<=', $dateTo));
+
+        return [
+            'totalKredit' => (float) (clone $kpiQuery)->where('jenis', 'K')->sum('nominal'),
+            'totalDebet' => (float) (clone $kpiQuery)->where('jenis', 'D')->sum('nominal'),
+            'totalPickupCost' => (float) (clone $kpiQuery)->where('sumber', 'pengangkutan')->sum('nominal'),
+            'totalExpenseCost' => (float) (clone $kpiQuery)->where('sumber', 'operasional')->sum('nominal'),
+            'totalSalesIncome' => (float) (clone $kpiQuery)->where('sumber', 'penjualan')->sum('nominal'),
+        ];
+    }
+
+    /**
+     * Mengambil detail transaksi jurnal keuangan.
+     */
+    public static function getDetailedTransaction(int $id): ?self
+    {
+        return static::with(['campus', 'creator'])->find($id);
     }
 }
 
