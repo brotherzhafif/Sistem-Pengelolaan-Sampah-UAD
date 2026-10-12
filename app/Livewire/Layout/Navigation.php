@@ -22,3 +22,4 @@ class Navigation extends Component
         return view('livewire.layout.navigation');
     }
 }
+

@@ -83,7 +83,7 @@ weigh_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', weigh_html)
 weigh_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', weigh_html)]
 weigh_snap = next(s for s in weigh_snaps if s.get('memo', {}).get('name') in ['pages.weighing', 'pages.weighing.index'])
 
-today_str = date.today().isoformat()
+today_str = weigh_snap.get('data', {}).get('filterDateTo') or date.today().isoformat()
 print("[*] Snapshot data keys:", list(weigh_snap.get('data', {}).keys()))
 raw_items = weigh_snap.get('data', {}).get('formItems')
 print("[*] formItems repr:", repr(raw_items)[:200])

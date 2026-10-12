@@ -83,7 +83,7 @@ snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]
 expenses_snapshot = next(s for s in snaps if s.get('memo', {}).get('name') in ['pages.expenses', 'pages.expenses.index'])
 csrf_expenses = re.search(r'<meta name="csrf-token" content="([^"]+)"', expenses_html).group(1)
 
-today_str = datetime.date.today().strftime('%Y-%m-%d')
+today_str = expenses_snapshot.get('data', {}).get('filterDateTo') or datetime.date.today().strftime('%Y-%m-%d')
 test_desc = f"MVC E2E Biaya {int(datetime.datetime.now().timestamp())}"
 
 create_payload = {

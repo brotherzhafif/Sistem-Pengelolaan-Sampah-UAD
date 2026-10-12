@@ -81,3 +81,4 @@ class Sidebar extends Component
         ]);
     }
 }
+
