@@ -1,13 +1,11 @@
 <?php
 
+use App\Http\Controllers\UserController;
 use App\Models\Campus;
 use App\Models\User;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 use Livewire\WithPagination;
-use Spatie\Permission\Models\Role;
 
 new #[Layout('layouts.app')] class extends Component
 {
@@ -147,101 +145,16 @@ new #[Layout('layouts.app')] class extends Component
 
     public function saveUser(): void
     {
-        $currentUser = auth()->user();
-        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
-
-        if (!$isSuperAdmin && !$currentUser->hasRole(['admin_kampus', 'koordinator_tps3r'])) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menyimpan atau memperbarui akun pengguna.');
-        }
-
-        // Jika bukan Super Admin, batasi hak peran dan kampus penugasan
-        if (!$isSuperAdmin) {
-            if (!in_array($this->selectedRole, ['petugas_tps', 'petugas_penjualan', 'keuangan'])) {
-                abort(403, 'Akses ditolak: Koordinator TPS hanya diizinkan mengelola akun Petugas TPS, Petugas Penjualan, dan Keuangan.');
-            }
-            $this->selectedCampusId = $currentUser->campus_id;
-
-            if ($this->editUserId) {
-                $target = User::findOrFail($this->editUserId);
-                if ($target->hasRole(['super_admin', 'Super Admin']) || $target->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
-                    abort(403, 'Akses ditolak: Anda tidak diizinkan mengubah akun tingkat pusat.');
-                }
-                if ($target->campus_id !== $currentUser->campus_id && $target->id !== $currentUser->id) {
-                    abort(403, 'Akses ditolak: Anda hanya dapat mengubah akun di unit kampus Anda sendiri.');
-                }
-            }
-        }
-
-        $isCreate = $this->editUserId === null;
-
-        $rules = [
-            'name' => ['required', 'string', 'max:255'],
-            'email' => [
-                'required', 
-                'email', 
-                'max:255', 
-                Rule::unique('users', 'email')->ignore($this->editUserId)
-            ],
-            'selectedRole' => ['required', 'string', 'exists:roles,name'],
-            'selectedCampusId' => [
-                $this->selectedRole === 'super_admin' ? 'nullable' : 'required',
-                'nullable',
-                'exists:campuses,id'
-            ],
-        ];
-
-        if ($isCreate) {
-            $rules['password'] = ['required', 'string', 'min:6'];
-        } else {
-            $rules['password'] = ['nullable', 'string', 'min:6'];
-        }
-
-        $this->validate($rules, [
-            'name.required' => 'Nama lengkap pengguna wajib diisi.',
-            'email.required' => 'Alamat email wajib diisi.',
-            'email.unique' => 'Alamat email ini sudah terdaftar oleh pengguna lain.',
-            'password.required' => 'Kata sandi akun wajib diisi minimal 6 karakter.',
-            'password.min' => 'Kata sandi minimal 6 karakter.',
-            'selectedRole.required' => 'Pilih peran / role akses pengguna.',
-            'selectedCampusId.required' => 'Pilih unit kampus penugasan pengguna.',
+        $result = app(UserController::class)->saveUser([
+            'id' => $this->editUserId,
+            'name' => $this->name,
+            'email' => $this->email,
+            'password' => $this->password,
+            'selectedRole' => $this->selectedRole,
+            'selectedCampusId' => $this->selectedCampusId,
         ]);
 
-        $campusToSave = $this->selectedRole === 'super_admin' ? null : ($isSuperAdmin ? $this->selectedCampusId : $currentUser->campus_id);
-
-        if ($isCreate) {
-            $user = User::create([
-                'name' => strip_tags(trim($this->name)),
-                'email' => strtolower(trim($this->email)),
-                'password' => Hash::make($this->password),
-                'campus_id' => $campusToSave,
-            ]);
-
-            $user->syncRoles([$this->selectedRole]);
-
-            $this->dispatch('toast', message: "Pengguna '{$user->name}' berhasil ditambahkan!", type: 'success');
-        } else {
-            $user = User::findOrFail($this->editUserId);
-
-            $updateData = [
-                'name' => strip_tags(trim($this->name)),
-                'email' => strtolower(trim($this->email)),
-                'campus_id' => $campusToSave,
-            ];
-
-            if (!empty($this->password)) {
-                $updateData['password'] = Hash::make($this->password);
-            }
-
-            $user->update($updateData);
-
-            // Hanya Super Admin yang bisa ubah role tingkat pusat
-            if ($isSuperAdmin || in_array($this->selectedRole, ['petugas_tps', 'petugas_penjualan', 'keuangan'])) {
-                $user->syncRoles([$this->selectedRole]);
-            }
-
-            $this->dispatch('toast', message: "Data pengguna '{$user->name}' berhasil diperbarui!", type: 'success');
-        }
-
+        $this->dispatch('toast', message: $result['message'], type: 'success');
         $this->closeFormModal();
     }
 
@@ -296,60 +209,23 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
-        $currentUser = auth()->user();
-        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
-        $user = User::findOrFail($this->deleteUserId);
-
-        if ($user->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Akun Super Administrator tidak dapat dihapus.');
-        }
-
-        if ($user->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan']) && !$isSuperAdmin) {
-            abort(403, 'Akses ditolak: Akun Pimpinan & Auditor hanya dapat dikelola oleh Super Administrator.');
-        }
-
-        if (!$isSuperAdmin) {
-            if ($user->hasRole(['admin_kampus', 'koordinator_tps3r'])) {
-                abort(403, 'Akses ditolak: Anda tidak dapat menghapus sesama akun Koordinator.');
-            }
-            if ($user->campus_id !== $currentUser->campus_id) {
-                abort(403, 'Akses ditolak: Anda hanya dapat menghapus akun di unit kampus Anda sendiri.');
-            }
-        }
-
-        $userName = $user->name;
-        $user->delete();
-
+        $result = app(UserController::class)->deleteUser($this->deleteUserId);
         $this->closeDeleteModal();
-        $this->dispatch('toast', message: "Pengguna '{$userName}' berhasil dihapus dari sistem.", type: 'success');
+        if ($result['success']) {
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+        } else {
+            $this->dispatch('toast', message: $result['message'], type: 'error');
+        }
     }
 
     public function resetPasswordDefault(int $id): void
     {
-        $currentUser = auth()->user();
-        $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
-        $user = User::findOrFail($id);
-
-        if (!$isSuperAdmin) {
-            if ($user->hasRole(['super_admin', 'Super Admin'])) {
-                $this->dispatch('toast', message: 'Anda tidak memiliki hak untuk mereset kata sandi Super Administrator!', type: 'error');
-                return;
-            }
-            if ($user->hasRole(['viewer', 'Viewer', 'auditor_pimpinan', 'Auditor / Pimpinan'])) {
-                $this->dispatch('toast', message: 'Anda tidak memiliki hak untuk mereset kata sandi Pimpinan & Auditor!', type: 'error');
-                return;
-            }
-            if ($user->campus_id !== $currentUser->campus_id) {
-                $this->dispatch('toast', message: 'Anda hanya dapat mereset kata sandi akun di unit kampus Anda sendiri.', type: 'error');
-                return;
-            }
+        $result = app(UserController::class)->resetPassword($id);
+        if ($result['success']) {
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+        } else {
+            $this->dispatch('toast', message: $result['message'], type: 'error');
         }
-
-        $user->update([
-            'password' => Hash::make('password123'),
-        ]);
-
-        $this->dispatch('toast', message: "Kata sandi untuk '{$user->name}' direset menjadi: password123", type: 'success');
     }
 
     public function with(): array
@@ -357,57 +233,12 @@ new #[Layout('layouts.app')] class extends Component
         $currentUser = auth()->user();
         $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
 
-        $query = User::with(['campus', 'roles'])
-            ->when(!$isSuperAdmin, function ($q) use ($currentUser) {
-                // Admin Kampus HANYA BISA MELIHAT staf pengguna di kampusnya sendiri
-                $q->where('campus_id', $currentUser->campus_id);
-            })
-            ->when($isSuperAdmin && $this->filterCampusId, function ($q) {
-                $q->where('campus_id', $this->filterCampusId);
-            })
-            ->when($this->search, function ($q) {
-                $q->where(function ($sub) {
-                    $sub->where('name', 'like', '%' . $this->search . '%')
-                        ->orWhere('email', 'like', '%' . $this->search . '%');
-                });
-            })
-            ->when($this->filterRole, function ($q) {
-                $q->whereHas('roles', fn($r) => $r->where('name', $this->filterRole));
-            })
-            ->orderBy('id', 'asc');
+        $effectiveCampusId = $isSuperAdmin ? $this->filterCampusId : (int) $currentUser->campus_id;
+        $users = User::filtered($effectiveCampusId, $this->filterRole, $this->search)->paginate(8);
 
-        // Aturan Baku: Tepat 8 baris per halaman
-        $users = $query->paginate(8);
-
-        $rolePriority = [
-            'super_admin' => 1,
-            'admin_kampus' => 2,
-            'petugas_tps' => 3,
-            'petugas_penjualan' => 4,
-            'keuangan' => 5,
-            'viewer' => 6,
-            'koordinator_tps3r' => 7,
-            'operator_timbangan' => 8,
-            'pengurus_bank_sampah' => 9,
-            'auditor_pimpinan' => 10,
-        ];
-        
-        $roles = Role::whereIn('name', ['super_admin', 'admin_kampus', 'petugas_tps', 'petugas_penjualan', 'keuangan', 'viewer'])
-            ->get()
-            ->sortBy(fn($r) => $rolePriority[$r->name] ?? 99)
-            ->values();
-
-        // Pilihan peran di modal form:
-        // Super Admin bisa pilih semua 6 peran
-        // Admin Kampus HANYA bisa pilih petugas operasional di kampusnya
-        $formRoles = $isSuperAdmin
-            ? $roles
-            : Role::whereIn('name', ['petugas_tps', 'petugas_penjualan', 'keuangan'])
-                ->get()
-                ->sortBy(fn($r) => $rolePriority[$r->name] ?? 99)
-                ->values();
-
-        $campuses = Campus::where('is_active', true)->orderBy('id')->get();
+        $roles = User::getOrderedRoles(false);
+        $formRoles = $isSuperAdmin ? $roles : User::getOrderedRoles(true);
+        $campuses = Campus::getActiveCampuses();
 
         return [
             'isSuperAdmin' => $isSuperAdmin,

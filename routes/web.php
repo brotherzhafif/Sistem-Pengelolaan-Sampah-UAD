@@ -32,7 +32,7 @@ Route::get('master-data', [App\Http\Controllers\MasterDataController::class, 'in
     ->middleware(['auth', 'verified'])
     ->name('master-data');
 
-Volt::route('users', 'pages.users.index')
+Route::get('users', [App\Http\Controllers\UserController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('users.index');
 
