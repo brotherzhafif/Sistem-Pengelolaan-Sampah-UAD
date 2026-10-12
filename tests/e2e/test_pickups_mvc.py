@@ -80,8 +80,7 @@ print("[+] /pickups HTTP route successfully served by PickupController with 200 
 
 # 3. Test Livewire RPC interaction on Pickups module
 pickups_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', pickups_html).group(1)
-pickups_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', pickups_html)]
-pickups_snap = next(s for s in pickups_snaps if s.get('memo', {}).get('name') == 'pages.pickups.index')
+pickups_snap = next(s for s in pickups_snaps if s.get('memo', {}).get('name') in ['pages.pickups', 'pages.pickups.index'])
 
 # Trigger volume update and calculateTotalCost
 cost_calc_payload = {

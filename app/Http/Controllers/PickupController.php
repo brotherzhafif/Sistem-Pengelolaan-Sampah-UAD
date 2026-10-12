@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Pages\Pickups\Index as PickupComponent;
 use App\Models\Pickup;
 use App\Services\LedgerService;
 use App\Services\StockService;
-use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Livewire\Volt\LivewireManager;
 
 class PickupController extends Controller
 {
@@ -23,12 +22,7 @@ class PickupController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Pengangkutan.');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.pickups.index'),
-            '__invoke',
-        ]);
+        return app(PickupComponent::class)();
     }
 
     /**

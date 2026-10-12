@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Pages\Expenses\Index as ExpenseComponent;
 use App\Models\Campus;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Services\LedgerService;
-use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Livewire\Volt\LivewireManager;
 
 class ExpenseController extends Controller
 {
@@ -23,12 +22,7 @@ class ExpenseController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Pengeluaran.');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.expenses.index'),
-            '__invoke',
-        ]);
+        return app(ExpenseComponent::class)();
     }
 
     /**

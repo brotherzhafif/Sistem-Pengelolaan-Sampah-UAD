@@ -80,7 +80,7 @@ print("[+] /expenses HTTP route successfully served by ExpenseController with 20
 
 # 3. Test Livewire RPC interaction on Expenses module
 snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', expenses_html)]
-expenses_snapshot = next(s for s in snaps if s.get('memo', {}).get('name') == 'pages.expenses.index')
+expenses_snapshot = next(s for s in snaps if s.get('memo', {}).get('name') in ['pages.expenses', 'pages.expenses.index'])
 csrf_expenses = re.search(r'<meta name="csrf-token" content="([^"]+)"', expenses_html).group(1)
 
 today_str = datetime.date.today().strftime('%Y-%m-%d')
