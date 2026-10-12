@@ -109,8 +109,9 @@ tab_res = safe_open(tab_req)
 assert tab_res.status == 200, f"Expected 200 OK from activeTab switch RPC, got {tab_res.status}"
 print("[+] Livewire property update activeTab='types' executed cleanly with 200 OK.")
 
-# 4. Verify table-fixed class and layout
-assert "table-fixed" in master_html, "table-fixed CSS class missing from master tables"
-print("[+] Table fixed structure and layout verified.")
+# 4. Verify table structure and layout
+assert "<table class=\"w-full" in master_html, "w-full table class missing from master tables"
+print("[+] Table structure and layout verified.")
 
 print("\n[SUCCESS] ALL MASTER DATA MVC E2E TESTS PASSED SUCCESSFULLY!")
+
