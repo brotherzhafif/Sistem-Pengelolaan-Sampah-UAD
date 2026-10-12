@@ -131,3 +131,4 @@ class WeighingController extends Controller
         ];
     }
 }
+

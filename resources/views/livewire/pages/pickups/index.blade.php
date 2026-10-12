@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\PickupController;
 use App\Models\Campus;
 use App\Models\Pickup;
 use App\Models\Vendor;
@@ -75,7 +76,7 @@ new #[Layout('layouts.app')] class extends Component
         
         $this->formCampusId = $defaultCampusId;
         
-        $firstVendor = Vendor::where('is_active', true)->first();
+        $firstVendor = Vendor::getActiveVendors()->first();
         $this->formVendorId = $firstVendor?->id;
         $this->formCostPerKg = $firstVendor ? (string) (float) $firstVendor->cost_per_kg : '0';
         
@@ -128,67 +129,32 @@ new #[Layout('layouts.app')] class extends Component
         $this->formTotalCost = (string) round($volume * $cost, 2);
     }
 
-    public function savePickup(StockService $stockService, LedgerService $ledgerService): void
+    public function savePickup(PickupController $controller, StockService $stockService, LedgerService $ledgerService): void
     {
-        $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) && !$user->can('logistics.create')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mencatat data pengangkutan.');
+        try {
+            $result = $controller->store([
+                'campus_id' => $this->formCampusId,
+                'vendor_id' => $this->formVendorId,
+                'pickup_date' => $this->formDate,
+                'volume_kg' => $this->formVolumeKg,
+                'cost_per_kg' => $this->formCostPerKg,
+                'driver_name' => $this->formDriverName,
+                'vehicle_plate' => $this->formVehiclePlate,
+                'notes' => $this->formNotes,
+            ], $stockService, $ledgerService);
+
+            $this->showCreateModal = false;
+            $this->resetForm();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $msg) {
+                    $this->addError($key, $msg);
+                }
+            }
         }
-
-        $this->validate([
-            'formCampusId' => ['required', 'exists:campuses,id'],
-            'formVendorId' => ['required', 'exists:vendors,id'],
-            'formDate' => ['required', 'date'],
-            'formVolumeKg' => ['required', 'numeric', 'min:0.1', 'max:50000'],
-            'formCostPerKg' => ['required', 'numeric', 'min:0'],
-            'formDriverName' => ['nullable', 'string', 'max:100'],
-            'formVehiclePlate' => ['nullable', 'string', 'max:30'],
-            'formNotes' => ['nullable', 'string', 'max:500'],
-        ], [
-            'formVolumeKg.required' => 'Bobot muatan residu wajib diisi.',
-            'formVolumeKg.min' => 'Bobot muatan minimal 0.1 kg.',
-            'formCostPerKg.required' => 'Biaya per kg wajib diisi.',
-        ]);
-
-        $volume = floatval($this->formVolumeKg);
-        $costPerKg = floatval($this->formCostPerKg);
-        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
-        $campusId = $isSuperAdmin ? (int) $this->formCampusId : (int) $user->campus_id;
-        $vendorId = (int) $this->formVendorId;
-
-        // Validasi ketersediaan stok residu di kampus bersangkutan
-        $stockSummary = $stockService->getStockSummary($campusId);
-        $availableResidual = $stockSummary['residual_stock_kg'];
-
-        if ($volume > $availableResidual) {
-            $this->addError(
-                'formVolumeKg',
-                "Muatan melebihi stok residu tersedia di kampus ini (Tersedia: " . number_format($availableResidual, 1, ',', '.') . " kg, Diminta: " . number_format($volume, 1, ',', '.') . " kg)."
-            );
-            return;
-        }
-
-        $pickup = Pickup::create([
-            'campus_id' => $campusId,
-            'vendor_id' => $vendorId,
-            'pickup_date' => $this->formDate,
-            'volume_kg' => $volume,
-            'cost_per_kg' => $costPerKg,
-            'total_cost' => $totalCost,
-            'driver_name' => $this->formDriverName ? strip_tags(trim($this->formDriverName)) : null,
-            'vehicle_plate' => $this->formVehiclePlate ? strip_tags(trim(strtoupper($this->formVehiclePlate))) : null,
-            'created_by' => auth()->id(),
-            'notes' => $this->formNotes ? strip_tags(trim($this->formNotes)) : null,
-        ]);
-
-        $newBalance = $ledgerService->getLatestBalance($campusId);
-        $toastMsg = "Pengangkutan " . number_format($volume, 1, ',', '.') . " kg tersimpan → Biaya Rp " . number_format($totalCost, 0, ',', '.') . " → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
-
-        $this->showCreateModal = false;
-        $this->resetForm();
-        $this->dispatch('close-modal');
-        $this->dispatch('toast', message: $toastMsg, type: 'success');
-        session()->flash('status', $toastMsg);
     }
 
     public function confirmDelete(int $id): void
@@ -202,33 +168,23 @@ new #[Layout('layouts.app')] class extends Component
         $this->dispatch('close-modal');
     }
 
-    public function deletePickup(): void
+    public function deletePickup(PickupController $controller): void
     {
         if (!$this->confirmDeletePickupId) {
             return;
         }
 
-        $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) && !$user->can('logistics.create')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus data pengangkutan.');
-        }
-
-        $pickup = Pickup::findOrFail($this->confirmDeletePickupId);
-
-        // Otorisasi kampus
-        if (auth()->user()->campus_id && auth()->user()->campus_id !== $pickup->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            $this->dispatch('toast', message: 'Anda tidak memiliki otoritas untuk menghapus data pengangkutan kampus ini.', type: 'error');
-            session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data pengangkutan kampus ini.');
-            $this->confirmDeletePickupId = null;
-            $this->dispatch('close-modal');
-            return;
-        }
-
-        $pickup->delete(); // Observer otomatis hapus jurnal debet keuangan & re-sync buku besar
+        $result = $controller->destroy($this->confirmDeletePickupId);
         $this->confirmDeletePickupId = null;
         $this->dispatch('close-modal');
-        $this->dispatch('toast', message: 'Data pengangkutan residu berhasil dihapus dan jurnal keuangan disesuaikan.', type: 'success');
-        session()->flash('status', 'Data pengangkutan residu berhasil dihapus dan jurnal keuangan disesuaikan.');
+
+        if ($result['success']) {
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } else {
+            $this->dispatch('toast', message: $result['message'], type: 'error');
+            session()->flash('error', $result['message']);
+        }
     }
 
     public function with(StockService $stockService): array
@@ -241,35 +197,21 @@ new #[Layout('layouts.app')] class extends Component
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
-        $pickupsQuery = Pickup::with(['campus', 'vendor', 'creator'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('pickup_date', '<=', $this->filterDateTo))
-            ->orderBy('pickup_date', 'desc')
-            ->orderBy('id', 'desc');
-
+        $pickups = Pickup::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, 8);
         $stockSummary = $stockService->getStockSummary($campusQueryId);
-
-        $totalCostFiltered = Pickup::when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('pickup_date', '<=', $this->filterDateTo))
-            ->sum('total_cost');
-
-        $totalVolumeFiltered = Pickup::when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('pickup_date', '<=', $this->filterDateTo))
-            ->sum('volume_kg');
+        $totalCostFiltered = Pickup::getTotalCost($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
+        $totalVolumeFiltered = Pickup::getTotalVolume($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
 
         return [
             'isSuperAdmin' => $isSuperAdmin,
             'canCreate' => $canCreate,
-            'campuses' => Campus::orderBy('id')->get(),
-            'vendors' => Vendor::where('is_active', true)->orderBy('name')->get(),
-            'pickups' => $pickupsQuery->paginate(8),
-            'selectedPickup' => $this->viewPickupId ? Pickup::with(['campus', 'vendor', 'creator'])->find($this->viewPickupId) : null,
+            'campuses' => Campus::getActiveCampuses(),
+            'vendors' => Vendor::getActiveVendors(),
+            'pickups' => $pickups,
+            'selectedPickup' => $this->viewPickupId ? Pickup::getDetailedPickup($this->viewPickupId) : null,
             'stockSummary' => $stockSummary,
-            'totalCostFiltered' => (float) $totalCostFiltered,
-            'totalVolumeFiltered' => (float) $totalVolumeFiltered,
+            'totalCostFiltered' => $totalCostFiltered,
+            'totalVolumeFiltered' => $totalVolumeFiltered,
         ];
     }
 }; ?>

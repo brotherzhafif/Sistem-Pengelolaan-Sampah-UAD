@@ -16,7 +16,7 @@ Route::get('sales', [App\Http\Controllers\SaleController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('sales');
 
-Volt::route('pickups', 'pages.pickups.index')
+Route::get('pickups', [App\Http\Controllers\PickupController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('pickups');
 

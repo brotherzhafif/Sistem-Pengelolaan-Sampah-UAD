@@ -65,4 +65,48 @@ class Pickup extends Model
             ->take($limit)
             ->get();
     }
+
+    /**
+     * Mengambil daftar data transaksi pengangkutan terpaginasi dengan filter.
+     */
+    public static function getFilteredList(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 8)
+    {
+        return static::with(['campus', 'vendor', 'creator'])
+            ->forCampus($campusId)
+            ->when($dateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('pickup_date', '<=', $dateTo))
+            ->orderBy('pickup_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Menghitung total biaya pengangkutan residu terfilter.
+     */
+    public static function getTotalCost(?int $campusId, ?string $dateFrom, ?string $dateTo): float
+    {
+        return (float) static::forCampus($campusId)
+            ->when($dateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('pickup_date', '<=', $dateTo))
+            ->sum('total_cost');
+    }
+
+    /**
+     * Menghitung total bobot volume pengangkutan residu terfilter.
+     */
+    public static function getTotalVolume(?int $campusId, ?string $dateFrom, ?string $dateTo): float
+    {
+        return (float) static::forCampus($campusId)
+            ->when($dateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('pickup_date', '<=', $dateTo))
+            ->sum('volume_kg');
+    }
+
+    /**
+     * Mengambil detail transaksi pengangkutan.
+     */
+    public static function getDetailedPickup(int $id): ?self
+    {
+        return static::with(['campus', 'vendor', 'creator'])->find($id);
+    }
 }

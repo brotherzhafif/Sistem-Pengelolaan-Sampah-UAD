@@ -20,5 +20,13 @@ class Vendor extends Model
         'cost_per_kg' => 'decimal:2',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Mengambil daftar vendor pengangkutan residu yang aktif.
+     */
+    public static function getActiveVendors()
+    {
+        return static::where('is_active', true)->orderBy('name')->get();
+    }
 }
 
