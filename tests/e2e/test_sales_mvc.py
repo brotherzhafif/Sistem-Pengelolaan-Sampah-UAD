@@ -80,8 +80,7 @@ print("[+] /sales HTTP route successfully served by SaleController with 200 OK."
 
 # 3. Test Livewire RPC interaction on Sales module
 sales_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', sales_html).group(1)
-sales_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', sales_html)]
-sales_snap = next(s for s in sales_snaps if s.get('memo', {}).get('name') == 'pages.sales.index')
+sales_snap = next(s for s in sales_snaps if s.get('memo', {}).get('name') in ['pages.sales', 'pages.sales.index'])
 
 # Trigger modal opening and subtotal calculation
 update_subtotal_payload = {

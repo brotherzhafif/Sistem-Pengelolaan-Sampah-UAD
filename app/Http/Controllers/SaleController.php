@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Pages\Sales\Index as SalesComponent;
 use App\Models\Sale;
 use App\Models\SaleItem;
 use App\Services\LedgerService;
 use App\Services\StockService;
-use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Livewire\Volt\LivewireManager;
 
 class SaleController extends Controller
 {
@@ -24,12 +23,7 @@ class SaleController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Penjualan.');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.sales.index'),
-            '__invoke',
-        ]);
+        return app(SalesComponent::class)();
     }
 
     /**

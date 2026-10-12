@@ -80,7 +80,7 @@ print("[+] /dashboard HTTP route successfully served by DashboardController with
 # 3. Test Livewire RPC tab switcher on Dashboard
 dash_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', dash_html).group(1)
 dash_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', dash_html)]
-dash_snap = next(s for s in dash_snaps if s.get('memo', {}).get('name') == 'pages.dashboard.index')
+dash_snap = next(s for s in dash_snaps if s.get('memo', {}).get('name') in ['pages.dashboard', 'pages.dashboard.index'])
 
 tab_payload = {
     "_token": dash_csrf,

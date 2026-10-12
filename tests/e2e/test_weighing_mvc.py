@@ -81,7 +81,7 @@ print("[+] /weighing HTTP route successfully served by WeighingController with 2
 # 3. Test Livewire RPC on Weighing module (saveWeighing handled by WeighingController@store)
 weigh_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', weigh_html).group(1)
 weigh_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', weigh_html)]
-weigh_snap = next(s for s in weigh_snaps if s.get('memo', {}).get('name') == 'pages.weighing.index')
+weigh_snap = next(s for s in weigh_snaps if s.get('memo', {}).get('name') in ['pages.weighing', 'pages.weighing.index'])
 
 today_str = date.today().isoformat()
 print("[*] Snapshot data keys:", list(weigh_snap.get('data', {}).keys()))

@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\WeighingItem;
 use App\Models\WeighingSession;
-use Illuminate\Container\Container;
+use App\Livewire\Pages\Weighing\Index as WeighingComponent;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
-use Livewire\Volt\LivewireManager;
 
 class WeighingController extends Controller
 {
@@ -22,12 +21,7 @@ class WeighingController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Penimbangan.');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.weighing.index'),
-            '__invoke',
-        ]);
+        return app(WeighingComponent::class)();
     }
 
     /**
