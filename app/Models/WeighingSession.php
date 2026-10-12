@@ -47,5 +47,26 @@ class WeighingSession extends Model
     {
         return (float) $this->items->sum('weight_kg');
     }
+
+    /**
+     * Scope query berdasarkan ID Kampus.
+     */
+    public function scopeForCampus($query, ?int $campusId)
+    {
+        return $query->when($campusId, fn($q) => $q->where('campus_id', $campusId));
+    }
+
+    /**
+     * Mengambil 5 riwayat penimbangan terbaru.
+     */
+    public static function getRecentSessions(?int $campusId, int $limit = 5)
+    {
+        return static::with(['campus', 'wasteSource', 'creator', 'items'])
+            ->forCampus($campusId)
+            ->orderBy('weigh_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->take($limit)
+            ->get();
+    }
 }
 

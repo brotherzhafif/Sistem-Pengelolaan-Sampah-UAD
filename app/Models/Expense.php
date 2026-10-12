@@ -109,5 +109,18 @@ class Expense extends Model
     {
         return static::with(['campus', 'category', 'creator'])->find($id);
     }
+
+    /**
+     * Mengambil 5 pengeluaran operasional terbaru.
+     */
+    public static function getRecentExpenses(?int $campusId, int $limit = 5)
+    {
+        return static::with(['campus', 'category', 'creator'])
+            ->forCampus($campusId)
+            ->orderBy('expense_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->take($limit)
+            ->get();
+    }
 }
 

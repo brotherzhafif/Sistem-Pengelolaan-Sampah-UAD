@@ -49,5 +49,26 @@ class Sale extends Model
     {
         return (float) $this->items->sum('weight_kg');
     }
+
+    /**
+     * Scope query berdasarkan ID Kampus.
+     */
+    public function scopeForCampus($query, ?int $campusId)
+    {
+        return $query->when($campusId, fn($q) => $q->where('campus_id', $campusId));
+    }
+
+    /**
+     * Mengambil 5 riwayat penjualan terbaru.
+     */
+    public static function getRecentSales(?int $campusId, int $limit = 5)
+    {
+        return static::with(['campus', 'buyer', 'creator'])
+            ->forCampus($campusId)
+            ->orderBy('sale_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->take($limit)
+            ->get();
+    }
 }
 

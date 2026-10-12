@@ -1,17 +1,10 @@
 <?php
 
-use App\Models\BukuBesar;
+use App\Http\Controllers\DashboardController;
 use App\Models\Campus;
-use App\Models\Expense;
-use App\Models\Keuangan;
-use App\Models\Pickup;
-use App\Models\Sale;
-use App\Models\WeighingItem;
-use App\Models\WeighingSession;
+use App\Services\AlertService;
 use App\Services\LedgerService;
 use App\Services\StockService;
-use Carbon\Carbon;
-use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
 use Livewire\Volt\Component;
 
@@ -42,7 +35,7 @@ new #[Layout('layouts.app')] class extends Component
         $this->activeActivityTab = $tab;
     }
 
-    public function with(StockService $stockService, LedgerService $ledgerService): array
+    public function with(DashboardController $controller, StockService $stockService, LedgerService $ledgerService, AlertService $alertService): array
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
@@ -52,216 +45,15 @@ new #[Layout('layouts.app')] class extends Component
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
         $activeCampus = $campusQueryId ? Campus::find($campusQueryId) : null;
-        $campuses = Campus::where('is_active', true)->orderBy('id')->get();
+        $campuses = Campus::getActiveCampuses();
 
-        $today = Carbon::today()->format('Y-m-d');
+        $metrics = $controller->getMetrics($campusQueryId, $stockService, $ledgerService, $alertService);
 
-        // 1. Timbangan Hari Ini
-        $weighingTodayQuery = WeighingItem::query()
-            ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
-            ->whereDate('weighing_sessions.weigh_date', $today);
-
-        if ($campusQueryId) {
-            $weighingTodayQuery->where('weighing_sessions.campus_id', $campusQueryId);
-        }
-
-        $todayWeighedKg = (float) $weighingTodayQuery->sum('weighing_items.weight_kg');
-
-        // Total akumulasi timbangan (kg) & volume (m3)
-        $totalWeighedQuery = WeighingItem::query()
-            ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id');
-        if ($campusQueryId) {
-            $totalWeighedQuery->where('weighing_sessions.campus_id', $campusQueryId);
-        }
-
-        $totalAllWeighedKg = (float) (clone $totalWeighedQuery)->sum('weighing_items.weight_kg');
-        $totalAllVolumeM3 = (float) (clone $totalWeighedQuery)->sum('weighing_items.volume_m3');
-
-        // 2. Stok Terpilah & Residu Realtime dari StockService
-        $stockSummary = $stockService->getStockSummary($campusQueryId);
-
-        // 3. Komposisi Sampah (Organik vs Anorganik vs Residu)
-        $compositionQuery = WeighingItem::query()
-            ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
-            ->join('waste_types', 'weighing_items.waste_type_id', '=', 'waste_types.id')
-            ->select('waste_types.category', DB::raw('SUM(weighing_items.weight_kg) as total_kg'))
-            ->groupBy('waste_types.category');
-
-        if ($campusQueryId) {
-            $compositionQuery->where('weighing_sessions.campus_id', $campusQueryId);
-        }
-
-        $rawCategoryWeights = $compositionQuery->pluck('total_kg', 'category')->toArray();
-        $categoryWeights = [];
-        foreach ($rawCategoryWeights as $catKey => $catKg) {
-            $normalizedKey = strtolower(trim((string) $catKey));
-            if (str_contains($normalizedKey, 'organik') && !str_contains($normalizedKey, 'anorganik')) {
-                $categoryWeights['organik'] = ($categoryWeights['organik'] ?? 0.0) + (float) $catKg;
-            } elseif (str_contains($normalizedKey, 'anorganik')) {
-                $categoryWeights['anorganik'] = ($categoryWeights['anorganik'] ?? 0.0) + (float) $catKg;
-            } elseif (str_contains($normalizedKey, 'residu')) {
-                $categoryWeights['residu'] = ($categoryWeights['residu'] ?? 0.0) + (float) $catKg;
-            } else {
-                $categoryWeights[$normalizedKey] = ($categoryWeights[$normalizedKey] ?? 0.0) + (float) $catKg;
-            }
-        }
-
-        $organikKg = (float) ($categoryWeights['organik'] ?? 0.0);
-        $anorganikKg = (float) ($categoryWeights['anorganik'] ?? 0.0);
-        $residuKg = (float) ($categoryWeights['residu'] ?? 0.0);
-        $totalCompositionKg = $organikKg + $anorganikKg + $residuKg;
-
-        $organikPct = $totalCompositionKg > 0 ? round(($organikKg / $totalCompositionKg) * 100, 1) : 0.0;
-        $anorganikPct = $totalCompositionKg > 0 ? round(($anorganikKg / $totalCompositionKg) * 100, 1) : 0.0;
-        $residuPct = $totalCompositionKg > 0 ? round(($residuKg / $totalCompositionKg) * 100, 1) : 0.0;
-
-        // Diversion Rate (Tingkat Pengalihan dari TPA: Organik didaur-ulang/kompos + Anorganik dijual)
-        $diversionRate = $totalCompositionKg > 0 ? round((($organikKg + $anorganikKg) / $totalCompositionKg) * 100, 1) : 0.0;
-
-        // 4. Tren Timbulan 7 Hari Terakhir
-        $shortDays = [0 => 'Min', 1 => 'Sen', 2 => 'Sel', 3 => 'Rab', 4 => 'Kam', 5 => 'Jum', 6 => 'Sab'];
-        $sevenDaysTrend = [];
-        $baseDate = Carbon::today();
-
-        for ($i = 6; $i >= 0; $i--) {
-            $curDate = $baseDate->copy()->subDays($i);
-            $curDateStr = $curDate->format('Y-m-d');
-            $dayOfWeek = (int) $curDate->format('w');
-            $shortDay = $shortDays[$dayOfWeek] ?? 'Hari';
-
-            $dayQuery = WeighingItem::query()
-                ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
-                ->whereDate('weighing_sessions.weigh_date', $curDateStr);
-
-            if ($campusQueryId) {
-                $dayQuery->where('weighing_sessions.campus_id', $campusQueryId);
-            }
-
-            $dayKg = (float) $dayQuery->sum('weighing_items.weight_kg');
-
-            $sevenDaysTrend[] = [
-                'date' => $curDateStr,
-                'short_day' => $shortDay,
-                'day_num' => $curDate->format('d/m'),
-                'weight_kg' => $dayKg,
-            ];
-        }
-
-        $maxTrendWeight = max(1.0, (float) collect($sevenDaysTrend)->max('weight_kg'));
-
-        // 5. Kesehatan Sirkular Finansial & Kas
-        $finQuery = Keuangan::query();
-        if ($campusQueryId) {
-            $finQuery->where('campus_id', $campusQueryId);
-        }
-
-        $salesRevenue = (float) (clone $finQuery)->where('sumber', 'penjualan')->sum('nominal');
-        $pickupExpense = (float) (clone $finQuery)->where('sumber', 'pengangkutan')->sum('nominal');
-        $operationalExpense = (float) (clone $finQuery)->where('sumber', 'operasional')->sum('nominal');
-
-        $totalKredit = (float) (clone $finQuery)->where('jenis', 'K')->sum('nominal');
-        $totalDebet = (float) (clone $finQuery)->where('jenis', 'D')->sum('nominal');
-        
-        // SRS M1 & REV-04: Saldo Kas Sirkular diambil dari saldo_akhir buku besar
-        $saldoKas = $ledgerService->getLatestBalance($campusQueryId);
-
-        // SRS M10 — Sistem Notifikasi & Peringatan Otomatis (Alerts)
-        $alerts = [];
-        if ($todayWeighedKg == 0) {
-            $alerts[] = [
-                'type' => 'info',
-                'title' => 'Reminder Input Harian',
-                'message' => 'Belum ada catatan penimbangan sampah yang diinput hari ini (' . Carbon::today()->translatedFormat('l, d F Y') . ').',
-                'action_url' => route('weighing'),
-                'action_label' => 'Input Timbangan',
-            ];
-        }
-        if (($stockSummary['sellable_stock_kg'] ?? 0) >= 500) {
-            $alerts[] = [
-                'type' => 'warning',
-                'title' => 'Alert Stok Menumpuk',
-                'message' => 'Akumulasi sampah terpilah siap jual mencapai ' . number_format($stockSummary['sellable_stock_kg'], 1, ',', '.') . ' kg. Segera jadwalkan penjualan ke pengepul.',
-                'action_url' => route('sales'),
-                'action_label' => 'Catat Penjualan',
-            ];
-        }
-        if (($stockSummary['residual_stock_kg'] ?? 0) >= 1000) {
-            $alerts[] = [
-                'type' => 'danger',
-                'title' => 'Alert Akumulasi Residu Tinggi',
-                'message' => 'Akumulasi residu TPS mencapai ' . number_format($stockSummary['residual_stock_kg'], 1, ',', '.') . ' kg. Segera jadwalkan pengangkutan armada ke TPA Piyungan.',
-                'action_url' => route('pickups'),
-                'action_label' => 'Jadwalkan Angkut',
-            ];
-        }
-        if ($saldoKas < 500000 && $saldoKas > 0) {
-            $alerts[] = [
-                'type' => 'warning',
-                'title' => 'Alert Saldo Menipis',
-                'message' => 'Saldo kas operasional kampus tersisa Rp ' . number_format($saldoKas, 0, ',', '.') . '. Pantau pengeluaran operasional.',
-                'action_url' => route('finance'),
-                'action_label' => 'Lihat Buku Kas',
-            ];
-        }
-
-        // 6. Aktivitas Terbaru (Per Modul)
-        $recentSessions = WeighingSession::with(['campus', 'wasteSource', 'creator', 'items'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->orderBy('weigh_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->take(5)
-            ->get();
-
-        $recentSales = Sale::with(['campus', 'buyer', 'creator'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->orderBy('sale_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->take(5)
-            ->get();
-
-        $recentPickups = Pickup::with(['campus', 'vendor', 'creator'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->orderBy('pickup_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->take(5)
-            ->get();
-
-        $recentExpenses = Expense::with(['campus', 'category', 'creator'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->orderBy('expense_date', 'desc')
-            ->orderBy('id', 'desc')
-            ->take(5)
-            ->get();
-
-        return [
+        return array_merge([
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => $campuses,
             'activeCampus' => $activeCampus,
-            'todayWeighedKg' => $todayWeighedKg,
-            'totalAllWeighedKg' => $totalAllWeighedKg,
-            'totalAllVolumeM3' => $totalAllVolumeM3,
-            'sellableStockKg' => $stockSummary['sellable_stock_kg'],
-            'residualStockKg' => $stockSummary['residual_stock_kg'],
-            'organikKg' => $organikKg,
-            'anorganikKg' => $anorganikKg,
-            'residuKg' => $residuKg,
-            'totalCompositionKg' => $totalCompositionKg,
-            'organikPct' => $organikPct,
-            'anorganikPct' => $anorganikPct,
-            'residuPct' => $residuPct,
-            'diversionRate' => $diversionRate,
-            'sevenDaysTrend' => $sevenDaysTrend,
-            'maxTrendWeight' => $maxTrendWeight,
-            'salesRevenue' => $salesRevenue,
-            'pickupExpense' => $pickupExpense,
-            'operationalExpense' => $operationalExpense,
-            'saldoKas' => $saldoKas,
-            'alerts' => $alerts,
-            'recentSessions' => $recentSessions,
-            'recentSales' => $recentSales,
-            'recentPickups' => $recentPickups,
-            'recentExpenses' => $recentExpenses,
-        ];
+        ], $metrics);
     }
 }; ?>
 

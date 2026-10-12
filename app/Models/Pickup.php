@@ -44,4 +44,25 @@ class Pickup extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /**
+     * Scope query berdasarkan ID Kampus.
+     */
+    public function scopeForCampus($query, ?int $campusId)
+    {
+        return $query->when($campusId, fn($q) => $q->where('campus_id', $campusId));
+    }
+
+    /**
+     * Mengambil 5 riwayat pengangkutan residu terbaru.
+     */
+    public static function getRecentPickups(?int $campusId, int $limit = 5)
+    {
+        return static::with(['campus', 'vendor', 'creator'])
+            ->forCampus($campusId)
+            ->orderBy('pickup_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->take($limit)
+            ->get();
+    }
 }
