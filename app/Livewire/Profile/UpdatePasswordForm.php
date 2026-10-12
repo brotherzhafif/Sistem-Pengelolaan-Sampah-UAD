@@ -44,3 +44,4 @@ class UpdatePasswordForm extends Component
         return view('livewire.profile.update-password-form');
     }
 }
+

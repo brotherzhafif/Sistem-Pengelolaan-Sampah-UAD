@@ -78,6 +78,7 @@ print("[+] /users HTTP route successfully served by UserController with 200 OK."
 
 # 3. Test Livewire RPC interaction on Users module (Search filter)
 users_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', users_html).group(1)
+users_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', users_html)]
 users_snap = next(s for s in users_snaps if s.get('memo', {}).get('name') in ['pages.users', 'pages.users.index'])
 
 search_payload = {

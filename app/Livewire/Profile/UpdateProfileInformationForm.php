@@ -68,3 +68,4 @@ class UpdateProfileInformationForm extends Component
         return view('livewire.profile.update-profile-information-form');
     }
 }
+

@@ -29,3 +29,4 @@ class DeleteUserForm extends Component
         return view('livewire.profile.delete-user-form');
     }
 }
+

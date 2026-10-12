@@ -78,3 +78,4 @@ assert "Delete Account" in prof_html, "Section Delete Account missing"
 print("[+] /profile HTTP route successfully served by ProfileController with 200 OK.")
 
 print("\n[SUCCESS] ALL PROFILE MVC E2E TESTS PASSED SUCCESSFULLY!")
+

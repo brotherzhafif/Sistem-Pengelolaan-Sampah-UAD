@@ -21,3 +21,4 @@ class Index extends Component
         ]);
     }
 }
+
