@@ -79,15 +79,15 @@ assert "table-fixed" in expenses_html, "table-fixed class missing from expenses 
 print("[+] /expenses HTTP route successfully served by ExpenseController with 200 OK.")
 
 # 3. Test Livewire RPC interaction on Expenses module
-snap_match = re.search(r'wire:snapshot="([^"]+)"', expenses_html)
-assert snap_match, "Livewire snapshot not found on /expenses"
-expenses_snapshot = json.loads(html.unescape(snap_match.group(1)))
+snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', expenses_html)]
+expenses_snapshot = next(s for s in snaps if s.get('memo', {}).get('name') == 'pages.expenses.index')
+csrf_expenses = re.search(r'<meta name="csrf-token" content="([^"]+)"', expenses_html).group(1)
 
 today_str = datetime.date.today().strftime('%Y-%m-%d')
 test_desc = f"MVC E2E Biaya {int(datetime.datetime.now().timestamp())}"
 
 create_payload = {
-    "_token": csrf_token,
+    "_token": csrf_expenses,
     "components": [
         {
             "snapshot": json.dumps(expenses_snapshot),
@@ -109,7 +109,7 @@ create_req = urllib.request.Request(
     headers={
         'Content-Type': 'application/json',
         'X-Livewire': 'true',
-        'X-CSRF-TOKEN': csrf_token,
+        'X-CSRF-TOKEN': csrf_expenses,
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)',
         'Accept': 'application/json',
     }
@@ -132,3 +132,4 @@ print(f"[+] Verified newly created record '{test_desc}' rendered properly in tab
 print("\n" + "="*50)
 print(" EXPENSES MVC ARCHITECTURE VERIFIED SUCCESSFULLY!")
 print("="*50)
+
