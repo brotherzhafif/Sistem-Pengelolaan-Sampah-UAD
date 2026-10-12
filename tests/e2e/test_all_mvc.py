@@ -3,6 +3,7 @@ import sys
 import os
 
 TEST_FILES = [
+    "test_auth_flow.py",
     "test_dashboard_mvc.py",
     "test_weighing_mvc.py",
     "test_sales_mvc.py",

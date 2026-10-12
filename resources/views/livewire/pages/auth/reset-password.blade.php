@@ -70,7 +70,7 @@ new #[Layout('layouts.guest')] class extends Component
 }; ?>
 
 <div>
-    <form wire:submit="resetPassword" action="#" method="POST" onsubmit="event.preventDefault();">
+    <form wire:submit="resetPassword" action="javascript:void(0);" method="POST" onsubmit="event.preventDefault();">
         <!-- Email Address -->
         <div>
             <x-input-label for="email" :value="__('Email')" />

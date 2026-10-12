@@ -16,6 +16,7 @@
         <!-- Scripts -->
         @vite(['resources/css/app.css', 'resources/js/app.js'])
         @livewireStyles
+        @livewireScripts
     </head>
     <body class="font-sans antialiased bg-[#f5f7fa] text-slate-900 h-screen overflow-hidden">
         <div class="flex h-screen overflow-hidden">
@@ -45,7 +46,5 @@
 
         <!-- Global Floating Toast / Snackbar (Bottom Right) -->
         <x-toast-notification />
-
-        @livewireScripts
     </body>
 </html>

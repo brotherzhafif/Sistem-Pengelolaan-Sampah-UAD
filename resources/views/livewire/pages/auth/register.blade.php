@@ -34,7 +34,7 @@ new #[Layout('layouts.guest')] class extends Component
     {
         $validated = $this->validate([
             'name' => ['required', 'string', 'min:3', 'max:100'],
-            'email' => ['required', 'string', 'lowercase', 'email:rfc,dns', 'max:255', 'unique:'.User::class],
+            'email' => ['required', 'string', 'lowercase', 'email:rfc,filter', 'max:255', 'unique:'.User::class],
             'campus_id' => ['required', 'integer', 'exists:campuses,id'],
             'password' => ['required', 'string', 'min:8', 'max:100', 'confirmed', Rules\Password::defaults()],
         ], [
@@ -70,7 +70,7 @@ new #[Layout('layouts.guest')] class extends Component
         <p class="text-sm text-base-content/70 mt-1">Daftar untuk mengakses sistem pengelolaan sampah UAD</p>
     </div>
 
-    <form wire:submit="register" action="#" method="POST" onsubmit="event.preventDefault();" class="space-y-4">
+    <form wire:submit="register" action="javascript:void(0);" method="POST" onsubmit="event.preventDefault();" class="space-y-4">
         <!-- Name -->
         <div class="form-control">
             <label class="label" for="name">
@@ -215,7 +215,7 @@ new #[Layout('layouts.guest')] class extends Component
         </div>
     </form>
 
-    <script>
+    <script data-cfasync="false">
         if (window.location.search && (window.location.search.includes('email=') || window.location.search.includes('name=') || window.location.search.includes('password='))) {
             window.history.replaceState({}, document.title, window.location.pathname);
         }
