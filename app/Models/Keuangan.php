@@ -2,9 +2,11 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Support\Facades\DB;
 
 class Keuangan extends Model
 {
@@ -103,6 +105,56 @@ class Keuangan extends Model
     public static function getDetailedTransaction(int $id): ?self
     {
         return static::with(['campus', 'creator'])->find($id);
+    }
+
+    /**
+     * Catat transaksi keuangan ke Buku Kas dan mutasikan saldo Buku Besar secara otomatis.
+     */
+    public static function recordTransaction(
+        int $campusId,
+        $date,
+        string $jenis,
+        string $sumber,
+        float $nominal,
+        ?string $keterangan = null,
+        ?int $refId = null,
+        ?int $createdBy = null
+    ): self {
+        $formattedDate = Carbon::parse($date)->format('Y-m-d');
+
+        return DB::transaction(function () use ($campusId, $formattedDate, $jenis, $sumber, $nominal, $keterangan, $refId, $createdBy) {
+            $keuangan = static::create([
+                'campus_id' => $campusId,
+                'tanggal' => $formattedDate,
+                'jenis' => $jenis,
+                'sumber' => $sumber,
+                'ref_id' => $refId,
+                'nominal' => $nominal,
+                'keterangan' => $keterangan,
+                'created_by' => $createdBy ?? auth()->id(),
+            ]);
+
+            BukuBesar::recalculateLedgerFromDate($campusId, $formattedDate);
+
+            return $keuangan;
+        });
+    }
+
+    /**
+     * Hapus transaksi keuangan berdasarkan sumber dan ref_id, lalu hitung ulang Buku Besar.
+     */
+    public static function deleteTransactionByRef(string $sumber, int $refId): void
+    {
+        DB::transaction(function () use ($sumber, $refId) {
+            $trans = static::where('sumber', $sumber)->where('ref_id', $refId)->first();
+            if ($trans) {
+                $campusId = $trans->campus_id;
+                $date = $trans->tanggal->format('Y-m-d');
+                $trans->delete();
+
+                BukuBesar::recalculateLedgerFromDate($campusId, $date);
+            }
+        });
     }
 }
 

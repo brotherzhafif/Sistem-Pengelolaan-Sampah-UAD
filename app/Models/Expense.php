@@ -122,5 +122,32 @@ class Expense extends Model
             ->take($limit)
             ->get();
     }
+
+    /**
+     * The "booted" method of the model.
+     * Auto-record Debet (D) entry to Buku Kas & recalculate daily ledger on create/delete.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (Expense $expense) {
+            if ($expense->amount > 0) {
+                $categoryName = $expense->category?->name ?? 'Operasional Umum';
+                Keuangan::recordTransaction(
+                    campusId: $expense->campus_id,
+                    date: $expense->expense_date,
+                    jenis: 'D', // Debet = Pengeluaran / Biaya
+                    sumber: 'operasional',
+                    nominal: (float) $expense->amount,
+                    keterangan: 'Pengeluaran Operasional [' . $categoryName . ']: ' . ($expense->description ?: 'Tanpa keterangan'),
+                    refId: $expense->id,
+                    createdBy: $expense->created_by
+                );
+            }
+        });
+
+        static::deleted(function (Expense $expense) {
+            Keuangan::deleteTransactionByRef('operasional', $expense->id);
+        });
+    }
 }
 

@@ -1,27 +1,3 @@
-<?php
-
-use App\Services\AlertService;
-use Livewire\Volt\Component;
-
-new class extends Component
-{
-    public function with(AlertService $alertService): array
-    {
-        $user = auth()->user();
-        if (!$user) {
-            return ['alerts' => [], 'totalAlerts' => 0];
-        }
-
-        $activeCampusId = session('active_campus_id', $user->campus_id ?? null);
-        $allAlerts = $alertService->getAlerts($activeCampusId);
-
-        return [
-            'alerts'      => array_slice($allAlerts, 0, 3),
-            'totalAlerts' => count($allAlerts),
-        ];
-    }
-}; ?>
-
 <div class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40" 
      x-data="{ notifOpen: false }" 
      @click.outside="notifOpen = false"

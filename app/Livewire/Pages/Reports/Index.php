@@ -2,6 +2,7 @@
 
 namespace App\Livewire\Pages\Reports;
 
+use App\Models\BukuBesar;
 use App\Models\Campus;
 use App\Models\KapSurvey;
 use App\Models\Keuangan;
@@ -12,7 +13,6 @@ use App\Models\WasteSource;
 use App\Models\WasteType;
 use App\Models\WeighingItem;
 use App\Models\WeighingSession;
-use App\Services\LedgerService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
 use Livewire\Attributes\Layout;
@@ -138,7 +138,7 @@ class Index extends Component
         $this->viewKeuanganId = null;
     }
 
-    public function render(LedgerService $ledgerService)
+    public function render()
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
@@ -505,7 +505,7 @@ class Index extends Component
                     }
                 }
 
-                $cSaldo = $ledgerService->getLatestBalance($c->id);
+                $cSaldo = BukuBesar::getLatestBalance($c->id);
 
                 $univTotalKg += $cTotalKg;
                 $univResiduKg += $cResiduKg;

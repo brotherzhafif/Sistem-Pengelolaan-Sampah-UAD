@@ -109,4 +109,31 @@ class Pickup extends Model
     {
         return static::with(['campus', 'vendor', 'creator'])->find($id);
     }
+
+    /**
+     * The "booted" method of the model.
+     * Auto-record Debet (D) entry to Buku Kas & recalculate daily ledger on create/delete.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (Pickup $pickup) {
+            if ($pickup->total_cost > 0) {
+                $vendorName = $pickup->vendor?->name ?? 'Mitra Pengangkut';
+                Keuangan::recordTransaction(
+                    campusId: $pickup->campus_id,
+                    date: $pickup->pickup_date,
+                    jenis: 'D', // Debet = Pengeluaran / Biaya
+                    sumber: 'pengangkutan',
+                    nominal: (float) $pickup->total_cost,
+                    keterangan: 'Biaya pengangkutan residu sampah oleh ' . $vendorName . ' (' . number_format($pickup->volume_kg, 1, ',', '.') . ' kg)',
+                    refId: $pickup->id,
+                    createdBy: $pickup->created_by
+                );
+            }
+        });
+
+        static::deleted(function (Pickup $pickup) {
+            Keuangan::deleteTransactionByRef('pengangkutan', $pickup->id);
+        });
+    }
 }

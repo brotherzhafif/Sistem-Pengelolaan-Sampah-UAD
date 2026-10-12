@@ -7,7 +7,6 @@ use App\Models\Campus;
 use App\Models\WasteSource;
 use App\Models\WasteType;
 use App\Models\WeighingSession;
-use App\Services\StockService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -168,7 +167,7 @@ class Index extends Component
         }
     }
 
-    public function render(StockService $stockService)
+    public function render()
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
@@ -179,7 +178,7 @@ class Index extends Component
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
         $sessions = WeighingSession::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, 8);
-        $stockSummary = $stockService->getStockSummary($campusQueryId);
+        $stockSummary = WasteType::getStockSummary($campusQueryId);
 
         return view('livewire.pages.weighing.index', [
             'isSuperAdmin' => $isSuperAdmin,

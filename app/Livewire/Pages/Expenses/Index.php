@@ -6,7 +6,6 @@ use App\Http\Controllers\ExpenseController;
 use App\Models\Campus;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
-use App\Services\LedgerService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -83,7 +82,7 @@ class Index extends Component
         $this->resetForm();
     }
 
-    public function saveExpense(LedgerService $ledgerService, ExpenseController $controller): void
+    public function saveExpense(ExpenseController $controller): void
     {
         $result = $controller->store([
             'campus_id' => $this->formCampusId,
@@ -91,7 +90,7 @@ class Index extends Component
             'expense_date' => $this->formDate,
             'amount' => $this->formAmount,
             'description' => $this->formDescription,
-        ], $ledgerService);
+        ]);
 
         $this->closeCreateModal();
         $this->dispatch('close-modal');

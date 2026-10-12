@@ -115,5 +115,32 @@ class Sale extends Model
     {
         return static::with(['campus', 'buyer', 'creator', 'items.wasteType'])->find($id);
     }
+
+    /**
+     * The "booted" method of the model.
+     * Auto-record Kredit (K) entry to Buku Kas & recalculate ledger on create/delete.
+     */
+    protected static function booted(): void
+    {
+        static::created(function (Sale $sale) {
+            if ($sale->total_amount > 0) {
+                $buyerName = $sale->buyer?->name ?? 'Mitra Pengepul';
+                Keuangan::recordTransaction(
+                    campusId: $sale->campus_id,
+                    date: $sale->sale_date,
+                    jenis: 'K', // Kredit = Pemasukan
+                    sumber: 'penjualan',
+                    nominal: (float) $sale->total_amount,
+                    keterangan: 'Penjualan sampah terpilah kepada ' . $buyerName,
+                    refId: $sale->id,
+                    createdBy: $sale->created_by
+                );
+            }
+        });
+
+        static::deleted(function (Sale $sale) {
+            Keuangan::deleteTransactionByRef('penjualan', $sale->id);
+        });
+    }
 }
 

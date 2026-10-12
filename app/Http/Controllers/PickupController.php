@@ -3,9 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Pickups\Index as PickupComponent;
+use App\Models\BukuBesar;
 use App\Models\Pickup;
-use App\Services\LedgerService;
-use App\Services\StockService;
+use App\Models\WasteType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -28,7 +28,7 @@ class PickupController extends Controller
     /**
      * Memvalidasi stok residu dan menyimpan transaksi pengangkutan residu.
      */
-    public function store(array $data, StockService $stockService, LedgerService $ledgerService): array
+    public function store(array $data): array
     {
         $user = auth()->user();
         if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) && !$user->can('logistics.create')) {
@@ -60,7 +60,7 @@ class PickupController extends Controller
         $vendorId = (int) $data['vendor_id'];
 
         // Validasi ketersediaan stok residu di kampus bersangkutan
-        $stockSummary = $stockService->getStockSummary($campusId);
+        $stockSummary = WasteType::getStockSummary($campusId);
         $availableResidual = $stockSummary['residual_stock_kg'];
 
         if ($volume > $availableResidual) {
@@ -84,7 +84,7 @@ class PickupController extends Controller
             'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
         ]);
 
-        $newBalance = $ledgerService->getLatestBalance($campusId);
+        $newBalance = BukuBesar::getLatestBalance($campusId);
         $toastMsg = "Pengangkutan " . number_format($volume, 1, ',', '.') . " kg tersimpan → Biaya Rp " . number_format($totalCost, 0, ',', '.') . " → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
 
         return [

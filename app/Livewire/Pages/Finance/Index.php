@@ -6,7 +6,6 @@ use App\Http\Controllers\FinanceController;
 use App\Models\BukuBesar;
 use App\Models\Campus;
 use App\Models\Keuangan;
-use App\Services\LedgerService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -83,7 +82,7 @@ class Index extends Component
         $this->resetBalanceForm();
     }
 
-    public function saveInitialBalance(FinanceController $controller, LedgerService $ledgerService): void
+    public function saveInitialBalance(FinanceController $controller): void
     {
         try {
             $result = $controller->saveInitialBalance([
@@ -91,7 +90,7 @@ class Index extends Component
                 'initialDate' => $this->initialDate,
                 'initialAmount' => $this->initialAmount,
                 'initialNotes' => $this->initialNotes,
-            ], $ledgerService);
+            ]);
 
             $this->closeBalanceModal();
             $this->dispatch('close-modal');

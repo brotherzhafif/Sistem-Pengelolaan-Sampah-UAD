@@ -6,8 +6,7 @@ use App\Http\Controllers\PickupController;
 use App\Models\Campus;
 use App\Models\Pickup;
 use App\Models\Vendor;
-use App\Services\LedgerService;
-use App\Services\StockService;
+use App\Models\WasteType;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -132,7 +131,7 @@ class Index extends Component
         $this->formTotalCost = (string) round($volume * $cost, 2);
     }
 
-    public function savePickup(PickupController $controller, StockService $stockService, LedgerService $ledgerService): void
+    public function savePickup(PickupController $controller): void
     {
         try {
             $result = $controller->store([
@@ -144,7 +143,7 @@ class Index extends Component
                 'driver_name' => $this->formDriverName,
                 'vehicle_plate' => $this->formVehiclePlate,
                 'notes' => $this->formNotes,
-            ], $stockService, $ledgerService);
+            ]);
 
             $this->showCreateModal = false;
             $this->resetForm();
@@ -190,7 +189,7 @@ class Index extends Component
         }
     }
 
-    public function render(StockService $stockService)
+    public function render()
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
@@ -201,7 +200,7 @@ class Index extends Component
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
         $pickups = Pickup::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, 8);
-        $stockSummary = $stockService->getStockSummary($campusQueryId);
+        $stockSummary = WasteType::getStockSummary($campusQueryId);
         $totalCostFiltered = Pickup::getTotalCost($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
         $totalVolumeFiltered = Pickup::getTotalVolume($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
 

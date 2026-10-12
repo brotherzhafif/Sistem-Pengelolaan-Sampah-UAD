@@ -3,7 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Finance\Index as FinanceComponent;
-use App\Services\LedgerService;
+use App\Models\Keuangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -25,7 +25,7 @@ class FinanceController extends Controller
     /**
      * Menetapkan dan mencatat saldo kas awal operasional TPS kampus.
      */
-    public function saveInitialBalance(array $data, LedgerService $ledgerService): array
+    public function saveInitialBalance(array $data): array
     {
         $user = auth()->user();
         if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan']) && !$user->can('finance.create')) {
@@ -46,7 +46,7 @@ class FinanceController extends Controller
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
         $targetCampusId = $isSuperAdmin ? (int) $data['initialCampusId'] : (int) $user->campus_id;
 
-        $ledgerService->recordTransaction(
+        Keuangan::recordTransaction(
             campusId: $targetCampusId,
             date: $data['initialDate'],
             jenis: 'K',

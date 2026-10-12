@@ -52,12 +52,102 @@ class BukuBesar extends Model
      */
     public static function getCurrentBalance(?int $campusId, float $fallback = 0.0): float
     {
-        $latest = static::query()
-            ->when($campusId, fn($q) => $q->where('campus_id', $campusId))
+        return static::getLatestBalance($campusId);
+    }
+
+    /**
+     * Recalculate daily ledger starting from a given date sequentially.
+     * Formula: Saldo Akhir = Saldo Awal + Total Kredit - Total Debet
+     * Saldo Awal Hari (X+1) = Saldo Akhir Hari (X)
+     */
+    public static function recalculateLedgerFromDate(int $campusId, string $startDate): void
+    {
+        // Temukan saldo penutup sebelum $startDate
+        $prevLedger = static::where('campus_id', $campusId)
+            ->whereDate('tanggal', '<', $startDate)
             ->orderBy('tanggal', 'desc')
             ->first();
 
-        return $latest ? (float) $latest->saldo_akhir : $fallback;
+        $runningSaldo = $prevLedger ? (float) $prevLedger->saldo_akhir : 0.00;
+
+        // Ambil semua tanggal unik transaksi atau ledger yang tercatat mulai $startDate ke depan
+        $dates = Keuangan::where('campus_id', $campusId)
+            ->whereDate('tanggal', '>=', $startDate)
+            ->distinct()
+            ->orderBy('tanggal')
+            ->pluck('tanggal')
+            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        // Sertakan tanggal yang mungkin sudah ada di buku besar meskipun keuangannya dihapus
+        $ledgerDates = static::where('campus_id', $campusId)
+            ->whereDate('tanggal', '>=', $startDate)
+            ->pluck('tanggal')
+            ->map(fn($d) => \Carbon\Carbon::parse($d)->format('Y-m-d'))
+            ->toArray();
+
+        $allDates = array_unique(array_merge($dates, $ledgerDates));
+        sort($allDates);
+
+        foreach ($allDates as $date) {
+            $kreditSum = (float) Keuangan::where('campus_id', $campusId)
+                ->whereDate('tanggal', $date)
+                ->where('jenis', 'K')
+                ->sum('nominal');
+
+            $debetSum = (float) Keuangan::where('campus_id', $campusId)
+                ->whereDate('tanggal', $date)
+                ->where('jenis', 'D')
+                ->sum('nominal');
+
+            $saldoAwal = $runningSaldo;
+            $saldoAkhir = $saldoAwal + $kreditSum - $debetSum;
+
+            static::updateOrCreate(
+                [
+                    'campus_id' => $campusId,
+                    'tanggal' => $date,
+                ],
+                [
+                    'saldo_awal' => $saldoAwal,
+                    'total_kredit' => $kreditSum,
+                    'total_debet' => $debetSum,
+                    'saldo_akhir' => $saldoAkhir,
+                ]
+            );
+
+            $runningSaldo = $saldoAkhir;
+        }
+    }
+
+    /**
+     * Dapatkan saldo kas operasional terbaru dari buku besar per kampus atau agregat.
+     */
+    public static function getLatestBalance(?int $campusId = null): float
+    {
+        if ($campusId) {
+            $ledger = static::where('campus_id', $campusId)
+                ->orderBy('tanggal', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+
+            return $ledger ? (float) $ledger->saldo_akhir : 0.00;
+        }
+
+        // Jika semua kampus (Pusat), agregasikan saldo_akhir terakhir dari masing-masing kampus
+        $campuses = Campus::where('is_active', true)->pluck('id');
+        $totalBalance = 0.00;
+        foreach ($campuses as $cId) {
+            $cLedger = static::where('campus_id', $cId)
+                ->orderBy('tanggal', 'desc')
+                ->orderBy('id', 'desc')
+                ->first();
+            if ($cLedger) {
+                $totalBalance += (float) $cLedger->saldo_akhir;
+            }
+        }
+
+        return $totalBalance;
     }
 }
 

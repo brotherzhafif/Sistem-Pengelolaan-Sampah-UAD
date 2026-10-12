@@ -2,16 +2,15 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\BukuBesar;
 use App\Models\Campus;
 use App\Models\Expense;
 use App\Models\Keuangan;
 use App\Models\Pickup;
 use App\Models\Sale;
+use App\Models\WasteType;
 use App\Models\WeighingItem;
 use App\Models\WeighingSession;
-use App\Services\AlertService;
-use App\Services\LedgerService;
-use App\Services\StockService;
 use App\Livewire\Pages\Dashboard\Index as DashboardComponent;
 use Illuminate\Http\Request;
 
@@ -33,14 +32,14 @@ class DashboardController extends Controller
     /**
      * Mengagregasikan seluruh metrik operasional, timbulan, komposisi, stok, dan finansial dashboard.
      */
-    public function getMetrics(?int $campusId, StockService $stockService, LedgerService $ledgerService, AlertService $alertService): array
+    public function getMetrics(?int $campusId): array
     {
         // 1. Timbangan Hari Ini & Akumulasi (dari Model WeighingItem)
         $todayWeighedKg = WeighingItem::getTodayWeighedKg($campusId);
         $totalAccumulation = WeighingItem::getTotalAccumulation($campusId);
 
-        // 2. Stok Terpilah & Residu Realtime (dari StockService)
-        $stockSummary = $stockService->getStockSummary($campusId);
+        // 2. Stok Terpilah & Residu Realtime (dari Model WasteType)
+        $stockSummary = WasteType::getStockSummary($campusId);
 
         // 3. Komposisi Sampah & Diversion Rate (dari Model WeighingItem)
         $composition = WeighingItem::getCompositionStats($campusId);
@@ -48,12 +47,12 @@ class DashboardController extends Controller
         // 4. Tren Timbulan 7 Hari Terakhir (dari Model WeighingItem)
         $trendData = WeighingItem::getSevenDaysTrend($campusId);
 
-        // 5. Kesehatan Finansial & Kas Sirkular (dari Model Keuangan & LedgerService)
+        // 5. Kesehatan Finansial & Kas Sirkular (dari Model Keuangan & BukuBesar)
         $finances = Keuangan::getFinancialSummary($campusId);
-        $saldoKas = $ledgerService->getLatestBalance($campusId);
+        $saldoKas = BukuBesar::getLatestBalance($campusId);
 
-        // 6. Sistem Peringatan Otomatis (Alerts dari AlertService)
-        $alerts = $alertService->getAlerts($campusId);
+        // 6. Sistem Peringatan Otomatis (Alerts dari NotificationController)
+        $alerts = NotificationController::getAlerts($campusId);
 
         // 7. Aktivitas Terbaru 5 Transaksi Terakhir (dari Models)
         $recentSessions = WeighingSession::getRecentSessions($campusId, 5);

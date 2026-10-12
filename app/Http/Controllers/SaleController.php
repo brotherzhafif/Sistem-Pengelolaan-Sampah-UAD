@@ -3,10 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Sales\Index as SalesComponent;
+use App\Models\BukuBesar;
 use App\Models\Sale;
 use App\Models\SaleItem;
-use App\Services\LedgerService;
-use App\Services\StockService;
+use App\Models\WasteType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\ValidationException;
@@ -29,7 +29,7 @@ class SaleController extends Controller
     /**
      * Memvalidasi stok aktual dan menyimpan transaksi penjualan beserta item rinciannya.
      */
-    public function store(array $data, StockService $stockService, LedgerService $ledgerService): array
+    public function store(array $data): array
     {
         $user = auth()->user();
         if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_penjualan', 'Petugas Penjualan', 'pengurus_bank_sampah']) && !$user->can('bank_sampah.sale.create')) {
@@ -62,7 +62,7 @@ class SaleController extends Controller
 
             if ($weight > 0) {
                 // Validasi ketersediaan stok aktual di kampus bersangkutan
-                $availableStock = $stockService->getAvailableStock((int) $item['waste_type_id'], $targetCampusId);
+                $availableStock = WasteType::getAvailableStock((int) $item['waste_type_id'], $targetCampusId);
 
                 if ($weight > $availableStock) {
                     $wasteName = $item['waste_name'] ?? 'Sampah';
@@ -107,7 +107,7 @@ class SaleController extends Controller
             ]);
         }
 
-        $newBalance = $ledgerService->getLatestBalance($targetCampusId);
+        $newBalance = BukuBesar::getLatestBalance($targetCampusId);
         $toastMsg = "Penjualan Rp " . number_format($totalAmount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
 
         return [

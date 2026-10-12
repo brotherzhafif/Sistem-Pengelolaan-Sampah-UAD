@@ -19,9 +19,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        \App\Models\Sale::observe(\App\Observers\SaleObserver::class);
-        \App\Models\Pickup::observe(\App\Observers\PickupObserver::class);
-        \App\Models\Expense::observe(\App\Observers\ExpenseObserver::class);
+        // Mount Volt views directory for Breeze authentication routes without requiring a separate VoltServiceProvider
+        if (class_exists(\Livewire\Volt\Volt::class)) {
+            \Livewire\Volt\Volt::mount([
+                config('livewire.view_path', resource_path('views/livewire')),
+            ]);
+        }
 
         // Bypass Cloudflare Rocket Loader for Livewire & Vite scripts
         // Cloudflare Rocket Loader breaks/delays single-page & AJAX script hydration

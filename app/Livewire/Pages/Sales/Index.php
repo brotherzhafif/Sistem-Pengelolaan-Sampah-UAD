@@ -7,8 +7,6 @@ use App\Models\Buyer;
 use App\Models\Campus;
 use App\Models\Sale;
 use App\Models\WasteType;
-use App\Services\LedgerService;
-use App\Services\StockService;
 use Carbon\Carbon;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
@@ -127,7 +125,7 @@ class Index extends Component
         return round($total, 2);
     }
 
-    public function saveSale(SaleController $controller, StockService $stockService, LedgerService $ledgerService): void
+    public function saveSale(SaleController $controller): void
     {
         try {
             $result = $controller->store([
@@ -136,7 +134,7 @@ class Index extends Component
                 'sale_date' => $this->formDate,
                 'notes' => $this->formNotes,
                 'items' => $this->saleItems,
-            ], $stockService, $ledgerService);
+            ]);
 
             $this->showCreateModal = false;
             $this->resetForm();
@@ -182,7 +180,7 @@ class Index extends Component
         }
     }
 
-    public function render(StockService $stockService)
+    public function render()
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
@@ -193,7 +191,7 @@ class Index extends Component
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
         $sales = Sale::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, 8);
-        $stockSummary = $stockService->getStockSummary($campusQueryId);
+        $stockSummary = WasteType::getStockSummary($campusQueryId);
         $totalRevenue = Sale::getTotalRevenue($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
         $totalSoldFiltered = Sale::getTotalSoldWeight($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
 

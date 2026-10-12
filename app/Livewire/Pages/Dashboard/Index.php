@@ -4,9 +4,6 @@ namespace App\Livewire\Pages\Dashboard;
 
 use App\Http\Controllers\DashboardController;
 use App\Models\Campus;
-use App\Services\AlertService;
-use App\Services\LedgerService;
-use App\Services\StockService;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
 
@@ -38,7 +35,7 @@ class Index extends Component
         $this->activeActivityTab = $tab;
     }
 
-    public function render(DashboardController $controller, StockService $stockService, LedgerService $ledgerService, AlertService $alertService)
+    public function render(DashboardController $controller)
     {
         $user = auth()->user();
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
@@ -50,7 +47,7 @@ class Index extends Component
         $activeCampus = $campusQueryId ? Campus::find($campusQueryId) : null;
         $campuses = Campus::getActiveCampuses();
 
-        $metrics = $controller->getMetrics($campusQueryId, $stockService, $ledgerService, $alertService);
+        $metrics = $controller->getMetrics($campusQueryId);
 
         return view('livewire.pages.dashboard.index', array_merge([
             'isSuperAdmin' => $isSuperAdmin,
