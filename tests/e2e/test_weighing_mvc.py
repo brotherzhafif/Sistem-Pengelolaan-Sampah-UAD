@@ -83,12 +83,10 @@ weigh_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', weigh_html)
 weigh_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', weigh_html)]
 weigh_snap = next(s for s in weigh_snaps if s.get('memo', {}).get('name') == 'pages.weighing.index')
 
-# Extract existing formItems or populate
 today_str = date.today().isoformat()
-items_state = weigh_snap.get('data', {}).get('formItems', [])
-if items_state:
-    # Set the first item weight to 12.5 kg for testing
-    items_state[0]['weight_kg'] = '12.5'
+print("[*] Snapshot data keys:", list(weigh_snap.get('data', {}).keys()))
+raw_items = weigh_snap.get('data', {}).get('formItems')
+print("[*] formItems repr:", repr(raw_items)[:200])
 
 save_payload = {
     "_token": weigh_csrf,
@@ -98,7 +96,7 @@ save_payload = {
             "updates": {
                 "formDate": today_str,
                 "formNotes": "E2E Automated MVC Weighing Test",
-                "formItems": items_state
+                "formItems.0.weight_kg": "12.5"
             },
             "calls": [
                 {"path": "", "method": "saveWeighing", "params": []}
@@ -130,4 +128,4 @@ verify_html = safe_open(verify_req).read().decode('utf-8')
 assert "E2E Automated MVC Weighing Test" in verify_html or "12.5" in verify_html, "Saved weighing record not rendered in table"
 print("[+] Verified saved weighing record rendered in table.")
 
-print("\n🎉 ALL WEIGHING MVC E2E TESTS PASSED SUCCESSFULLY!")
+print("\n[SUCCESS] ALL WEIGHING MVC E2E TESTS PASSED SUCCESSFULLY!")
