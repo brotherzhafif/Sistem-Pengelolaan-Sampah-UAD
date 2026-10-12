@@ -52,11 +52,11 @@ Route::get('reports/export/excel', [App\Http\Controllers\ReportExportController:
     ->middleware(['auth', 'verified'])
     ->name('reports.export.excel');
 
-Volt::route('survei-kap', 'pages.kap.survey')
+Route::get('survei-kap', [App\Http\Controllers\KapController::class, 'survey'])
     ->name('kap.survey');
 Route::redirect('survey', 'survei-kap')->name('public.survey');
 
-Volt::route('kap', 'pages.kap.index')
+Route::get('kap', [App\Http\Controllers\KapController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('kap');
 

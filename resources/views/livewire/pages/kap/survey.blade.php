@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\KapController;
 use App\Models\Campus;
 use App\Models\KapSurvey;
 use Carbon\Carbon;
@@ -133,81 +134,31 @@ new #[Layout('layouts.guest')] class extends Component
     {
         $this->validateStep1();
 
-        $this->validate([
-            'knowledge.*' => ['required', 'boolean'],
-            'attitude.*' => ['required', 'integer', 'between:1,5'],
-            'practice.*' => ['required', 'integer', 'between:1,5'],
-            'satisfaction.*' => ['required', 'integer', 'between:1,5'],
-            'facilities' => ['nullable', 'array'],
-            'barriers' => ['nullable', 'array'],
-            'motivations' => ['nullable', 'array'],
-            'feedback' => ['nullable', 'string', 'max:1000'],
-        ]);
-
-        // Kunci Jawaban Pengetahuan (K1 - K8)
-        $knowledgeKeys = [
-            1 => true,  // K1: Benar
-            2 => false, // K2: Salah
-            3 => true,  // K3: Benar
-            4 => true,  // K4: Benar
-            5 => true,  // K5: Benar
-            6 => true,  // K6: Benar
-            7 => false, // K7: Salah
-            8 => true,  // K8: Benar
-        ];
-
-        $correctCount = 0;
-        foreach ($knowledgeKeys as $idx => $expected) {
-            $val = (bool) ($this->knowledge[$idx] ?? false);
-            if ($val === $expected) {
-                $correctCount++;
-            }
-        }
-        $kScore = ($correctCount / 8) * 100;
-
-        $aInt = array_map('intval', $this->attitude);
-        $pInt = array_map('intval', $this->practice);
-        $sInt = array_map('intval', $this->satisfaction);
-
-        $aScore = (array_sum($aInt) / (count($aInt) * 5)) * 100;
-        $pScore = (array_sum($pInt) / (count($pInt) * 5)) * 100;
-        $sScore = (array_sum($sInt) / (count($sInt) * 5)) * 100;
-
-        $overallScore = round(($kScore + $aScore + $pScore) / 3, 2);
-
-        $this->submittedSurvey = KapSurvey::create([
+        $result = app(KapController::class)->submitSurvey([
             'campus_id' => $this->campus_id,
-            'respondent_name' => $this->respondent_name ? strip_tags(trim($this->respondent_name)) : null,
-            'respondent_identifier' => $this->respondent_identifier ? strip_tags(trim($this->respondent_identifier)) : null,
+            'respondent_name' => $this->respondent_name,
+            'respondent_identifier' => $this->respondent_identifier,
             'respondent_role' => $this->respondent_role,
-            'faculty_unit' => strip_tags(trim($this->faculty_unit)),
+            'faculty_unit' => $this->faculty_unit,
             'gender' => $this->gender,
             'has_attended_training' => $this->has_attended_training,
             'is_willing_volunteer' => $this->is_willing_volunteer,
             'residence_type' => $this->residence_type,
-            'knowledge_responses' => $this->knowledge,
-            'attitude_responses' => array_values($aInt),
-            'practice_responses' => array_values($pInt),
-            'satisfaction_responses' => array_values($sInt),
-            'facility_responses' => array_values($this->facilities),
-            'barrier_responses' => [
-                'barriers' => array_values($this->barriers),
-                'motivations' => array_values($this->motivations),
-            ],
-            'knowledge_score' => $kScore,
-            'attitude_score' => $aScore,
-            'practice_score' => $pScore,
-            'satisfaction_score' => $sScore,
-            'overall_score' => $overallScore,
-            'category' => KapSurvey::determineCategory($overallScore),
-            'feedback' => $this->feedback ? strip_tags(trim($this->feedback)) : null,
-            'survey_date' => Carbon::today()->format('Y-m-d'),
+            'knowledge' => $this->knowledge,
+            'attitude' => $this->attitude,
+            'practice' => $this->practice,
+            'satisfaction' => $this->satisfaction,
+            'facilities' => $this->facilities,
+            'barriers' => $this->barriers,
+            'motivations' => $this->motivations,
+            'feedback' => $this->feedback,
         ]);
 
+        $this->submittedSurvey = $result['survey'];
         $this->isSubmitted = true;
         $this->currentStep = 8;
 
-        $this->dispatch('toast', message: 'Survei KAP Anda berhasil dikirim! Terima kasih atas partisipasi Anda.', type: 'success');
+        $this->dispatch('toast', message: $result['message'], type: 'success');
     }
 
     public function resetForm(): void

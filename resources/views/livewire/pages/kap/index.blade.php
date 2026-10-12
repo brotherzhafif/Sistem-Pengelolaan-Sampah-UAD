@@ -74,61 +74,32 @@ new #[Layout('layouts.app')] class extends Component
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
             : (int) $user->campus_id;
 
-        $query = KapSurvey::with('campus')
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterRole, fn($q) => $q->where('respondent_role', $this->filterRole))
-            ->when($this->filterCategory, fn($q) => $q->where('category', $this->filterCategory))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('survey_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('survey_date', '<=', $this->filterDateTo))
-            ->orderBy('survey_date', 'desc')
-            ->orderBy('id', 'desc');
+        $surveys = KapSurvey::filtered(
+            $campusQueryId,
+            $this->filterRole ?: null,
+            $this->filterCategory ?: null,
+            $this->filterDateFrom ?: null,
+            $this->filterDateTo ?: null
+        )->paginate(8);
 
-        // Rule 7: Tepat 8 baris per halaman
-        $surveys = $query->paginate(8);
-
-        // Agregasi Statistik Analitik KAP
-        $statsQuery = KapSurvey::query()
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterRole, fn($q) => $q->where('respondent_role', $this->filterRole))
-            ->when($this->filterCategory, fn($q) => $q->where('category', $this->filterCategory))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('survey_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('survey_date', '<=', $this->filterDateTo));
-
-        $totalRespondents = (int) (clone $statsQuery)->count();
-        $avgKnowledge = (float) (clone $statsQuery)->avg('knowledge_score') ?? 0.0;
-        $avgAttitude = (float) (clone $statsQuery)->avg('attitude_score') ?? 0.0;
-        $avgPractice = (float) (clone $statsQuery)->avg('practice_score') ?? 0.0;
-        $avgOverall = (float) (clone $statsQuery)->avg('overall_score') ?? 0.0;
-
-        $highCount = (int) (clone $statsQuery)->where('category', 'sangat_baik')->count();
-        $moderateCount = (int) (clone $statsQuery)->where('category', 'sedang')->count();
-        $lowCount = (int) (clone $statsQuery)->where('category', 'kurang')->count();
-
-        $highPct = $totalRespondents > 0 ? round(($highCount / $totalRespondents) * 100, 1) : 0.0;
-        $moderatePct = $totalRespondents > 0 ? round(($moderateCount / $totalRespondents) * 100, 1) : 0.0;
-        $lowPct = $totalRespondents > 0 ? round(($lowCount / $totalRespondents) * 100, 1) : 0.0;
+        $stats = KapSurvey::getStats(
+            $campusQueryId,
+            $this->filterRole ?: null,
+            $this->filterCategory ?: null,
+            $this->filterDateFrom ?: null,
+            $this->filterDateTo ?: null
+        );
 
         $detailedSurvey = $this->viewSurveyId 
             ? KapSurvey::with('campus')->find($this->viewSurveyId) 
             : null;
 
-        return [
+        return array_merge([
             'isSuperAdmin' => $isSuperAdmin,
-            'campuses' => Campus::where('is_active', true)->orderBy('id')->get(),
+            'campuses' => Campus::getActiveCampuses(),
             'surveys' => $surveys,
             'detailedSurvey' => $detailedSurvey,
-            'totalRespondents' => $totalRespondents,
-            'avgKnowledge' => round($avgKnowledge, 1),
-            'avgAttitude' => round($avgAttitude, 1),
-            'avgPractice' => round($avgPractice, 1),
-            'avgOverall' => round($avgOverall, 1),
-            'highCount' => $highCount,
-            'moderateCount' => $moderateCount,
-            'lowCount' => $lowCount,
-            'highPct' => $highPct,
-            'moderatePct' => $moderatePct,
-            'lowPct' => $lowPct,
-        ];
+        ], $stats);
     }
 }; ?>
 
