@@ -80,7 +80,7 @@ print("[+] /finance HTTP route successfully served by FinanceController with 200
 # 3. Test Livewire RPC interaction on Finance module (Tab Switcher to general_ledger)
 finance_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', finance_html).group(1)
 finance_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', finance_html)]
-finance_snap = next(s for s in finance_snaps if s.get('memo', {}).get('name') == 'pages.finance.index')
+finance_snap = next(s for s in finance_snaps if s.get('memo', {}).get('name') in ['pages.finance', 'pages.finance.index'])
 
 tab_payload = {
     "_token": finance_csrf,

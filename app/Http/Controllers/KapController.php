@@ -2,12 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Pages\Kap\Index as KapIndexComponent;
+use App\Livewire\Pages\Kap\Survey as KapSurveyComponent;
 use App\Models\KapSurvey;
 use Carbon\Carbon;
-use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Livewire\Volt\LivewireManager;
 
 class KapController extends Controller
 {
@@ -21,11 +21,7 @@ class KapController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mengakses modul Analitik Survei KAP.');
         }
 
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.kap.index'),
-            '__invoke',
-        ]);
+        return app(KapIndexComponent::class)();
     }
 
     /**
@@ -33,11 +29,7 @@ class KapController extends Controller
      */
     public function survey(Request $request)
     {
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.kap.survey'),
-            '__invoke',
-        ]);
+        return app(KapSurveyComponent::class)();
     }
 
     /**

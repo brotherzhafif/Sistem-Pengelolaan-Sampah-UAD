@@ -2,11 +2,10 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Pages\Finance\Index as FinanceComponent;
 use App\Services\LedgerService;
-use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Livewire\Volt\LivewireManager;
 
 class FinanceController extends Controller
 {
@@ -20,12 +19,7 @@ class FinanceController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Keuangan.');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.finance.index'),
-            '__invoke',
-        ]);
+        return app(FinanceComponent::class)();
     }
 
     /**

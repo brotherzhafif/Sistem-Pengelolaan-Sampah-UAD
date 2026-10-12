@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Container\Container;
+use App\Livewire\Pages\Reports\Index as ReportComponent;
 use Illuminate\Http\Request;
-use Livewire\Volt\LivewireManager;
 
 class ReportController extends Controller
 {
@@ -25,11 +24,6 @@ class ReportController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses ke modul Laporan & Ekspor.');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.reports.index'),
-            '__invoke',
-        ]);
+        return app(ReportComponent::class)();
     }
 }

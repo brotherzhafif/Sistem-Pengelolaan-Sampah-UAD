@@ -79,7 +79,7 @@ print("[+] /kap HTTP route successfully served by KapController with 200 OK.")
 # 3. Test Livewire RPC interaction on KAP module (Filter category)
 kap_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', kap_html).group(1)
 kap_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', kap_html)]
-kap_snap = next(s for s in kap_snaps if s.get('memo', {}).get('name') == 'pages.kap.index')
+kap_snap = next(s for s in kap_snaps if s.get('memo', {}).get('name') in ['pages.kap', 'pages.kap.index'])
 
 filter_payload = {
     "_token": kap_csrf,
