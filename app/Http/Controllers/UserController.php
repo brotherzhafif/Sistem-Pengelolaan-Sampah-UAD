@@ -2,14 +2,13 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Pages\Users\Index as UserComponent;
 use App\Models\Campus;
 use App\Models\User;
-use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
-use Livewire\Volt\LivewireManager;
 
 class UserController extends Controller
 {
@@ -23,12 +22,7 @@ class UserController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki hak akses untuk mengelola data pengguna.');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.users.index'),
-            '__invoke',
-        ]);
+        return app(UserComponent::class)();
     }
 
     /**

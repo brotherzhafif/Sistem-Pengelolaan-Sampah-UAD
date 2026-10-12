@@ -1,24 +1,3 @@
-<?php
-
-use App\Services\AlertService;
-use Livewire\Attributes\Layout;
-use Livewire\Volt\Component;
-
-new #[Layout('layouts.app')] class extends Component
-{
-    public function with(AlertService $alertService): array
-    {
-        $user = auth()->user();
-        $activeCampusId = session('active_campus_id', $user->campus_id ?? null);
-        $alerts = $alertService->getAlerts($activeCampusId);
-
-        return [
-            'alerts'      => $alerts,
-            'totalAlerts' => count($alerts),
-        ];
-    }
-}; ?>
-
 <x-slot name="header">
     <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div>

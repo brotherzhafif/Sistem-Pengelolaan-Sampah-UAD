@@ -78,8 +78,7 @@ print("[+] /master-data HTTP route successfully served by MasterDataController w
 
 # 3. Test Livewire RPC interaction on Master Data module (Tab switch to 'types')
 master_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', master_html).group(1)
-master_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', master_html)]
-master_snap = next(s for s in master_snaps if s.get('memo', {}).get('name') == 'pages.master.index')
+master_snap = next(s for s in master_snaps if s.get('memo', {}).get('name') in ['pages.master', 'pages.master.index'])
 
 tab_payload = {
     "_token": master_csrf,

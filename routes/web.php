@@ -60,7 +60,7 @@ Route::get('kap', [App\Http\Controllers\KapController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('kap');
 
-Route::view('profile', 'profile')
+Route::get('profile', [\App\Http\Controllers\ProfileController::class, 'index'])
     ->middleware(['auth'])
     ->name('profile');
 

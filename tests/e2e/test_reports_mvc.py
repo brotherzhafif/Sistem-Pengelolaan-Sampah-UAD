@@ -83,6 +83,7 @@ base_res = safe_open(base_req)
 base_html = base_res.read().decode('utf-8')
 
 rep_csrf = re.search(r'<meta name="csrf-token" content="([^"]+)"', base_html).group(1)
+rep_snaps = [json.loads(html.unescape(s)) for s in re.findall(r'wire:snapshot="([^"]+)"', base_html)]
 rep_snap = next(s for s in rep_snaps if s.get('memo', {}).get('name') in ['pages.reports', 'pages.reports.index'])
 
 period_payload = {

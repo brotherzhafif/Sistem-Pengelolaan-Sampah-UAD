@@ -2,9 +2,8 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Container\Container;
+use App\Livewire\Pages\Notifications\Index as NotificationComponent;
 use Illuminate\Http\Request;
-use Livewire\Volt\LivewireManager;
 
 class NotificationController extends Controller
 {
@@ -17,10 +16,6 @@ class NotificationController extends Controller
             return redirect()->route('login');
         }
 
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.notifications.index'),
-            '__invoke',
-        ]);
+        return app(NotificationComponent::class)();
     }
 }

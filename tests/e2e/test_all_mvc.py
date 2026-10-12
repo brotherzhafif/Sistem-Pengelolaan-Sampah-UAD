@@ -15,6 +15,7 @@ TEST_FILES = [
     "test_kap_mvc.py",
     "test_reports_mvc.py",
     "test_notifications_mvc.py",
+    "test_profile_mvc.py",
     "verify_all_pages.py",
 ]
 

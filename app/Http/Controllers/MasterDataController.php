@@ -2,15 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Livewire\Pages\Master\Index as MasterComponent;
 use App\Models\Buyer;
 use App\Models\ExpenseCategory;
 use App\Models\Vendor;
 use App\Models\WasteSource;
 use App\Models\WasteType;
-use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
-use Livewire\Volt\LivewireManager;
 
 class MasterDataController extends Controller
 {
@@ -24,12 +23,7 @@ class MasterDataController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mengakses Pengaturan Master Data.');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.master.index'),
-            '__invoke',
-        ]);
+        return app(MasterComponent::class)();
     }
 
     /**
