@@ -74,8 +74,8 @@ sales_html = sales_res.read().decode('utf-8')
 
 assert sales_res.status == 200, f"Expected 200 OK from /sales, got {sales_res.status}"
 assert "Penjualan Sampah Terpilah" in sales_html, "Title Penjualan Sampah Terpilah missing"
-assert "Total Pendapatan Terfilter" in sales_html, "Metric Total Pendapatan Terfilter missing"
-assert "Total Bobot Terjual" in sales_html, "Metric Total Bobot Terjual missing"
+assert "Total Pendapatan Terdata" in sales_html, "Metric Total Pendapatan Terdata missing"
+assert "Total Berat Terjual" in sales_html, "Metric Total Berat Terjual missing"
 print("[+] /sales HTTP route successfully served by SaleController with 200 OK.")
 
 # 3. Test Livewire RPC interaction on Sales module
