@@ -31,7 +31,7 @@ class WasteSource extends Model
      */
     public static function getByCampus(?int $campusId)
     {
-        return static::when($campusId, fn($q) => $q->where('campus_id', $campusId))->get();
+        return static::when($campusId, fn($q) => $q->where('campus_id', $campusId))->orderBy('name')->get();
     }
 }
 

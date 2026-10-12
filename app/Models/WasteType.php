@@ -24,6 +24,14 @@ class WasteType extends Model
     ];
 
     /**
+     * Mengambil daftar seluruh jenis sampah terurut kategori dan nama.
+     */
+    public static function getAllTypes()
+    {
+        return static::orderBy('category')->orderBy('name')->get();
+    }
+
+    /**
      * Mengambil daftar seluruh jenis sampah aktif terurut kategori dan nama.
      */
     public static function getActiveTypes()

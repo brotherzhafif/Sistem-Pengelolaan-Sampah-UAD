@@ -22,6 +22,14 @@ class Vendor extends Model
     ];
 
     /**
+     * Mengambil daftar seluruh vendor pengangkutan residu terurut nama.
+     */
+    public static function getAllVendors()
+    {
+        return static::orderBy('name')->get();
+    }
+
+    /**
      * Mengambil daftar vendor pengangkutan residu yang aktif.
      */
     public static function getActiveVendors()

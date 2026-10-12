@@ -28,7 +28,7 @@ Route::get('finance', [App\Http\Controllers\FinanceController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('finance');
 
-Volt::route('master-data', 'pages.master.index')
+Route::get('master-data', [App\Http\Controllers\MasterDataController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('master-data');
 

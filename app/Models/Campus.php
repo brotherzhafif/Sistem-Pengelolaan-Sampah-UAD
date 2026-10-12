@@ -44,5 +44,13 @@ class Campus extends Model
     {
         return static::where('is_active', true)->orderBy('id')->get();
     }
+
+    /**
+     * Mengambil daftar seluruh kampus.
+     */
+    public static function getAllCampuses()
+    {
+        return static::orderBy('id')->get();
+    }
 }
 

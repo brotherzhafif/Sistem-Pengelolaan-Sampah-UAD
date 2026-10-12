@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\MasterDataController;
 use App\Models\Buyer;
 use App\Models\Campus;
 use App\Models\ExpenseCategory;
@@ -69,53 +70,12 @@ new #[Layout('layouts.app')] class extends Component
             return;
         }
 
-        $user = auth()->user();
-        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
-
-        if (!$isSuperAdmin && !$user->hasRole(['admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R']) && !$user->can('master.manage')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus data master.');
-        }
-
-        if (!$isSuperAdmin) {
-            if ($this->deleteType !== 'source') {
-                $this->dispatch('toast', message: 'Hanya Super Administrator yang berhak menghapus master data global sistem.', type: 'error');
-                $this->cancelDelete();
-                return;
-            }
-            $source = WasteSource::findOrFail($this->deleteTargetId);
-            if ($source->campus_id !== $user->campus_id) {
-                $this->dispatch('toast', message: 'Anda hanya dapat menghapus titik sumber di unit kampus Anda sendiri.', type: 'error');
-                $this->cancelDelete();
-                return;
-            }
-        }
-
-        switch ($this->deleteType) {
-            case 'source':
-                WasteSource::findOrFail($this->deleteTargetId)->delete();
-                $this->dispatch('toast', message: 'Titik sumber sampah berhasil dihapus.', type: 'success');
-                session()->flash('message', 'Titik sumber sampah berhasil dihapus.');
-                break;
-            case 'type':
-                WasteType::findOrFail($this->deleteTargetId)->delete();
-                $this->dispatch('toast', message: 'Jenis sampah berhasil dihapus.', type: 'success');
-                session()->flash('message', 'Jenis sampah berhasil dihapus.');
-                break;
-            case 'vendor':
-                Vendor::findOrFail($this->deleteTargetId)->delete();
-                $this->dispatch('toast', message: 'Vendor pengangkut berhasil dihapus.', type: 'success');
-                session()->flash('message', 'Vendor pengangkut berhasil dihapus.');
-                break;
-            case 'buyer':
-                Buyer::findOrFail($this->deleteTargetId)->delete();
-                $this->dispatch('toast', message: 'Pembeli/Pengepul berhasil dihapus.', type: 'success');
-                session()->flash('message', 'Pembeli/Pengepul berhasil dihapus.');
-                break;
-            case 'category':
-                ExpenseCategory::findOrFail($this->deleteTargetId)->delete();
-                $this->dispatch('toast', message: 'Kategori pengeluaran berhasil dihapus.', type: 'success');
-                session()->flash('message', 'Kategori pengeluaran berhasil dihapus.');
-                break;
+        $res = app(MasterDataController::class)->executeDelete($this->deleteType, $this->deleteTargetId);
+        if ($res['success']) {
+            $this->dispatch('toast', message: $res['message'], type: 'success');
+            session()->flash('message', $res['message']);
+        } else {
+            $this->dispatch('toast', message: $res['message'], type: 'error');
         }
 
         $this->cancelDelete();
@@ -143,50 +103,28 @@ new #[Layout('layouts.app')] class extends Component
 
         return [
             'isSuperAdmin' => $isSuperAdmin,
-            'campuses' => Campus::orderBy('id')->get(),
-            'sources' => WasteSource::when(!empty($effectiveCampusId), fn($q) => $q->where('campus_id', (int) $effectiveCampusId))->orderBy('name')->get(),
-            'wasteTypes' => WasteType::orderBy('category')->orderBy('name')->get(),
-            'vendors' => Vendor::orderBy('name')->get(),
-            'buyers' => Buyer::orderBy('name')->get(),
-            'expenseCategories' => ExpenseCategory::orderBy('name')->get(),
+            'campuses' => Campus::getAllCampuses(),
+            'sources' => WasteSource::getByCampus(!empty($effectiveCampusId) ? (int) $effectiveCampusId : null),
+            'wasteTypes' => WasteType::getAllTypes(),
+            'vendors' => Vendor::getAllVendors(),
+            'buyers' => Buyer::getAllBuyers(),
+            'expenseCategories' => ExpenseCategory::getAllCategories(),
         ];
     }
 
     // --- Action: Waste Source ---
     public function saveSource(): void
     {
-        $user = auth()->user();
-        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
-        $targetCampusId = $isSuperAdmin ? $this->selectedCampusId : $user->campus_id;
-
-        $this->validate([
-            'sourceName' => ['required', 'string', 'max:100'],
-            'sourceDescription' => ['nullable', 'string', 'max:255'],
-        ], [
-            'sourceName.required' => 'Nama titik sumber wajib diisi.',
-            'sourceName.max' => 'Nama maksimal 100 karakter.',
+        $result = app(MasterDataController::class)->saveSource([
+            'id' => $this->editingSourceId,
+            'campus_id' => $this->selectedCampusId,
+            'name' => $this->sourceName,
+            'description' => $this->sourceDescription,
         ]);
 
-        if ($this->editingSourceId && !$isSuperAdmin) {
-            $existing = WasteSource::findOrFail($this->editingSourceId);
-            if ($existing->campus_id !== $user->campus_id) {
-                abort(403, 'Akses ditolak: Anda hanya dapat mengelola titik sumber di unit kampus Anda sendiri.');
-            }
-        }
-
-        WasteSource::updateOrCreate(
-            ['id' => $this->editingSourceId],
-            [
-                'campus_id' => $targetCampusId,
-                'name' => strip_tags(trim($this->sourceName)),
-                'description' => strip_tags(trim($this->sourceDescription)),
-                'is_active' => true,
-            ]
-        );
-
         $this->reset(['sourceName', 'sourceDescription', 'editingSourceId']);
-        $this->dispatch('toast', message: 'Titik sumber sampah berhasil disimpan.', type: 'success');
-        session()->flash('message', 'Titik sumber sampah berhasil disimpan.');
+        $this->dispatch('toast', message: $result['message'], type: 'success');
+        session()->flash('message', $result['message']);
     }
 
     public function editSource(int $id): void
@@ -205,46 +143,29 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteSource(int $id): void
     {
-        $user = auth()->user();
-        $source = WasteSource::findOrFail($id);
-        if (!$user->hasRole(['super_admin', 'Super Admin']) && $source->campus_id !== $user->campus_id) {
-            $this->dispatch('toast', message: 'Anda hanya dapat menghapus titik sumber di unit kampus Anda sendiri.', type: 'error');
-            return;
+        $res = app(MasterDataController::class)->executeDelete('source', $id);
+        if ($res['success']) {
+            $this->dispatch('toast', message: $res['message'], type: 'success');
+            session()->flash('message', $res['message']);
+        } else {
+            $this->dispatch('toast', message: $res['message'], type: 'error');
         }
-
-        $source->delete();
-        $this->dispatch('toast', message: 'Titik sumber sampah berhasil dihapus.', type: 'success');
-        session()->flash('message', 'Titik sumber sampah berhasil dihapus.');
     }
 
     // --- Action: Waste Type ---
     public function saveWasteType(): void
     {
-        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi master jenis sampah.');
-        }
-
-        $this->validate([
-            'typeName' => ['required', 'string', 'max:100'],
-            'typeCategory' => ['required', 'string', 'in:Organik,Anorganik,Residu'],
-            'typePrice' => ['required', 'numeric', 'min:0'],
-            'typeIsSellable' => ['boolean'],
+        $result = app(MasterDataController::class)->saveWasteType([
+            'id' => $this->editingTypeId,
+            'name' => $this->typeName,
+            'category' => $this->typeCategory,
+            'default_price_per_kg' => $this->typePrice,
+            'is_sellable' => $this->typeIsSellable,
         ]);
 
-        WasteType::updateOrCreate(
-            ['id' => $this->editingTypeId],
-            [
-                'name' => strip_tags(trim($this->typeName)),
-                'category' => $this->typeCategory,
-                'default_price_per_kg' => $this->typePrice,
-                'is_sellable' => $this->typeIsSellable,
-                'is_active' => true,
-            ]
-        );
-
         $this->reset(['typeName', 'typeCategory', 'typePrice', 'typeIsSellable', 'editingTypeId']);
-        $this->dispatch('toast', message: 'Jenis sampah berhasil disimpan.', type: 'success');
-        session()->flash('message', 'Jenis sampah berhasil disimpan.');
+        $this->dispatch('toast', message: $result['message'], type: 'success');
+        session()->flash('message', $result['message']);
     }
 
     public function editWasteType(int $id): void
@@ -264,41 +185,28 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteWasteType(int $id): void
     {
-        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak menghapus jenis sampah.');
+        $res = app(MasterDataController::class)->executeDelete('type', $id);
+        if ($res['success']) {
+            $this->dispatch('toast', message: $res['message'], type: 'success');
+            session()->flash('message', $res['message']);
+        } else {
+            $this->dispatch('toast', message: $res['message'], type: 'error');
         }
-
-        WasteType::findOrFail($id)->delete();
-        $this->dispatch('toast', message: 'Jenis sampah berhasil dihapus.', type: 'success');
-        session()->flash('message', 'Jenis sampah berhasil dihapus.');
     }
 
     // --- Action: Vendor ---
     public function saveVendor(): void
     {
-        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi vendor armada angkut.');
-        }
-
-        $this->validate([
-            'vendorName' => ['required', 'string', 'max:100'],
-            'vendorContact' => ['nullable', 'string', 'max:100'],
-            'vendorCost' => ['required', 'numeric', 'min:0'],
+        $result = app(MasterDataController::class)->saveVendor([
+            'id' => $this->editingVendorId,
+            'name' => $this->vendorName,
+            'contact' => $this->vendorContact,
+            'cost_per_kg' => $this->vendorCost,
         ]);
 
-        Vendor::updateOrCreate(
-            ['id' => $this->editingVendorId],
-            [
-                'name' => strip_tags(trim($this->vendorName)),
-                'contact' => strip_tags(trim($this->vendorContact)),
-                'cost_per_kg' => $this->vendorCost,
-                'is_active' => true,
-            ]
-        );
-
         $this->reset(['vendorName', 'vendorContact', 'vendorCost', 'editingVendorId']);
-        $this->dispatch('toast', message: 'Vendor pengangkut berhasil disimpan.', type: 'success');
-        session()->flash('message', 'Vendor pengangkut berhasil disimpan.');
+        $this->dispatch('toast', message: $result['message'], type: 'success');
+        session()->flash('message', $result['message']);
     }
 
     public function editVendor(int $id): void
@@ -317,38 +225,27 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteVendor(int $id): void
     {
-        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak menghapus vendor.');
+        $res = app(MasterDataController::class)->executeDelete('vendor', $id);
+        if ($res['success']) {
+            $this->dispatch('toast', message: $res['message'], type: 'success');
+            session()->flash('message', $res['message']);
+        } else {
+            $this->dispatch('toast', message: $res['message'], type: 'error');
         }
-
-        Vendor::findOrFail($id)->delete();
-        $this->dispatch('toast', message: 'Vendor pengangkut berhasil dihapus.', type: 'success');
-        session()->flash('message', 'Vendor pengangkut berhasil dihapus.');
     }
 
     // --- Action: Buyer ---
     public function saveBuyer(): void
     {
-        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi pembeli/pengepul.');
-        }
-
-        $this->validate([
-            'buyerName' => ['required', 'string', 'max:100'],
-            'buyerContact' => ['nullable', 'string', 'max:100'],
+        $result = app(MasterDataController::class)->saveBuyer([
+            'id' => $this->editingBuyerId,
+            'name' => $this->buyerName,
+            'contact' => $this->buyerContact,
         ]);
 
-        Buyer::updateOrCreate(
-            ['id' => $this->editingBuyerId],
-            [
-                'name' => strip_tags(trim($this->buyerName)),
-                'contact' => strip_tags(trim($this->buyerContact)),
-            ]
-        );
-
         $this->reset(['buyerName', 'buyerContact', 'editingBuyerId']);
-        $this->dispatch('toast', message: 'Pembeli/Pengepul berhasil disimpan.', type: 'success');
-        session()->flash('message', 'Pembeli/Pengepul berhasil disimpan.');
+        $this->dispatch('toast', message: $result['message'], type: 'success');
+        session()->flash('message', $result['message']);
     }
 
     public function editBuyer(int $id): void
@@ -366,34 +263,26 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteBuyer(int $id): void
     {
-        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak menghapus pengepul.');
+        $res = app(MasterDataController::class)->executeDelete('buyer', $id);
+        if ($res['success']) {
+            $this->dispatch('toast', message: $res['message'], type: 'success');
+            session()->flash('message', $res['message']);
+        } else {
+            $this->dispatch('toast', message: $res['message'], type: 'error');
         }
-
-        Buyer::findOrFail($id)->delete();
-        $this->dispatch('toast', message: 'Pembeli/Pengepul berhasil dihapus.', type: 'success');
-        session()->flash('message', 'Pembeli/Pengepul berhasil dihapus.');
     }
 
     // --- Action: Expense Category ---
     public function saveCategory(): void
     {
-        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi kategori pengeluaran.');
-        }
-
-        $this->validate([
-            'categoryName' => ['required', 'string', 'max:100'],
+        $result = app(MasterDataController::class)->saveExpenseCategory([
+            'id' => $this->editingCategoryId,
+            'name' => $this->categoryName,
         ]);
 
-        ExpenseCategory::updateOrCreate(
-            ['id' => $this->editingCategoryId],
-            ['name' => strip_tags(trim($this->categoryName))]
-        );
-
         $this->reset(['categoryName', 'editingCategoryId']);
-        $this->dispatch('toast', message: 'Kategori pengeluaran berhasil disimpan.', type: 'success');
-        session()->flash('message', 'Kategori pengeluaran berhasil disimpan.');
+        $this->dispatch('toast', message: $result['message'], type: 'success');
+        session()->flash('message', $result['message']);
     }
 
     public function editCategory(int $id): void
@@ -410,13 +299,13 @@ new #[Layout('layouts.app')] class extends Component
 
     public function deleteCategory(int $id): void
     {
-        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak menghapus kategori pengeluaran.');
+        $res = app(MasterDataController::class)->executeDelete('category', $id);
+        if ($res['success']) {
+            $this->dispatch('toast', message: $res['message'], type: 'success');
+            session()->flash('message', $res['message']);
+        } else {
+            $this->dispatch('toast', message: $res['message'], type: 'error');
         }
-
-        ExpenseCategory::findOrFail($id)->delete();
-        $this->dispatch('toast', message: 'Kategori pengeluaran berhasil dihapus.', type: 'success');
-        session()->flash('message', 'Kategori pengeluaran berhasil dihapus.');
     }
 }; ?>
 
