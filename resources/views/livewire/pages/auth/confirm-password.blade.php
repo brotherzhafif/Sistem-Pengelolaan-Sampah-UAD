@@ -38,7 +38,7 @@ new #[Layout('layouts.guest')] class extends Component
         {{ __('This is a secure area of the application. Please confirm your password before continuing.') }}
     </div>
 
-    <form wire:submit="confirmPassword">
+    <form wire:submit="confirmPassword" action="#" method="POST" onsubmit="event.preventDefault();">
         <!-- Password -->
         <div>
             <x-input-label for="password" :value="__('Password')" />

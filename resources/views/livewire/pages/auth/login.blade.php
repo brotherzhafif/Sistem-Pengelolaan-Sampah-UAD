@@ -9,6 +9,13 @@ new #[Layout('layouts.guest')] class extends Component
 {
     public LoginForm $form;
 
+    public function mount(): void
+    {
+        if (request()->filled('email')) {
+            $this->form->email = (string) request()->query('email');
+        }
+    }
+
     /**
      * Handle an incoming authentication request.
      */
@@ -33,7 +40,7 @@ new #[Layout('layouts.guest')] class extends Component
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form wire:submit="login" class="space-y-4">
+    <form wire:submit="login" action="#" method="POST" onsubmit="event.preventDefault();" class="space-y-4">
         <!-- Email Address -->
         <div class="form-control">
             <label class="label" for="email">
@@ -118,4 +125,10 @@ new #[Layout('layouts.guest')] class extends Component
             </div>
         @endif
     </form>
+
+    <script>
+        if (window.location.search && (window.location.search.includes('email=') || window.location.search.includes('password='))) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    </script>
 </div>

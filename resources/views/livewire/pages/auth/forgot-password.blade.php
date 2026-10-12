@@ -44,7 +44,7 @@ new #[Layout('layouts.guest')] class extends Component
     <!-- Session Status -->
     <x-auth-session-status class="mb-4" :status="session('status')" />
 
-    <form wire:submit="sendPasswordResetLink">
+    <form wire:submit="sendPasswordResetLink" action="#" method="POST" onsubmit="event.preventDefault();">
         <!-- Email Address -->
         <div>
             <x-input-label for="email" :value="__('Email')" />
