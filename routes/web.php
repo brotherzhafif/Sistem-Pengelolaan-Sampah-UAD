@@ -36,7 +36,7 @@ Route::get('users', [App\Http\Controllers\UserController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('users.index');
 
-Volt::route('reports', 'pages.reports.index')
+Route::get('reports', [App\Http\Controllers\ReportController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('reports');
 
