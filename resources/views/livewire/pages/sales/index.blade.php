@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\SaleController;
 use App\Models\Buyer;
 use App\Models\Campus;
 use App\Models\Sale;
-use App\Models\SaleItem;
 use App\Models\WasteType;
 use App\Services\LedgerService;
 use App\Services\StockService;
@@ -74,12 +74,12 @@ new #[Layout('layouts.app')] class extends Component
             : ($user->campus_id ? (int) $user->campus_id : Campus::first()?->id);
             
         $this->formCampusId = $defaultCampusId;
-        $this->formBuyerId = Buyer::first()?->id;
+        $this->formBuyerId = Buyer::getAllBuyers()->first()?->id;
         $this->formDate = Carbon::today()->format('Y-m-d');
         $this->formNotes = '';
 
         // Ambil jenis sampah terpilah (is_sellable = true)
-        $sellableTypes = WasteType::where('is_sellable', true)->where('is_active', true)->orderBy('name')->get();
+        $sellableTypes = WasteType::getActiveSellableTypes();
         $this->saleItems = [];
         foreach ($sellableTypes as $type) {
             $this->saleItems[] = [
@@ -124,88 +124,29 @@ new #[Layout('layouts.app')] class extends Component
         return round($total, 2);
     }
 
-    public function saveSale(StockService $stockService, LedgerService $ledgerService): void
+    public function saveSale(SaleController $controller, StockService $stockService, LedgerService $ledgerService): void
     {
-        $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_penjualan', 'Petugas Penjualan', 'pengurus_bank_sampah']) && !$user->can('bank_sampah.sale.create')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mencatat transaksi penjualan.');
-        }
+        try {
+            $result = $controller->store([
+                'campus_id' => $this->formCampusId,
+                'buyer_id' => $this->formBuyerId,
+                'sale_date' => $this->formDate,
+                'notes' => $this->formNotes,
+                'items' => $this->saleItems,
+            ], $stockService, $ledgerService);
 
-        $this->validate([
-            'formCampusId' => ['required', 'exists:campuses,id'],
-            'formBuyerId' => ['required', 'exists:buyers,id'],
-            'formDate' => ['required', 'date'],
-            'formNotes' => ['nullable', 'string', 'max:500'],
-            'saleItems' => ['required', 'array', 'min:1'],
-            'saleItems.*.waste_type_id' => ['required', 'exists:waste_types,id'],
-            'saleItems.*.weight_kg' => ['nullable', 'numeric', 'min:0', 'max:10000'],
-            'saleItems.*.price_per_kg' => ['required', 'numeric', 'min:0'],
-        ]);
-
-        // Cek minimal ada 1 jenis sampah yang dijual dengan bobot > 0
-        $itemsToSell = [];
-        foreach ($this->saleItems as $index => $item) {
-            $weight = floatval($item['weight_kg'] ?? 0);
-            $price = floatval($item['price_per_kg'] ?? 0);
-
-        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
-        $targetCampusId = $isSuperAdmin ? (int) $this->formCampusId : (int) $user->campus_id;
-
-        if ($weight > 0) {
-                // Validasi ketersediaan stok aktual di kampus bersangkutan
-                $availableStock = $stockService->getAvailableStock($item['waste_type_id'], $targetCampusId);
-
-                if ($weight > $availableStock) {
-                    $this->addError(
-                        "saleItems.{$index}.weight_kg",
-                        "Stok '{$item['waste_name']}' tidak mencukupi (Tersedia: " . number_format($availableStock, 1) . " kg, Diminta: " . number_format($weight, 1) . " kg)."
-                    );
-                    return;
+            $this->showCreateModal = false;
+            $this->resetForm();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $msg) {
+                    $this->addError($key, $msg);
                 }
-
-                $itemsToSell[] = [
-                    'waste_type_id' => $item['waste_type_id'],
-                    'weight_kg' => $weight,
-                    'price_per_kg' => $price,
-                    'subtotal' => round($weight * $price, 2),
-                ];
             }
         }
-
-        if (empty($itemsToSell)) {
-            $this->addError('saleItems', 'Harap isi bobot penjualan minimal untuk salah satu jenis sampah.');
-            return;
-        }
-
-        $totalAmount = array_sum(array_column($itemsToSell, 'subtotal'));
-
-        $sale = Sale::create([
-            'campus_id' => $targetCampusId,
-            'buyer_id' => $this->formBuyerId,
-            'sale_date' => $this->formDate,
-            'total_amount' => $totalAmount,
-            'created_by' => auth()->id(),
-            'notes' => $this->formNotes ? strip_tags(trim($this->formNotes)) : null,
-        ]);
-
-        foreach ($itemsToSell as $item) {
-            SaleItem::create([
-                'sale_id' => $sale->id,
-                'waste_type_id' => $item['waste_type_id'],
-                'weight_kg' => $item['weight_kg'],
-                'price_per_kg' => $item['price_per_kg'],
-                'subtotal' => $item['subtotal'],
-            ]);
-        }
-
-        $newBalance = $ledgerService->getLatestBalance((int) $this->formCampusId);
-        $toastMsg = "Penjualan Rp " . number_format($totalAmount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
-
-        $this->showCreateModal = false;
-        $this->resetForm();
-        $this->dispatch('close-modal');
-        $this->dispatch('toast', message: $toastMsg, type: 'success');
-        session()->flash('status', $toastMsg);
     }
 
     public function confirmDelete(int $id): void
@@ -219,33 +160,23 @@ new #[Layout('layouts.app')] class extends Component
         $this->dispatch('close-modal');
     }
 
-    public function deleteSale(): void
+    public function deleteSale(SaleController $controller): void
     {
         if (!$this->confirmDeleteSaleId) {
             return;
         }
 
-        $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_penjualan', 'Petugas Penjualan', 'pengurus_bank_sampah']) && !$user->can('bank_sampah.sale.create')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus transaksi penjualan.');
-        }
-
-        $sale = Sale::findOrFail($this->confirmDeleteSaleId);
-
-        // Otorisasi kampus
-        if (auth()->user()->campus_id && auth()->user()->campus_id !== $sale->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            $this->dispatch('toast', message: 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.', type: 'error');
-            session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.');
-            $this->confirmDeleteSaleId = null;
-            $this->dispatch('close-modal');
-            return;
-        }
-
-        $sale->delete(); // Observer otomatis hapus jurnal keuangan & sinkronkan buku besar
+        $result = $controller->destroy($this->confirmDeleteSaleId);
         $this->confirmDeleteSaleId = null;
         $this->dispatch('close-modal');
-        $this->dispatch('toast', message: 'Transaksi penjualan berhasil dihapus dan jurnal keuangan disesuaikan.', type: 'success');
-        session()->flash('status', 'Transaksi penjualan berhasil dihapus dan jurnal keuangan disesuaikan.');
+
+        if ($result['success']) {
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } else {
+            $this->dispatch('toast', message: $result['message'], type: 'error');
+            session()->flash('error', $result['message']);
+        }
     }
 
     public function with(StockService $stockService): array
@@ -258,38 +189,23 @@ new #[Layout('layouts.app')] class extends Component
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
-        $salesQuery = Sale::with(['campus', 'buyer', 'creator', 'items.wasteType'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('sale_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('sale_date', '<=', $this->filterDateTo))
-            ->orderBy('sale_date', 'desc')
-            ->orderBy('id', 'desc');
-
+        $sales = Sale::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, 8);
         $stockSummary = $stockService->getStockSummary($campusQueryId);
-
-        $totalRevenue = Sale::when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('sale_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('sale_date', '<=', $this->filterDateTo))
-            ->sum('total_amount');
-
-        $totalSoldFiltered = SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->when($campusQueryId, fn($q) => $q->where('sales.campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('sales.sale_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('sales.sale_date', '<=', $this->filterDateTo))
-            ->sum('sale_items.weight_kg');
+        $totalRevenue = Sale::getTotalRevenue($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
+        $totalSoldFiltered = Sale::getTotalSoldWeight($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
 
         return [
             'isSuperAdmin' => $isSuperAdmin,
             'canCreate' => $canCreate,
-            'campuses' => Campus::orderBy('id')->get(),
-            'buyers' => Buyer::orderBy('name')->get(),
-            'sales' => $salesQuery->paginate(8),
+            'campuses' => Campus::getActiveCampuses(),
+            'buyers' => Buyer::getAllBuyers(),
+            'sales' => $sales,
             'selectedSale' => $this->viewSaleId 
-                ? Sale::with(['campus', 'buyer', 'creator', 'items.wasteType'])->find($this->viewSaleId) 
+                ? Sale::getDetailedSale($this->viewSaleId) 
                 : null,
             'stockSummary' => $stockSummary,
-            'totalRevenue' => (float) $totalRevenue,
-            'totalSoldFiltered' => (float) $totalSoldFiltered,
+            'totalRevenue' => $totalRevenue,
+            'totalSoldFiltered' => $totalSoldFiltered,
         ];
     }
 }; ?>

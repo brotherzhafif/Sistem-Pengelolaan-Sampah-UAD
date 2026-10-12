@@ -13,5 +13,13 @@ class Buyer extends Model
         'name',
         'contact',
     ];
+
+    /**
+     * Mengambil daftar seluruh pembeli / lapak terurut alfabetik.
+     */
+    public static function getAllBuyers()
+    {
+        return static::orderBy('name')->get();
+    }
 }
 

@@ -12,7 +12,7 @@ Route::get('weighing', [App\Http\Controllers\WeighingController::class, 'index']
     ->middleware(['auth', 'verified'])
     ->name('weighing');
 
-Volt::route('sales', 'pages.sales.index')
+Route::get('sales', [App\Http\Controllers\SaleController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('sales');
 
