@@ -38,5 +38,76 @@ class Expense extends Model
     {
         return $this->belongsTo(User::class, 'created_by');
     }
+
+    /**
+     * Scope query berdasarkan ID Kampus.
+     */
+    public function scopeForCampus($query, ?int $campusId)
+    {
+        return $query->when($campusId, fn($q) => $q->where('campus_id', $campusId));
+    }
+
+    /**
+     * Scope query berdasarkan Kategori Pengeluaran.
+     */
+    public function scopeForCategory($query, ?int $categoryId)
+    {
+        return $query->when($categoryId, fn($q) => $q->where('expense_category_id', $categoryId));
+    }
+
+    /**
+     * Scope query berdasarkan rentang tanggal.
+     */
+    public function scopeDateBetween($query, ?string $from, ?string $to)
+    {
+        return $query
+            ->when($from, fn($q) => $q->whereDate('expense_date', '>=', $from))
+            ->when($to, fn($q) => $q->whereDate('expense_date', '<=', $to));
+    }
+
+    /**
+     * Mengambil daftar data pengeluaran terpaginasi dengan relasi.
+     */
+    public static function getFilteredList(?int $campusId, ?int $categoryId, ?string $dateFrom, ?string $dateTo, int $perPage = 8)
+    {
+        return static::with(['campus', 'category', 'creator'])
+            ->forCampus($campusId)
+            ->forCategory($categoryId)
+            ->dateBetween($dateFrom, $dateTo)
+            ->orderBy('expense_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Mengambil ringkasan metrik statistik pengeluaran.
+     */
+    public static function getSummaryStats(?int $campusId, ?int $categoryId, ?string $dateFrom, ?string $dateTo): array
+    {
+        $statsQuery = static::query()
+            ->forCampus($campusId)
+            ->forCategory($categoryId)
+            ->dateBetween($dateFrom, $dateTo);
+
+        $totalAmount = (float) $statsQuery->sum('amount');
+        $totalCount = (int) $statsQuery->count();
+        $maxAmount = (float) $statsQuery->max('amount');
+        $avgAmount = $totalCount > 0 ? $totalAmount / $totalCount : 0.0;
+
+        return [
+            'totalAmount' => $totalAmount,
+            'totalCount' => $totalCount,
+            'maxAmount' => $maxAmount,
+            'avgAmount' => $avgAmount,
+        ];
+    }
+
+    /**
+     * Mengambil detail pengeluaran berdasarkan ID.
+     */
+    public static function getDetailedExpense(int $id): ?self
+    {
+        return static::with(['campus', 'category', 'creator'])->find($id);
+    }
 }
 

@@ -36,5 +36,13 @@ class Campus extends Model
     {
         return $this->hasMany(WeighingSession::class);
     }
+
+    /**
+     * Mengambil daftar kampus yang aktif.
+     */
+    public static function getActiveCampuses()
+    {
+        return static::where('is_active', true)->orderBy('id')->get();
+    }
 }
 

@@ -12,5 +12,13 @@ class ExpenseCategory extends Model
     protected $fillable = [
         'name',
     ];
+
+    /**
+     * Mengambil seluruh kategori pengeluaran terurut nama.
+     */
+    public static function getAllCategories()
+    {
+        return static::orderBy('name')->get();
+    }
 }
 

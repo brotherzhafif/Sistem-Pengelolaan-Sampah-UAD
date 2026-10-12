@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ExpenseController;
 use App\Models\Campus;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -79,48 +80,20 @@ new #[Layout('layouts.app')] class extends Component
         $this->resetForm();
     }
 
-    public function saveExpense(LedgerService $ledgerService): void
+    public function saveExpense(LedgerService $ledgerService, ExpenseController $controller): void
     {
-        $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'pengurus_bank_sampah', 'Pengurus Bank Sampah']) && !$user->can('expenses.create')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mencatat pengeluaran.');
-        }
-
-        $this->validate([
-            'formCampusId' => ['required', 'exists:campuses,id'],
-            'formCategoryId' => ['required', 'exists:expense_categories,id'],
-            'formDate' => ['required', 'date'],
-            'formAmount' => ['required', 'numeric', 'min:100', 'max:100000000'],
-            'formDescription' => ['required', 'string', 'max:255'],
-        ], [
-            'formCampusId.required' => 'Unit kampus wajib dipilih.',
-            'formCategoryId.required' => 'Kategori pengeluaran wajib dipilih.',
-            'formDate.required' => 'Tanggal pengeluaran wajib diisi.',
-            'formAmount.required' => 'Nominal biaya wajib diisi.',
-            'formAmount.min' => 'Nominal biaya minimal Rp 100.',
-            'formDescription.required' => 'Keterangan pengeluaran wajib diisi.',
-        ]);
-
-        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
-        $campusId = $isSuperAdmin ? (int) $this->formCampusId : (int) $user->campus_id;
-        $amount = (float) $this->formAmount;
-
-        Expense::create([
-            'campus_id' => $campusId,
-            'expense_category_id' => (int) $this->formCategoryId,
+        $result = $controller->store([
+            'campus_id' => $this->formCampusId,
+            'expense_category_id' => $this->formCategoryId,
             'expense_date' => $this->formDate,
-            'amount' => $amount,
-            'description' => strip_tags(trim($this->formDescription)),
-            'created_by' => auth()->id(),
-        ]);
-
-        $newBalance = $ledgerService->getLatestBalance($campusId);
-        $toastMsg = "Pengeluaran Rp " . number_format($amount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
+            'amount' => $this->formAmount,
+            'description' => $this->formDescription,
+        ], $ledgerService);
 
         $this->closeCreateModal();
         $this->dispatch('close-modal');
-        $this->dispatch('toast', message: $toastMsg, type: 'success');
-        session()->flash('status', $toastMsg);
+        $this->dispatch('toast', message: $result['message'], type: 'success');
+        session()->flash('status', $result['message']);
     }
 
     public function viewExpense(int $id): void
@@ -143,28 +116,19 @@ new #[Layout('layouts.app')] class extends Component
         $this->deleteExpenseId = null;
     }
 
-    public function deleteExpense(): void
+    public function deleteExpense(ExpenseController $controller): void
     {
         if ($this->deleteExpenseId) {
-            $user = auth()->user();
-            if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'keuangan', 'Keuangan', 'pengurus_bank_sampah', 'Pengurus Bank Sampah']) && !$user->can('expenses.create')) {
-                abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus pengeluaran.');
-            }
-
-            $expense = Expense::findOrFail($this->deleteExpenseId);
-
-            if ($user->campus_id && $user->campus_id !== $expense->campus_id && !$user->hasRole(['super_admin', 'Super Admin'])) {
-                $this->dispatch('toast', message: 'Anda tidak memiliki otoritas untuk menghapus data pengeluaran kampus ini.', type: 'error');
-                $this->deleteExpenseId = null;
-                $this->dispatch('close-modal');
-                return;
-            }
-
-            $expense->delete(); // ExpenseObserver auto deletes from keuangan & updates buku_besar
+            $result = $controller->destroy($this->deleteExpenseId);
             $this->deleteExpenseId = null;
             $this->dispatch('close-modal');
-            $this->dispatch('toast', message: 'Data pengeluaran operasional berhasil dihapus.', type: 'success');
-            session()->flash('message', 'Data pengeluaran operasional berhasil dihapus.');
+
+            if ($result['success']) {
+                $this->dispatch('toast', message: $result['message'], type: 'success');
+                session()->flash('message', $result['message']);
+            } else {
+                $this->dispatch('toast', message: $result['message'], type: 'error');
+            }
         }
     }
 
@@ -178,43 +142,30 @@ new #[Layout('layouts.app')] class extends Component
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
-        $query = Expense::with(['campus', 'category', 'creator'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterCategoryId, fn($q) => $q->where('expense_category_id', $this->filterCategoryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('expense_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('expense_date', '<=', $this->filterDateTo))
-            ->orderBy('expense_date', 'desc')
-            ->orderBy('id', 'desc');
-
-        $expenses = $query->paginate(8);
-
-        // Agregasi Ringkasan
-        $statsQuery = Expense::query()
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterCategoryId, fn($q) => $q->where('expense_category_id', $this->filterCategoryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('expense_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('expense_date', '<=', $this->filterDateTo));
-
-        $totalAmount = (float) $statsQuery->sum('amount');
-        $totalCount = (int) $statsQuery->count();
-        $maxAmount = (float) $statsQuery->max('amount');
-        $avgAmount = $totalCount > 0 ? $totalAmount / $totalCount : 0.0;
-
-        $detailedExpense = $this->viewExpenseId
-            ? Expense::with(['campus', 'category', 'creator'])->find($this->viewExpenseId)
-            : null;
+        $stats = Expense::getSummaryStats(
+            $campusQueryId,
+            $this->filterCategoryId,
+            $this->filterDateFrom,
+            $this->filterDateTo
+        );
 
         return [
             'isSuperAdmin' => $isSuperAdmin,
             'canCreate' => $canCreate,
-            'campuses' => Campus::where('is_active', true)->orderBy('id')->get(),
-            'categories' => ExpenseCategory::orderBy('name')->get(),
-            'expenses' => $expenses,
-            'detailedExpense' => $detailedExpense,
-            'totalAmount' => $totalAmount,
-            'totalCount' => $totalCount,
-            'maxAmount' => $maxAmount,
-            'avgAmount' => $avgAmount,
+            'campuses' => Campus::getActiveCampuses(),
+            'categories' => ExpenseCategory::getAllCategories(),
+            'expenses' => Expense::getFilteredList(
+                $campusQueryId,
+                $this->filterCategoryId,
+                $this->filterDateFrom,
+                $this->filterDateTo,
+                8
+            ),
+            'detailedExpense' => $this->viewExpenseId ? Expense::getDetailedExpense($this->viewExpenseId) : null,
+            'totalAmount' => $stats['totalAmount'],
+            'totalCount' => $stats['totalCount'],
+            'maxAmount' => $stats['maxAmount'],
+            'avgAmount' => $stats['avgAmount'],
         ];
     }
 }; ?>

@@ -20,7 +20,7 @@ Volt::route('pickups', 'pages.pickups.index')
     ->middleware(['auth', 'verified'])
     ->name('pickups');
 
-Volt::route('expenses', 'pages.expenses.index')
+Route::get('expenses', [App\Http\Controllers\ExpenseController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('expenses');
 
