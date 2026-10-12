@@ -12,9 +12,8 @@ use App\Models\WeighingSession;
 use App\Services\AlertService;
 use App\Services\LedgerService;
 use App\Services\StockService;
-use Illuminate\Container\Container;
+use App\Livewire\Pages\Dashboard\Index as DashboardComponent;
 use Illuminate\Http\Request;
-use Livewire\Volt\LivewireManager;
 
 class DashboardController extends Controller
 {
@@ -28,12 +27,7 @@ class DashboardController extends Controller
             return redirect()->route('login');
         }
 
-        // Resolusi komponen Livewire Volt untuk View layer
-        $container = Container::getInstance();
-        return $container->call([
-            $container->make(LivewireManager::class)->new('pages.dashboard.index'),
-            '__invoke',
-        ]);
+        return app(DashboardComponent::class)();
     }
 
     /**

@@ -59,3 +59,4 @@ class Index extends Component
         ], $metrics));
     }
 }
+
