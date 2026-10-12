@@ -40,7 +40,7 @@ Route::get('reports', [App\Http\Controllers\ReportController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('reports');
 
-Volt::route('notifications', 'pages.notifications.index')
+Route::get('notifications', [App\Http\Controllers\NotificationController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('notifications');
 
