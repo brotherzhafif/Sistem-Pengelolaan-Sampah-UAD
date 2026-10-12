@@ -25,5 +25,13 @@ class WasteSource extends Model
     {
         return $this->belongsTo(Campus::class);
     }
+
+    /**
+     * Mengambil daftar sumber timbulan berdasarkan unit kampus.
+     */
+    public static function getByCampus(?int $campusId)
+    {
+        return static::when($campusId, fn($q) => $q->where('campus_id', $campusId))->get();
+    }
 }
 

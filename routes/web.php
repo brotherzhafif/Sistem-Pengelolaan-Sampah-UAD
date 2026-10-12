@@ -8,7 +8,7 @@ Route::get('dashboard', [App\Http\Controllers\DashboardController::class, 'index
     ->middleware(['auth', 'verified'])
     ->name('dashboard');
 
-Volt::route('weighing', 'pages.weighing.index')
+Route::get('weighing', [App\Http\Controllers\WeighingController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('weighing');
 

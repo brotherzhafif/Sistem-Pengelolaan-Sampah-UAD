@@ -1,9 +1,9 @@
 <?php
 
+use App\Http\Controllers\WeighingController;
 use App\Models\Campus;
 use App\Models\WasteSource;
 use App\Models\WasteType;
-use App\Models\WeighingItem;
 use App\Models\WeighingSession;
 use App\Services\StockService;
 use Carbon\Carbon;
@@ -61,12 +61,12 @@ new #[Layout('layouts.app')] class extends Component
             : ($user->campus_id ? (int) $user->campus_id : Campus::first()?->id);
             
         $this->formCampusId = $defaultCampusId;
-        $this->formSourceId = WasteSource::where('campus_id', $this->formCampusId)->first()?->id;
+        $this->formSourceId = WasteSource::getByCampus($this->formCampusId)->first()?->id;
         $this->formDate = Carbon::today()->format('Y-m-d');
         $this->formNotes = '';
         
         // Inisialisasi baris penimbangan otomatis untuk semua tipe sampah aktif
-        $activeTypes = WasteType::where('is_active', true)->orderBy('category')->orderBy('name')->get();
+        $activeTypes = WasteType::getActiveTypes();
         $this->formItems = [];
         foreach ($activeTypes as $type) {
             $this->formItems[] = [
@@ -104,71 +104,32 @@ new #[Layout('layouts.app')] class extends Component
 
     public function updatedFormCampusId(): void
     {
-        $this->formSourceId = WasteSource::where('campus_id', $this->formCampusId)->first()?->id;
+        $this->formSourceId = WasteSource::getByCampus($this->formCampusId)->first()?->id;
     }
 
-    public function saveWeighing(): void
+    public function saveWeighing(WeighingController $controller): void
     {
-        $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) && !$user->can('weighing.create')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mencatat data penimbangan.');
-        }
+        try {
+            $result = $controller->store([
+                'campus_id' => $this->formCampusId,
+                'waste_source_id' => $this->formSourceId,
+                'weigh_date' => $this->formDate,
+                'notes' => $this->formNotes,
+                'items' => $this->formItems,
+            ]);
 
-        $this->validate([
-            'formCampusId' => ['required', 'exists:campuses,id'],
-            'formSourceId' => ['nullable', 'exists:waste_sources,id'],
-            'formDate' => ['required', 'date'],
-            'formNotes' => ['nullable', 'string', 'max:500'],
-            'formItems' => ['required', 'array', 'min:1'],
-            'formItems.*.waste_type_id' => ['required', 'exists:waste_types,id'],
-            'formItems.*.weight_kg' => ['nullable', 'numeric', 'min:0', 'max:10000'],
-            'formItems.*.volume_m3' => ['nullable', 'numeric', 'min:0', 'max:1000'],
-        ]);
-
-        // Cek minimal ada satu jenis sampah yang diisi bobot > 0
-        $hasFilledItem = false;
-        foreach ($this->formItems as $item) {
-            if (!empty($item['weight_kg']) && floatval($item['weight_kg']) > 0) {
-                $hasFilledItem = true;
-                break;
+            $this->showCreateModal = false;
+            $this->resetForm();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $msg) {
+                    $this->addError($key, $msg);
+                }
             }
         }
-
-        if (!$hasFilledItem) {
-            $this->addError('formItems', 'Harap isi bobot timbangan minimal untuk salah satu jenis sampah.');
-            return;
-        }
-
-        $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
-        $campusToSave = $isSuperAdmin ? (int) $this->formCampusId : (int) $user->campus_id;
-
-        $session = WeighingSession::create([
-            'campus_id' => $campusToSave,
-            'waste_source_id' => $this->formSourceId,
-            'weigh_date' => $this->formDate,
-            'created_by' => auth()->id(),
-            'notes' => $this->formNotes ? strip_tags(trim($this->formNotes)) : null,
-        ]);
-
-        foreach ($this->formItems as $item) {
-            $weight = !empty($item['weight_kg']) ? floatval($item['weight_kg']) : 0;
-            $volume = !empty($item['volume_m3']) ? floatval($item['volume_m3']) : null;
-
-            if ($weight > 0) {
-                WeighingItem::create([
-                    'weighing_session_id' => $session->id,
-                    'waste_type_id' => $item['waste_type_id'],
-                    'weight_kg' => $weight,
-                    'volume_m3' => $volume,
-                ]);
-            }
-        }
-
-        $this->showCreateModal = false;
-        $this->resetForm();
-        $this->dispatch('close-modal');
-        $this->dispatch('toast', message: 'Data penimbangan harian berhasil disimpan dengan rapi.', type: 'success');
-        session()->flash('status', 'Data penimbangan harian berhasil disimpan dengan rapi.');
     }
 
     // Modal Deletion state
@@ -185,33 +146,23 @@ new #[Layout('layouts.app')] class extends Component
         $this->dispatch('close-modal');
     }
 
-    public function deleteSession(): void
+    public function deleteSession(WeighingController $controller): void
     {
         if (!$this->confirmDeleteSessionId) {
             return;
         }
 
-        $user = auth()->user();
-        if (!$user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) && !$user->can('weighing.delete')) {
-            abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus data penimbangan.');
-        }
-
-        $session = WeighingSession::findOrFail($this->confirmDeleteSessionId);
-        
-        // Otorisasi: hanya Super Admin atau user dari kampus bersangkutan
-        if (auth()->user()->campus_id && auth()->user()->campus_id !== $session->campus_id && !auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
-            $this->dispatch('toast', message: 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.', type: 'error');
-            session()->flash('error', 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.');
-            $this->confirmDeleteSessionId = null;
-            $this->dispatch('close-modal');
-            return;
-        }
-
-        $session->delete();
+        $result = $controller->destroy($this->confirmDeleteSessionId);
         $this->confirmDeleteSessionId = null;
         $this->dispatch('close-modal');
-        $this->dispatch('toast', message: 'Data sesi penimbangan berhasil dihapus.', type: 'success');
-        session()->flash('status', 'Data sesi penimbangan berhasil dihapus.');
+
+        if ($result['success']) {
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } else {
+            $this->dispatch('toast', message: $result['message'], type: 'error');
+            session()->flash('error', $result['message']);
+        }
     }
 
     public function with(StockService $stockService): array
@@ -224,23 +175,17 @@ new #[Layout('layouts.app')] class extends Component
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
-        $sessionsQuery = WeighingSession::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])
-            ->when($campusQueryId, fn($q) => $q->where('campus_id', $campusQueryId))
-            ->when($this->filterDateFrom, fn($q) => $q->whereDate('weigh_date', '>=', $this->filterDateFrom))
-            ->when($this->filterDateTo, fn($q) => $q->whereDate('weigh_date', '<=', $this->filterDateTo))
-            ->orderBy('weigh_date', 'desc')
-            ->orderBy('id', 'desc');
-
+        $sessions = WeighingSession::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, 8);
         $stockSummary = $stockService->getStockSummary($campusQueryId);
 
         return [
             'isSuperAdmin' => $isSuperAdmin,
             'canCreate' => $canCreate,
-            'campuses' => Campus::orderBy('id')->get(),
-            'wasteSources' => WasteSource::where('campus_id', $this->formCampusId)->get(),
-            'sessions' => $sessionsQuery->paginate(8),
+            'campuses' => Campus::getActiveCampuses(),
+            'wasteSources' => WasteSource::getByCampus($this->formCampusId),
+            'sessions' => $sessions,
             'selectedSession' => $this->viewSessionId 
-                ? WeighingSession::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])->find($this->viewSessionId) 
+                ? WeighingSession::getDetailedSession($this->viewSessionId) 
                 : null,
             'stockSummary' => $stockSummary,
         ];

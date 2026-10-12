@@ -68,5 +68,27 @@ class WeighingSession extends Model
             ->take($limit)
             ->get();
     }
+
+    /**
+     * Mengambil daftar data sesi penimbangan terpaginasi.
+     */
+    public static function getFilteredList(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 8)
+    {
+        return static::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])
+            ->forCampus($campusId)
+            ->when($dateFrom, fn($q) => $q->whereDate('weigh_date', '>=', $dateFrom))
+            ->when($dateTo, fn($q) => $q->whereDate('weigh_date', '<=', $dateTo))
+            ->orderBy('weigh_date', 'desc')
+            ->orderBy('id', 'desc')
+            ->paginate($perPage);
+    }
+
+    /**
+     * Mengambil detail sesi penimbangan dengan item dan jenis sampah.
+     */
+    public static function getDetailedSession(int $id): ?self
+    {
+        return static::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])->find($id);
+    }
 }
 

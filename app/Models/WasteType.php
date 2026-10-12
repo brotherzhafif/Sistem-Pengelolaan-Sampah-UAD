@@ -22,5 +22,21 @@ class WasteType extends Model
         'is_sellable' => 'boolean',
         'is_active' => 'boolean',
     ];
+
+    /**
+     * Mengambil daftar seluruh jenis sampah aktif terurut kategori dan nama.
+     */
+    public static function getActiveTypes()
+    {
+        return static::where('is_active', true)->orderBy('category')->orderBy('name')->get();
+    }
+
+    /**
+     * Mengambil daftar jenis sampah aktif yang dapat dijual (anorganik/terpilah).
+     */
+    public static function getActiveSellableTypes()
+    {
+        return static::where('is_sellable', true)->where('is_active', true)->orderBy('name')->get();
+    }
 }
 
