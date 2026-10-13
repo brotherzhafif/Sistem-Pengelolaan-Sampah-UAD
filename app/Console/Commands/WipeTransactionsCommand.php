@@ -73,3 +73,4 @@ class WipeTransactionsCommand extends Command
         return 0;
     }
 }
+

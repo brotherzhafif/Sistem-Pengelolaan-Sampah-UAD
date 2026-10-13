@@ -44,3 +44,4 @@ return new class extends Migration
         // No-op: Data transaksi yang telah dibersihkan tidak dapat di-rollback
     }
 };
+
