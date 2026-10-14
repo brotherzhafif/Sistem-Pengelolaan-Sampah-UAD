@@ -62,6 +62,7 @@ class Sidebar extends Component
         $canReports = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isAuditor;
         $canMaster = $isSuperAdmin || $isAdminKampus;
         $canUsers = $isSuperAdmin || $isAdminKampus;
+        $canLogs = $isSuperAdmin || $isAdminKampus;
 
         $activeCampus = $this->activeCampusId ? Campus::find($this->activeCampusId) : $user->campus;
 
@@ -76,6 +77,7 @@ class Sidebar extends Component
             'canReports' => $canReports,
             'canMaster' => $canMaster,
             'canUsers' => $canUsers,
+            'canLogs' => $canLogs,
             'activeCampus' => $activeCampus,
             'campuses' => Campus::where('is_active', true)->orderBy('id')->get(),
         ]);

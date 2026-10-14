@@ -36,6 +36,10 @@ Route::get('users', [App\Http\Controllers\UserController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('users.index');
 
+Route::get('logs', [App\Http\Controllers\ActivityLogController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('logs.index');
+
 Route::get('reports', [App\Http\Controllers\ReportController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('reports');
