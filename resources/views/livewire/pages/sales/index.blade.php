@@ -58,7 +58,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sisa Stok Terpilah</span>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Akumulasi anorganik belum terjual</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Akumulasi sampah bernilai jual belum terjual</p>
                         </div>
                         <div class="w-7 h-7 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -301,9 +301,9 @@
                                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
                                             </svg>
                                         </div>
-                                        <h5 class="text-xs font-bold text-slate-800">Belum Ada Stok Sampah Anorganik Siap Jual</h5>
+                                        <h5 class="text-xs font-bold text-slate-800">Belum Ada Stok Sampah Bernilai Jual</h5>
                                         <p class="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                                            Hanya jenis sampah anorganik yang telah ditimbang dan memiliki sisa stok (> 0 kg) yang dapat dijual. Silakan lakukan penimbangan sampah terlebih dahulu pada modul Penimbangan.
+                                            Hanya jenis sampah yang bernilai jual (siap jual) dan telah ditimbang serta memiliki sisa stok (> 0 kg) yang dapat dijual. Silakan lakukan penimbangan sampah terlebih dahulu pada modul Penimbangan.
                                         </p>
                                     </div>
                                 @else

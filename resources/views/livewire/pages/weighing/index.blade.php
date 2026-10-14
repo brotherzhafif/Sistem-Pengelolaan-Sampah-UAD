@@ -41,7 +41,7 @@
             <div class="flex items-center justify-between">
                 <div>
                     <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Terpilah (Siap Jual)</span>
-                    <p class="text-[10px] text-slate-400 mt-0.5">Akumulasi anorganik belum terjual</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Akumulasi sampah bernilai jual belum terjual</p>
                 </div>
                 <div class="w-7 h-7 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
