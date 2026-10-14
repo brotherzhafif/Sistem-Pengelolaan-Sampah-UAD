@@ -1009,7 +1009,7 @@
                                 </div>
                                 <div class="flex items-center gap-1.5">
                                     <span class="w-3 h-1 bg-emerald-500 rounded"></span>
-                                    <span class="font-semibold text-emerald-700">Realisasi 2026 (Menurun ke 3.5%)</span>
+                                    <span class="font-semibold text-emerald-700">{{ $tabData['current_realization_label'] ?? 'Realisasi 2026' }}</span>
                                 </div>
                                 <div class="flex items-center gap-1.5">
                                     <span class="w-2.5 h-2.5 rounded-full bg-emerald-100 border border-emerald-400"></span>
@@ -1038,22 +1038,23 @@
                                 <div class="relative bg-slate-900/95 backdrop-blur-sm text-white rounded-xl shadow-xl px-3.5 py-2 text-xs border border-slate-700/80 whitespace-nowrap min-w-[180px]">
                                     <div class="flex items-center justify-between gap-3">
                                         <span class="text-[10px] text-slate-300 font-medium" x-text="activeResidu ? activeResidu.label : ''"></span>
-                                        <span class="px-1.5 py-0.2 rounded text-[9px] font-bold bg-emerald-950 text-emerald-300 border border-emerald-700/60" x-text="activeResidu ? activeResidu.desc : ''"></span>
+                                        <span :class="activeResidu && activeResidu.hasData ? 'bg-emerald-950 text-emerald-300 border-emerald-700/60' : 'bg-slate-800 text-slate-300 border-slate-600'" class="px-1.5 py-0.5 rounded text-[9px] font-bold border" x-text="activeResidu ? activeResidu.desc : ''"></span>
                                     </div>
                                     <div class="flex items-baseline gap-2 mt-1">
                                         <span class="text-emerald-400 font-bold font-mono text-base" x-text="activeResidu ? activeResidu.val : ''"></span>
                                         <span class="text-[10px] text-rose-300 line-through" x-text="activeResidu ? `vs ${activeResidu.baseline}` : ''"></span>
                                     </div>
-                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="activeResidu ? `Residu: ${activeResidu.residuKg} kg dari ${activeResidu.totalKg} kg` : ''"></div>
+                                    <div class="text-[10px] text-slate-400 mt-0.5" x-text="activeResidu ? (activeResidu.hasData ? `Residu: ${activeResidu.residuKg} kg dari ${activeResidu.totalKg} kg` : 'Belum ada data penimbangan') : ''"></div>
                                     <div class="absolute left-1/2 -bottom-1 -translate-x-1/2 w-2 h-2 bg-slate-900/95 rotate-45 border-r border-b border-slate-700/80"></div>
                                 </div>
                             </div>
 
                             @php
                                 $rPoints = $tabData['residu_points'] ?? [];
+                                $hasResiduData = !empty($tabData['has_residu_data']);
                                 $activePoly = implode(' ', array_map(fn($p) => $p['x'].','.$p['y'], $rPoints));
                                 $basePoly = implode(' ', array_map(fn($p) => $p['x'].','.$p['y_baseline'], $rPoints));
-                                $areaPoly = count($rPoints) > 0 ? "70,210 {$activePoly} 970,210" : '';
+                                $areaPoly = ($hasResiduData && count($rPoints) > 0) ? "70,210 {$activePoly} 970,210" : '';
                             @endphp
 
                             <svg viewBox="0 0 1000 240" class="w-full h-60 sm:h-64" preserveAspectRatio="none">
@@ -1095,8 +1096,8 @@
                                     <polyline points="{{ $basePoly }}" fill="none" stroke="#f43f5e" stroke-width="2" stroke-dasharray="6" opacity="0.65" />
                                 @endif
 
-                                <!-- 2026 Trend Curve (Solid Emerald) -->
-                                @if($activePoly)
+                                <!-- Realization Trend Curve (Solid Emerald) -->
+                                @if($activePoly && $hasResiduData)
                                     <polyline points="{{ $activePoly }}" fill="none" stroke="#10b981" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" />
                                 @endif
 
@@ -1111,11 +1112,15 @@
                                     <!-- Baseline dot -->
                                     <circle cx="{{ $rp['x'] }}" cy="{{ $rp['y_baseline'] }}" r="3" fill="#ffffff" stroke="#f43f5e" stroke-width="1.5" opacity="0.8" />
                                     <!-- Active dot -->
-                                    <circle cx="{{ $rp['x'] }}" cy="{{ $rp['y'] }}" r="4" fill="#ffffff" stroke="#10b981" stroke-width="2.5" class="transition-all" />
+                                    @if(!empty($rp['has_data']))
+                                        <circle cx="{{ $rp['x'] }}" cy="{{ $rp['y'] }}" r="4" fill="#ffffff" stroke="#10b981" stroke-width="2.5" class="transition-all" />
+                                    @else
+                                        <circle cx="{{ $rp['x'] }}" cy="{{ $rp['y'] }}" r="2.5" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.5" class="transition-all" />
+                                    @endif
                                     <!-- Hover hit zone -->
                                     <rect x="{{ $rp['x'] - 45 }}" y="20" width="90" height="200" fill="transparent" class="cursor-pointer"
-                                          @mouseenter="activeResidu = { label: '{{ $rp['month'] }}', val: '{{ number_format($rp['pct'], 1) }}%', baseline: '{{ number_format($rp['baseline_pct'], 1) }}%', residuKg: '{{ number_format($rp['residu_kg'], 1, ',', '.') }}', totalKg: '{{ number_format($rp['total_kg'], 1, ',', '.') }}', desc: '{{ $rp['desc'] }}', x: {{ round(($rp['x'] / 1000) * 100, 2) }}, y: {{ round(($rp['y'] / 240) * 100, 2) }} }"
-                                          @click="activeResidu = { label: '{{ $rp['month'] }}', val: '{{ number_format($rp['pct'], 1) }}%', baseline: '{{ number_format($rp['baseline_pct'], 1) }}%', residuKg: '{{ number_format($rp['residu_kg'], 1, ',', '.') }}', totalKg: '{{ number_format($rp['total_kg'], 1, ',', '.') }}', desc: '{{ $rp['desc'] }}', x: {{ round(($rp['x'] / 1000) * 100, 2) }}, y: {{ round(($rp['y'] / 240) * 100, 2) }} }" />
+                                          @mouseenter="activeResidu = { label: '{{ $rp['month'] }}', val: '{{ number_format($rp['pct'], 1) }}%', baseline: '{{ number_format($rp['baseline_pct'], 1) }}%', residuKg: '{{ number_format($rp['residu_kg'], 1, ',', '.') }}', totalKg: '{{ number_format($rp['total_kg'], 1, ',', '.') }}', desc: '{{ $rp['desc'] }}', hasData: {{ !empty($rp['has_data']) ? 'true' : 'false' }}, x: {{ round(($rp['x'] / 1000) * 100, 2) }}, y: {{ round(($rp['y'] / 240) * 100, 2) }} }"
+                                          @click="activeResidu = { label: '{{ $rp['month'] }}', val: '{{ number_format($rp['pct'], 1) }}%', baseline: '{{ number_format($rp['baseline_pct'], 1) }}%', residuKg: '{{ number_format($rp['residu_kg'], 1, ',', '.') }}', totalKg: '{{ number_format($rp['total_kg'], 1, ',', '.') }}', desc: '{{ $rp['desc'] }}', hasData: {{ !empty($rp['has_data']) ? 'true' : 'false' }}, x: {{ round(($rp['x'] / 1000) * 100, 2) }}, y: {{ round(($rp['y'] / 240) * 100, 2) }} }" />
                                 @endforeach
 
                                 <!-- X Axis Labels -->

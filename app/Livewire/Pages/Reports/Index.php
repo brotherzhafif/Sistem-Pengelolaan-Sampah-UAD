@@ -539,18 +539,20 @@ class Index extends Component
 
             $pctDiangkut = $univTotalKg > 0 ? round(($pickupTotalKg / $univTotalKg) * 100, 1) : 0;
 
-            // Tren Rasio Residu Bulanan (Jan s.d. Okt 2026)
+            // Tren Rasio Residu Bulanan (Jan s.d. Okt)
+            $filterYear = !empty($this->filterDateFrom) ? (int) date('Y', strtotime($this->filterDateFrom)) : (int) date('Y');
+
             $monthsMeta = [
-                1 => ['label' => 'Jan', 'name' => 'Januari 2026', 'baseline' => 11.5],
-                2 => ['label' => 'Feb', 'name' => 'Februari 2026', 'baseline' => 11.2],
-                3 => ['label' => 'Mar', 'name' => 'Maret 2026', 'baseline' => 10.8],
-                4 => ['label' => 'Apr', 'name' => 'April 2026', 'baseline' => 10.5],
-                5 => ['label' => 'Mei', 'name' => 'Mei 2026', 'baseline' => 10.1],
-                6 => ['label' => 'Jun', 'name' => 'Juni 2026', 'baseline' => 9.7],
-                7 => ['label' => 'Jul', 'name' => 'Juli 2026', 'baseline' => 9.2],
-                8 => ['label' => 'Ags', 'name' => 'Agustus 2026', 'baseline' => 8.8],
-                9 => ['label' => 'Sep', 'name' => 'September 2026', 'baseline' => 8.4],
-                10 => ['label' => 'Okt', 'name' => 'Oktober 2026', 'baseline' => 8.0],
+                1 => ['label' => 'Jan', 'name' => "Januari {$filterYear}", 'baseline' => 11.5],
+                2 => ['label' => 'Feb', 'name' => "Februari {$filterYear}", 'baseline' => 11.2],
+                3 => ['label' => 'Mar', 'name' => "Maret {$filterYear}", 'baseline' => 10.8],
+                4 => ['label' => 'Apr', 'name' => "April {$filterYear}", 'baseline' => 10.5],
+                5 => ['label' => 'Mei', 'name' => "Mei {$filterYear}", 'baseline' => 10.1],
+                6 => ['label' => 'Jun', 'name' => "Juni {$filterYear}", 'baseline' => 9.7],
+                7 => ['label' => 'Jul', 'name' => "Juli {$filterYear}", 'baseline' => 9.2],
+                8 => ['label' => 'Ags', 'name' => "Agustus {$filterYear}", 'baseline' => 8.8],
+                9 => ['label' => 'Sep', 'name' => "September {$filterYear}", 'baseline' => 8.4],
+                10 => ['label' => 'Okt', 'name' => "Oktober {$filterYear}", 'baseline' => 8.0],
             ];
 
             $residuPoints = [];
@@ -559,31 +561,25 @@ class Index extends Component
 
             foreach ($monthsMeta as $mNum => $meta) {
                 $mQuery = WeighingSession::with('items.wasteType')
-                    ->whereYear('weigh_date', 2026)
+                    ->whereYear('weigh_date', $filterYear)
                     ->whereMonth('weigh_date', $mNum)
                     ->when($campusId, fn($q) => $q->where('campus_id', $campusId))
                     ->get();
 
-                $mTotal = 0;
-                $mRes = 0;
+                $mTotal = 0.0;
+                $mRes = 0.0;
                 foreach ($mQuery as $sess) {
                     foreach ($sess->items as $item) {
                         $w = (float) $item->weight_kg;
                         $mTotal += $w;
-                        if (str_contains(strtolower($item->wasteType?->name ?? ''), 'residu')) {
+                        if (!$item->wasteType?->is_sellable || str_contains(strtolower($item->wasteType?->name ?? ''), 'residu')) {
                             $mRes += $w;
                         }
                     }
                 }
 
-                if ($mTotal > 0) {
-                    $mPct = round(($mRes / $mTotal) * 100, 1);
-                } else {
-                    $defaultTrajectory = [1 => 8.2, 2 => 7.8, 3 => 7.1, 4 => 6.4, 5 => 5.9, 6 => 5.3, 7 => 4.8, 8 => 4.3, 9 => 3.8, 10 => 3.5];
-                    $mPct = $defaultTrajectory[$mNum] ?? 4.0;
-                    $mTotal = 8500 + ($mNum * 320);
-                    $mRes = round(($mTotal * $mPct) / 100, 1);
-                }
+                $hasData = $mTotal > 0;
+                $mPct = $hasData ? round(($mRes / $mTotal) * 100, 1) : 0.0;
 
                 $xPos = $xStart + (($mNum - 1) * $xStep);
                 // Chart coordinate: 0% at y=210, 15% at y=30. Range = 180px
@@ -598,13 +594,20 @@ class Index extends Component
                     'baseline_pct' => $meta['baseline'],
                     'residu_kg' => $mRes,
                     'total_kg' => $mTotal,
+                    'has_data' => $hasData,
                     'sessions_count' => $mQuery->count(),
                     'x' => $xPos,
                     'y' => $yPos,
                     'y_baseline' => $yBase,
-                    'desc' => $mPct <= 10.0 ? 'Sesuai Target (< 10%)' : 'Perlu Intervensi',
+                    'desc' => $hasData ? ($mPct <= 10.0 ? 'Sesuai Target (< 10%)' : 'Perlu Intervensi') : 'Belum Ada Data Timbangan',
                 ];
             }
+
+            $monthsWithData = array_values(array_filter($residuPoints, fn($p) => $p['has_data']));
+            $latestMonth = !empty($monthsWithData) ? end($monthsWithData) : null;
+            $currentRealizationLabel = $latestMonth 
+                ? "Realisasi {$filterYear} (Bulan {$latestMonth['label']}: {$latestMonth['pct']}%)" 
+                : "Realisasi {$filterYear} (Belum ada data)";
 
             $tabData = [
                 'pct_residu' => $univSummary['pct_residu'],
@@ -614,6 +617,9 @@ class Index extends Component
                 'campus_rows' => $campusRows,
                 'univ_summary' => $univSummary,
                 'residu_points' => $residuPoints,
+                'filter_year' => $filterYear,
+                'has_residu_data' => !empty($monthsWithData),
+                'current_realization_label' => $currentRealizationLabel,
             ];
 
         // ══════════════════════════════════════════════════════════════
