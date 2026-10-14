@@ -86,9 +86,20 @@ class FinancialTransaction extends Model
             'totalDebet' => $totalDebet,
             'netCashFlow' => $totalKredit - $totalDebet,
             'salesRevenue' => $totalSales,
+            'totalSalesIncome' => $totalSales,
             'pickupExpense' => $totalPickup,
+            'totalPickupCost' => $totalPickup,
             'operationalExpense' => $totalExpense,
+            'totalExpenseCost' => $totalExpense,
         ];
+    }
+
+    /**
+     * Mengambil detail transaksi jurnal keuangan.
+     */
+    public static function getDetailedTransaction(int $id): ?self
+    {
+        return static::with(['campus', 'creator'])->find($id);
     }
 
     /**
