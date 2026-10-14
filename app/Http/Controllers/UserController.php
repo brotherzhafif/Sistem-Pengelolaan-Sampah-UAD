@@ -190,6 +190,15 @@ class UserController extends Controller
             }
         }
 
+        $binding = $user->getBindingInfo();
+        if ($binding['is_bound']) {
+            return [
+                'success' => false,
+                'message' => "Tidak dapat menghapus akun '{$user->name}': Pengguna memiliki riwayat data aktif (" . implode(', ', $binding['reasons']) . ").",
+                'binding' => $binding,
+            ];
+        }
+
         $userName = $user->name;
         $userEmail = $user->email;
         $campusId = $user->campus_id;

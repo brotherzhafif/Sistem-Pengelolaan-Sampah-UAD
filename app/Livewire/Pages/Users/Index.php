@@ -32,6 +32,7 @@ class Index extends Component
     public bool $isDeleteModalOpen = false;
     public ?int $deleteUserId = null;
     public string $deleteUserName = '';
+    public ?array $deleteBindingInfo = null;
 
     public function getRoleLabel(string $role): string
     {
@@ -196,6 +197,7 @@ class Index extends Component
 
         $this->deleteUserId = $user->id;
         $this->deleteUserName = $user->name;
+        $this->deleteBindingInfo = $user->getBindingInfo();
         $this->isDeleteModalOpen = true;
     }
 
@@ -204,11 +206,18 @@ class Index extends Component
         $this->isDeleteModalOpen = false;
         $this->deleteUserId = null;
         $this->deleteUserName = '';
+        $this->deleteBindingInfo = null;
     }
 
     public function deleteUser(): void
     {
         if (!$this->deleteUserId || $this->deleteUserId === auth()->id()) {
+            return;
+        }
+
+        if ($this->deleteBindingInfo && !empty($this->deleteBindingInfo['is_bound'])) {
+            $this->dispatch('toast', message: 'Akun ini terikat dengan data transaksi aktif dan tidak dapat dihapus.', type: 'error');
+            $this->closeDeleteModal();
             return;
         }
 

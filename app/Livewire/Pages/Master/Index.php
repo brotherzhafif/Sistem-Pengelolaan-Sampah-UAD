@@ -15,7 +15,14 @@ use Livewire\Component;
 #[Layout('layouts.app')]
 class Index extends Component
 {
-    public string $activeTab = 'sources'; // sources, types, vendors, buyers, categories
+    public string $activeTab = 'sources'; // campuses, sources, types, vendors, buyers, categories
+
+    // Campus Form state
+    public string $campusName = '';
+    public string $campusCode = '';
+    public string $campusAddress = '';
+    public bool $campusIsActive = true;
+    public ?int $editingCampusId = null;
 
     // Filter campus for sources (Super Admin can switch, regular user is locked to their campus)
     public ?int $selectedCampusId = null;
@@ -48,15 +55,28 @@ class Index extends Component
     public ?int $editingCategoryId = null;
 
     // Delete Confirmation Modal State
-    public ?string $deleteType = null; // 'source', 'type', 'vendor', 'buyer', 'category'
+    public ?string $deleteType = null; // 'campus', 'source', 'type', 'vendor', 'buyer', 'category'
     public ?int $deleteTargetId = null;
     public string $deleteTargetName = '';
+    public ?array $deleteBindingInfo = null;
 
     public function confirmDelete(string $type, int $id, string $name = ''): void
     {
         $this->deleteType = $type;
         $this->deleteTargetId = $id;
         $this->deleteTargetName = $name;
+
+        $model = match($type) {
+            'campus' => Campus::find($id),
+            'source' => WasteSource::find($id),
+            'type' => WasteType::find($id),
+            'vendor' => Vendor::find($id),
+            'buyer' => Buyer::find($id),
+            'category' => ExpenseCategory::find($id),
+            default => null,
+        };
+
+        $this->deleteBindingInfo = $model?->getBindingInfo() ?? null;
     }
 
     public function cancelDelete(): void
@@ -64,12 +84,19 @@ class Index extends Component
         $this->deleteType = null;
         $this->deleteTargetId = null;
         $this->deleteTargetName = '';
+        $this->deleteBindingInfo = null;
         $this->dispatch('close-modal');
     }
 
     public function executeDelete(): void
     {
         if (!$this->deleteTargetId || !$this->deleteType) {
+            return;
+        }
+
+        if ($this->deleteBindingInfo && !empty($this->deleteBindingInfo['is_bound'])) {
+            $this->dispatch('toast', message: 'Data ini terikat dengan data relasi lain dan tidak dapat dihapus.', type: 'error');
+            $this->cancelDelete();
             return;
         }
 
@@ -112,6 +139,17 @@ class Index extends Component
             'vendors' => Vendor::getAllVendors(),
             'buyers' => Buyer::getAllBuyers(),
             'expenseCategories' => ExpenseCategory::getAllCategories(),
+            'activeTab' => $this->activeTab,
+            'deleteType' => $this->deleteType,
+            'deleteTargetId' => $this->deleteTargetId,
+            'deleteTargetName' => $this->deleteTargetName,
+            'deleteBindingInfo' => $this->deleteBindingInfo,
+            'editingSourceId' => $this->editingSourceId,
+            'editingTypeId' => $this->editingTypeId,
+            'editingVendorId' => $this->editingVendorId,
+            'editingBuyerId' => $this->editingBuyerId,
+            'editingCategoryId' => $this->editingCategoryId,
+            'editingCampusId' => $this->editingCampusId,
         ]);
     }
 
@@ -303,6 +341,49 @@ class Index extends Component
     public function deleteCategory(int $id): void
     {
         $res = app(MasterDataController::class)->executeDelete('category', $id);
+        if ($res['success']) {
+            $this->dispatch('toast', message: $res['message'], type: 'success');
+            session()->flash('message', $res['message']);
+        } else {
+            $this->dispatch('toast', message: $res['message'], type: 'error');
+        }
+    }
+
+    // --- Action: Campus (Unit Kampus) ---
+    public function saveCampus(): void
+    {
+        $result = app(MasterDataController::class)->saveCampus([
+            'id' => $this->editingCampusId,
+            'name' => $this->campusName,
+            'code' => $this->campusCode,
+            'address' => $this->campusAddress,
+            'is_active' => $this->campusIsActive,
+        ]);
+
+        $this->reset(['campusName', 'campusCode', 'campusAddress', 'campusIsActive', 'editingCampusId']);
+        $this->campusIsActive = true;
+        $this->dispatch('toast', message: $result['message'], type: 'success');
+        session()->flash('message', $result['message']);
+    }
+
+    public function editCampus(int $id): void
+    {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            $this->dispatch('toast', message: 'Hanya Super Administrator yang berhak mengedit data unit kampus.', type: 'error');
+            return;
+        }
+
+        $campus = Campus::findOrFail($id);
+        $this->editingCampusId = $campus->id;
+        $this->campusName = $campus->name;
+        $this->campusCode = $campus->code;
+        $this->campusAddress = $campus->address ?? '';
+        $this->campusIsActive = (bool) $campus->is_active;
+    }
+
+    public function deleteCampus(int $id): void
+    {
+        $res = app(MasterDataController::class)->executeDelete('campus', $id);
         if ($res['success']) {
             $this->dispatch('toast', message: $res['message'], type: 'success');
             session()->flash('message', $res['message']);

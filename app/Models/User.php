@@ -101,4 +101,81 @@ class User extends Authenticatable
             ->sortBy(fn($r) => $rolePriority[$r->name] ?? 99)
             ->values();
     }
+
+    /**
+     * Memeriksa keterikatan data relasional (Foreign Key) yang dibuat oleh pengguna ini.
+     * Mencegah penghapusan akun jika sudah memiliki jejak audit transaksi operasional.
+     */
+    public function getBindingInfo(): array
+    {
+        $sessionCount = WeighingSession::where('created_by', $this->id)->count();
+        $saleCount = Sale::where('created_by', $this->id)->count();
+        $pickupCount = Pickup::where('created_by', $this->id)->count();
+        $expenseCount = Expense::where('created_by', $this->id)->count();
+        $ftCount = FinancialTransaction::where('created_by', $this->id)->count();
+
+        $bindings = [];
+        $reasons = [];
+
+        if ($sessionCount > 0) {
+            $bindings[] = [
+                'type' => 'weighing',
+                'label' => 'Sesi Penimbangan',
+                'count' => $sessionCount,
+                'url' => route('weighing'),
+                'badge' => "{$sessionCount} Penimbangan",
+            ];
+            $reasons[] = "Telah mencatat {$sessionCount} sesi penimbangan sampah";
+        }
+
+        if ($saleCount > 0) {
+            $bindings[] = [
+                'type' => 'sales',
+                'label' => 'Transaksi Penjualan',
+                'count' => $saleCount,
+                'url' => route('sales'),
+                'badge' => "{$saleCount} Penjualan",
+            ];
+            $reasons[] = "Telah mencatat {$saleCount} transaksi penjualan sampah";
+        }
+
+        if ($pickupCount > 0) {
+            $bindings[] = [
+                'type' => 'pickups',
+                'label' => 'Pengangkutan Residu',
+                'count' => $pickupCount,
+                'url' => route('pickups'),
+                'badge' => "{$pickupCount} Pengangkutan",
+            ];
+            $reasons[] = "Telah mencatat {$pickupCount} transaksi pengangkutan residu";
+        }
+
+        if ($expenseCount > 0) {
+            $bindings[] = [
+                'type' => 'expenses',
+                'label' => 'Pengeluaran Operasional',
+                'count' => $expenseCount,
+                'url' => route('expenses'),
+                'badge' => "{$expenseCount} Pengeluaran",
+            ];
+            $reasons[] = "Telah mencatat {$expenseCount} pengeluaran operasional";
+        }
+
+        if ($ftCount > 0) {
+            $bindings[] = [
+                'type' => 'finance',
+                'label' => 'Buku Kas Keuangan',
+                'count' => $ftCount,
+                'url' => route('finance'),
+                'badge' => "{$ftCount} Transaksi Kas",
+            ];
+            $reasons[] = "Telah mencatat {$ftCount} mutasi buku kas keuangan";
+        }
+
+        return [
+            'is_bound' => count($bindings) > 0,
+            'bindings' => $bindings,
+            'reasons' => $reasons,
+        ];
+    }
 }

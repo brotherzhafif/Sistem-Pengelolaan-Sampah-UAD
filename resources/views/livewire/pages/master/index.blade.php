@@ -12,6 +12,10 @@
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
             <!-- Navigation Tabs (Clean Dribbble style matching ref tokens) -->
             <div class="bg-white border border-slate-200 rounded-xl p-1.5 flex flex-wrap gap-1 shadow-sm">
+                <button wire:click="$set('activeTab', 'campuses')" 
+                        class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition {{ $activeTab === 'campuses' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+                    Unit Kampus (UAD)
+                </button>
                 <button wire:click="$set('activeTab', 'sources')" 
                         class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition {{ $activeTab === 'sources' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
                     Titik Sumber Sampah
@@ -33,6 +37,149 @@
                     Kategori Pengeluaran
                 </button>
             </div>
+
+            <!-- Tab 0: Unit Kampus UAD -->
+            @if ($activeTab === 'campuses')
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    <!-- Form Tambah/Edit Kampus -->
+                    @if ($isSuperAdmin)
+                        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
+                            <h3 class="font-bold text-sm text-slate-900 mb-3">
+                                {{ $editingCampusId ? 'Edit Unit Kampus' : 'Tambah Unit Kampus Baru' }}
+                            </h3>
+                            <form wire:submit="saveCampus" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kampus</label>
+                                    <input wire:model="campusName" type="text" placeholder="Contoh: Kampus 1 UAD" required maxlength="100" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                    <x-input-error :messages="$errors->get('campusName')" class="mt-1" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kode Singkat Kampus</label>
+                                    <input wire:model="campusCode" type="text" placeholder="Contoh: UAD-1" required maxlength="50" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                    <x-input-error :messages="$errors->get('campusCode')" class="mt-1" />
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Alamat Kampus (Opsional)</label>
+                                    <input wire:model="campusAddress" type="text" placeholder="Jl. Kapas No. 9, Semaki, Yogyakarta" maxlength="255" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                </div>
+                                <div class="flex items-center gap-2 pt-1">
+                                    <input wire:model="campusIsActive" type="checkbox" id="campus_is_active" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                    <label for="campus_is_active" class="text-xs text-slate-700 font-medium">Status Aktif Beroperasi</label>
+                                </div>
+                                <div class="flex gap-2 pt-2">
+                                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition">
+                                        {{ $editingCampusId ? 'Perbarui Kampus' : 'Simpan Kampus' }}
+                                    </button>
+                                    @if($editingCampusId)
+                                        <button type="button" wire:click="$set('editingCampusId', null)" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50">
+                                            Batal
+                                        </button>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center h-fit">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center mx-auto mb-2.5">
+                                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </div>
+                            <h4 class="font-bold text-xs text-slate-800">Unit Kampus Terpusat</h4>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Pengaturan data master unit kampus dikelola secara terpusat oleh Super Administrator.
+                            </p>
+                        </div>
+                    @endif
+
+                    <!-- Tabel Kampus -->
+                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+                        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Unit Kampus UAD ({{ $campuses->count() }})</span>
+                            <span class="text-[11px] text-slate-500 font-medium">PK Utama Sistem Relasional</span>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                                    <tr>
+                                        <th class="py-2.5 px-4 font-semibold">Nama Unit</th>
+                                        <th class="py-2.5 px-4 font-semibold">Kode</th>
+                                        <th class="py-2.5 px-4 font-semibold">Keterikatan Relasi (PK)</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @forelse($campuses as $campus)
+                                        @php $bInfo = $campus->getBindingInfo(); @endphp
+                                        <tr class="hover:bg-slate-50/60">
+                                            <td class="py-3 px-4 font-medium text-slate-900">
+                                                <div class="flex items-center gap-1.5">
+                                                    <span>{{ $campus->name }}</span>
+                                                    @if($campus->is_active)
+                                                        <span class="w-2 h-2 rounded-full bg-emerald-500" title="Aktif"></span>
+                                                    @else
+                                                        <span class="w-2 h-2 rounded-full bg-slate-300" title="Nonaktif"></span>
+                                                    @endif
+                                                </div>
+                                                <div class="text-[10px] text-slate-400 font-normal mt-0.5 truncate max-w-xs">{{ $campus->address ?? 'Alamat belum diatur' }}</div>
+                                            </td>
+                                            <td class="py-3 px-4 font-mono font-bold text-slate-600">{{ $campus->code }}</td>
+                                            <td class="py-3 px-4">
+                                                @if($bInfo['is_bound'])
+                                                    <div class="space-y-1">
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60">
+                                                            🔒 Terkunci (Induk Database)
+                                                        </span>
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @foreach($bInfo['bindings'] as $b)
+                                                                <a href="{{ $b['url'] }}" 
+                                                                   class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition" 
+                                                                   title="{{ $b['label'] }}: Klik untuk menuju halaman">
+                                                                    <span>{{ $b['badge'] }}</span>
+                                                                    <span class="text-slate-400">&rarr;</span>
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 font-medium">Bebas (Belum Terkait Data)</span>
+                                                @endif
+                                            </td>
+                                            @if ($isSuperAdmin)
+                                                <td class="py-3 px-4 text-right space-x-2">
+                                                    <button wire:click="editCampus({{ $campus->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
+                                                    @if($bInfo['is_bound'])
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('campus', {{ $campus->id }}, '{{ addslashes($campus->name) }}')" 
+                                                                class="text-xs text-slate-400 hover:text-amber-700 font-semibold cursor-pointer inline-flex items-center gap-1"
+                                                                title="Data terikat - Klik untuk info keterikatan">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                            </svg>
+                                                            Terkunci
+                                                        </button>
+                                                    @else
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('campus', {{ $campus->id }}, '{{ addslashes($campus->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @endif
+                                                </td>
+                                            @else
+                                                <td class="py-3 px-4 text-right">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">
+                                                        Pusat
+                                                    </span>
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="4" class="py-6 text-center text-slate-400">Belum ada kampus terdaftar.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            @endif
 
             <!-- Tab 1: Titik Sumber Sampah -->
             @if ($activeTab === 'sources')
@@ -91,22 +238,56 @@
                                     <tr>
                                         <th class="py-2.5 px-4 font-semibold">Nama Titik Sumber</th>
                                         <th class="py-2.5 px-4 font-semibold">Keterangan</th>
+                                        <th class="py-2.5 px-4 font-semibold">Keterikatan Relasi (PK)</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($sources as $source)
+                                        @php $bInfo = $source->getBindingInfo(); @endphp
                                         <tr class="hover:bg-slate-50/60">
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $source->name }}</td>
                                             <td class="py-3 px-4 text-slate-500">{{ $source->description ?? '-' }}</td>
+                                            <td class="py-3 px-4">
+                                                @if($bInfo['is_bound'])
+                                                    <div class="space-y-1">
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60">
+                                                            🔒 Terkunci
+                                                        </span>
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @foreach($bInfo['bindings'] as $b)
+                                                                <a href="{{ $b['url'] }}" 
+                                                                   class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition" 
+                                                                   title="{{ $b['label'] }}: Klik untuk menuju data penimbangan">
+                                                                    <span>{{ $b['badge'] }}</span>
+                                                                    <span class="text-slate-400">&rarr;</span>
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 font-medium">Bebas (Belum Terkait)</span>
+                                                @endif
+                                            </td>
                                             <td class="py-3 px-4 text-right space-x-2">
                                                 <button wire:click="editSource({{ $source->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                <button @click="deleteModal = true; $wire.confirmDelete('source', {{ $source->id }}, '{{ addslashes($source->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                @if($bInfo['is_bound'])
+                                                    <button @click="deleteModal = true; $wire.confirmDelete('source', {{ $source->id }}, '{{ addslashes($source->name) }}')" 
+                                                            class="text-xs text-slate-400 hover:text-amber-700 font-semibold cursor-pointer inline-flex items-center gap-1"
+                                                            title="Data terikat - Klik untuk info keterikatan">
+                                                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                        </svg>
+                                                        Terkunci
+                                                    </button>
+                                                @else
+                                                    <button @click="deleteModal = true; $wire.confirmDelete('source', {{ $source->id }}, '{{ addslashes($source->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                @endif
                                             </td>
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="py-6 text-center text-slate-400">Belum ada titik sumber sampah di kampus ini.</td>
+                                            <td colspan="4" class="py-6 text-center text-slate-400">Belum ada titik sumber sampah di kampus ini.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -185,11 +366,13 @@
                                         <th class="py-2.5 px-4 font-semibold">Kategori</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">Harga Default</th>
                                         <th class="py-2.5 px-4 font-semibold text-center">Status Jual</th>
+                                        <th class="py-2.5 px-4 font-semibold">Keterikatan Relasi (PK)</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @foreach($wasteTypes as $type)
+                                        @php $bInfo = $type->getBindingInfo(); @endphp
                                         <tr class="hover:bg-slate-50/60">
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $type->name }}</td>
                                             <td class="py-3 px-4">
@@ -205,10 +388,42 @@
                                                     <span class="text-[10px] text-slate-400 font-medium">Residu/Kompos</span>
                                                 @endif
                                             </td>
+                                            <td class="py-3 px-4">
+                                                @if($bInfo['is_bound'])
+                                                    <div class="space-y-1">
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60">
+                                                            🔒 Terkunci
+                                                        </span>
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @foreach($bInfo['bindings'] as $b)
+                                                                <a href="{{ $b['url'] }}" 
+                                                                   class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition" 
+                                                                   title="{{ $b['label'] }}: Klik untuk menuju data transaksi">
+                                                                    <span>{{ $b['badge'] }}</span>
+                                                                    <span class="text-slate-400">&rarr;</span>
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 font-medium">Bebas (Belum Terkait)</span>
+                                                @endif
+                                            </td>
                                             @if ($isSuperAdmin)
                                                 <td class="py-3 px-4 text-right space-x-2">
                                                     <button wire:click="editWasteType({{ $type->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                    <button @click="deleteModal = true; $wire.confirmDelete('type', {{ $type->id }}, '{{ addslashes($type->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @if($bInfo['is_bound'])
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('type', {{ $type->id }}, '{{ addslashes($type->name) }}')" 
+                                                                class="text-xs text-slate-400 hover:text-amber-700 font-semibold cursor-pointer inline-flex items-center gap-1"
+                                                                title="Data terikat - Klik untuk info keterikatan">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                            </svg>
+                                                            Terkunci
+                                                        </button>
+                                                    @else
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('type', {{ $type->id }}, '{{ addslashes($type->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @endif
                                                 </td>
                                             @else
                                                 <td class="py-3 px-4 text-right">
@@ -287,19 +502,53 @@
                                         <th class="py-2.5 px-4 font-semibold">Nama Vendor</th>
                                         <th class="py-2.5 px-4 font-semibold">Kontak</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">Tarif / Kg</th>
+                                        <th class="py-2.5 px-4 font-semibold">Keterikatan Relasi (PK)</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($vendors as $vendor)
+                                        @php $bInfo = $vendor->getBindingInfo(); @endphp
                                         <tr class="hover:bg-slate-50/60">
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $vendor->name }}</td>
                                             <td class="py-3 px-4 text-slate-500">{{ $vendor->contact ?? '-' }}</td>
                                             <td class="py-3 px-4 text-right font-mono font-medium text-amber-700">Rp {{ number_format($vendor->cost_per_kg, 0, ',', '.') }}</td>
+                                            <td class="py-3 px-4">
+                                                @if($bInfo['is_bound'])
+                                                    <div class="space-y-1">
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60">
+                                                            🔒 Terkunci
+                                                        </span>
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @foreach($bInfo['bindings'] as $b)
+                                                                <a href="{{ $b['url'] }}" 
+                                                                   class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition" 
+                                                                   title="{{ $b['label'] }}: Klik untuk menuju data transaksi pengangkutan">
+                                                                    <span>{{ $b['badge'] }}</span>
+                                                                    <span class="text-slate-400">&rarr;</span>
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 font-medium">Bebas (Belum Terkait)</span>
+                                                @endif
+                                            </td>
                                             @if ($isSuperAdmin)
                                                 <td class="py-3 px-4 text-right space-x-2">
                                                     <button wire:click="editVendor({{ $vendor->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                    <button @click="deleteModal = true; $wire.confirmDelete('vendor', {{ $vendor->id }}, '{{ addslashes($vendor->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @if($bInfo['is_bound'])
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('vendor', {{ $vendor->id }}, '{{ addslashes($vendor->name) }}')" 
+                                                                class="text-xs text-slate-400 hover:text-amber-700 font-semibold cursor-pointer inline-flex items-center gap-1"
+                                                                title="Data terikat - Klik untuk info keterikatan">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                            </svg>
+                                                            Terkunci
+                                                        </button>
+                                                    @else
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('vendor', {{ $vendor->id }}, '{{ addslashes($vendor->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @endif
                                                 </td>
                                             @else
                                                 <td class="py-3 px-4 text-right">
@@ -311,7 +560,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="4" class="py-6 text-center text-slate-400">Belum ada vendor terdaftar.</td>
+                                            <td colspan="5" class="py-6 text-center text-slate-400">Belum ada vendor terdaftar.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -376,18 +625,52 @@
                                     <tr>
                                         <th class="py-2.5 px-4 font-semibold">Nama Pengepul</th>
                                         <th class="py-2.5 px-4 font-semibold">Kontak</th>
+                                        <th class="py-2.5 px-4 font-semibold">Keterikatan Relasi (PK)</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($buyers as $buyer)
+                                        @php $bInfo = $buyer->getBindingInfo(); @endphp
                                         <tr class="hover:bg-slate-50/60">
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $buyer->name }}</td>
                                             <td class="py-3 px-4 text-slate-500">{{ $buyer->contact ?? '-' }}</td>
+                                            <td class="py-3 px-4">
+                                                @if($bInfo['is_bound'])
+                                                    <div class="space-y-1">
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60">
+                                                            🔒 Terkunci
+                                                        </span>
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @foreach($bInfo['bindings'] as $b)
+                                                                <a href="{{ $b['url'] }}" 
+                                                                   class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition" 
+                                                                   title="{{ $b['label'] }}: Klik untuk menuju data transaksi penjualan">
+                                                                    <span>{{ $b['badge'] }}</span>
+                                                                    <span class="text-slate-400">&rarr;</span>
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 font-medium">Bebas (Belum Terkait)</span>
+                                                @endif
+                                            </td>
                                             @if ($isSuperAdmin)
                                                 <td class="py-3 px-4 text-right space-x-2">
                                                     <button wire:click="editBuyer({{ $buyer->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                    <button @click="deleteModal = true; $wire.confirmDelete('buyer', {{ $buyer->id }}, '{{ addslashes($buyer->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @if($bInfo['is_bound'])
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('buyer', {{ $buyer->id }}, '{{ addslashes($buyer->name) }}')" 
+                                                                class="text-xs text-slate-400 hover:text-amber-700 font-semibold cursor-pointer inline-flex items-center gap-1"
+                                                                title="Data terikat - Klik untuk info keterikatan">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                            </svg>
+                                                            Terkunci
+                                                        </button>
+                                                    @else
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('buyer', {{ $buyer->id }}, '{{ addslashes($buyer->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @endif
                                                 </td>
                                             @else
                                                 <td class="py-3 px-4 text-right">
@@ -399,7 +682,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="3" class="py-6 text-center text-slate-400">Belum ada pengepul terdaftar.</td>
+                                            <td colspan="4" class="py-6 text-center text-slate-400">Belum ada pengepul terdaftar.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -459,17 +742,51 @@
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
                                     <tr>
                                         <th class="py-2.5 px-4 font-semibold">Nama Kategori</th>
+                                        <th class="py-2.5 px-4 font-semibold">Keterikatan Relasi (PK)</th>
                                         <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
                                     @forelse($expenseCategories as $category)
+                                        @php $bInfo = $category->getBindingInfo(); @endphp
                                         <tr class="hover:bg-slate-50/60">
                                             <td class="py-3 px-4 font-medium text-slate-900">{{ $category->name }}</td>
+                                            <td class="py-3 px-4">
+                                                @if($bInfo['is_bound'])
+                                                    <div class="space-y-1">
+                                                        <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-800 border border-amber-200/60">
+                                                            🔒 Terkunci
+                                                        </span>
+                                                        <div class="flex flex-wrap gap-1">
+                                                            @foreach($bInfo['bindings'] as $b)
+                                                                <a href="{{ $b['url'] }}" 
+                                                                   class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 hover:bg-slate-200 text-slate-700 transition" 
+                                                                   title="{{ $b['label'] }}: Klik untuk menuju data pengeluaran operasional">
+                                                                    <span>{{ $b['badge'] }}</span>
+                                                                    <span class="text-slate-400">&rarr;</span>
+                                                                </a>
+                                                            @endforeach
+                                                        </div>
+                                                    </div>
+                                                @else
+                                                    <span class="text-[10px] text-slate-400 font-medium">Bebas (Belum Terkait)</span>
+                                                @endif
+                                            </td>
                                             @if ($isSuperAdmin)
                                                 <td class="py-3 px-4 text-right space-x-2">
                                                     <button wire:click="editCategory({{ $category->id }})" class="text-xs text-sky-600 hover:underline font-semibold cursor-pointer">Edit</button>
-                                                    <button @click="deleteModal = true; $wire.confirmDelete('category', {{ $category->id }}, '{{ addslashes($category->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @if($bInfo['is_bound'])
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('category', {{ $category->id }}, '{{ addslashes($category->name) }}')" 
+                                                                class="text-xs text-slate-400 hover:text-amber-700 font-semibold cursor-pointer inline-flex items-center gap-1"
+                                                                title="Data terikat - Klik untuk info keterikatan">
+                                                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                                            </svg>
+                                                            Terkunci
+                                                        </button>
+                                                    @else
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('category', {{ $category->id }}, '{{ addslashes($category->name) }}')" class="text-xs text-rose-600 hover:underline font-semibold cursor-pointer">Hapus</button>
+                                                    @endif
                                                 </td>
                                             @else
                                                 <td class="py-3 px-4 text-right">
@@ -481,7 +798,7 @@
                                         </tr>
                                     @empty
                                         <tr>
-                                            <td colspan="2" class="py-6 text-center text-slate-400">Belum ada kategori pengeluaran.</td>
+                                            <td colspan="3" class="py-6 text-center text-slate-400">Belum ada kategori pengeluaran.</td>
                                         </tr>
                                     @endforelse
                                 </tbody>
@@ -500,23 +817,71 @@
              style="display: none;"
              class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
             <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
-                <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                </div>
-                <h3 class="text-base font-bold text-slate-900">Konfirmasi Hapus Data</h3>
-                <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                    Apakah Anda yakin ingin menghapus data yang dipilih? Data yang dihapus tidak dapat dipulihkan kembali.
-                </p>
-                <div class="flex items-center justify-center gap-3 mt-6">
-                    <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
-                        Batal
-                    </button>
-                    <button type="button" wire:click="executeDelete" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
-                        Ya, Hapus Data
-                    </button>
-                </div>
+                @if($deleteBindingInfo && !empty($deleteBindingInfo['is_bound']))
+                    <!-- State: Locked / Terikat Relasi -->
+                    <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900">Data Master Terkunci (Tidak Dapat Dihapus)</h3>
+                    <div class="mt-3 text-left bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 space-y-2">
+                        <p class="text-xs font-semibold text-amber-900">
+                            Data <span class="font-bold">'{{ $deleteTargetName }}'</span> merupakan Primary Key (PK) yang mengikat data operasional di sistem:
+                        </p>
+                        <ul class="text-[11px] text-amber-800 space-y-1 list-disc pl-4">
+                            @foreach($deleteBindingInfo['reasons'] as $reason)
+                                <li>{{ $reason }}</li>
+                            @endforeach
+                        </ul>
+                        <p class="text-[10px] text-amber-700 pt-1.5 border-t border-amber-200/60 leading-relaxed">
+                            Berdasarkan prinsip integritas basis data, data yang sudah memiliki keterikatan relasional tidak dapat dihapus untuk mencegah kerusakan riwayat transaksi.
+                        </p>
+                    </div>
+
+                    @if(!empty($deleteBindingInfo['bindings']))
+                        <div class="mt-3 text-left">
+                            <span class="text-[11px] font-bold text-slate-700 block mb-1.5">Arahkan Menuju Data Terkait:</span>
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach($deleteBindingInfo['bindings'] as $b)
+                                    <a href="{{ $b['url'] }}" 
+                                       class="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-800 text-xs font-semibold transition"
+                                       target="_blank">
+                                        <span>{{ $b['label'] }} ({{ $b['count'] }})</span>
+                                        <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                @endforeach
+                            </div>
+                        </div>
+                    @endif
+
+                    <div class="flex items-center justify-center gap-3 mt-6">
+                        <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold shadow-sm transition cursor-pointer">
+                            Mengerti & Tutup
+                        </button>
+                    </div>
+                @else
+                    <!-- State: Unbound / Bebas Dihapus -->
+                    <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                    </div>
+                    <h3 class="text-base font-bold text-slate-900">Konfirmasi Hapus Data</h3>
+                    <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                        Apakah Anda yakin ingin menghapus <span class="font-bold text-slate-800">'{{ $deleteTargetName }}'</span>? Data ini belum terikat dengan transaksi apapun dan dapat dihapus dengan aman.
+                    </p>
+                    <div class="flex items-center justify-center gap-3 mt-6">
+                        <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                            Batal
+                        </button>
+                        <button type="button" wire:click="executeDelete" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                            Ya, Hapus Data
+                        </button>
+                    </div>
+                @endif
             </div>
         </div>
     </template>

@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Livewire\Pages\Master\Index as MasterComponent;
 use App\Models\ActivityLog;
 use App\Models\Buyer;
+use App\Models\Campus;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Pickup;
@@ -246,6 +247,61 @@ class MasterDataController extends Controller
     }
 
     /**
+     * Simpan / Perbarui Unit Kampus.
+     */
+    public function saveCampus(array $data): array
+    {
+        $user = auth()->user();
+        if (!$user->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengelola data unit kampus.');
+        }
+
+        Validator::make($data, [
+            'name' => ['required', 'string', 'max:100'],
+            'code' => ['required', 'string', 'max:50'],
+            'address' => ['nullable', 'string', 'max:255'],
+            'is_active' => ['nullable', 'boolean'],
+        ], [
+            'name.required' => 'Nama kampus wajib diisi.',
+            'code.required' => 'Kode kampus wajib diisi.',
+        ])->validate();
+
+        $editingId = !empty($data['id']) ? (int) $data['id'] : null;
+
+        if ($editingId) {
+            $campus = Campus::findOrFail($editingId);
+            $campus->update([
+                'name' => $data['name'],
+                'code' => $data['code'],
+                'address' => $data['address'] ?? null,
+                'is_active' => isset($data['is_active']) ? (bool) $data['is_active'] : true,
+            ]);
+            $msg = "Unit kampus '{$campus->name}' berhasil diperbarui.";
+        } else {
+            $campus = Campus::create([
+                'name' => $data['name'],
+                'code' => $data['code'],
+                'address' => $data['address'] ?? null,
+                'is_active' => isset($data['is_active']) ? (bool) $data['is_active'] : true,
+            ]);
+            $msg = "Unit kampus '{$campus->name}' berhasil ditambahkan.";
+        }
+
+        ActivityLog::record(
+            module: 'master_data',
+            action: $editingId ? 'update' : 'create',
+            description: ($editingId ? 'Memperbarui' : 'Menambahkan') . " unit kampus '{$campus->name}'",
+            properties: $data
+        );
+
+        return [
+            'success' => true,
+            'campus' => $campus,
+            'message' => $msg,
+        ];
+    }
+
+    /**
      * Eksekusi penghapusan entitas master data.
      */
     public function executeDelete(string $type, int $id): array
@@ -274,14 +330,29 @@ class MasterDataController extends Controller
         }
 
         switch ($type) {
+            case 'campus':
+                $entity = Campus::findOrFail($id);
+                $name = $entity->name;
+                $binding = $entity->getBindingInfo();
+                if ($binding['is_bound']) {
+                    return [
+                        'success' => false,
+                        'message' => "Tidak dapat menghapus unit kampus '{$name}': " . implode('. ', $binding['reasons']),
+                        'binding' => $binding,
+                    ];
+                }
+                $entity->delete();
+                $msg = 'Unit kampus berhasil dihapus.';
+                break;
             case 'source':
                 $entity = WasteSource::findOrFail($id);
                 $name = $entity->name;
-                $sessionCount = WeighingSession::where('waste_source_id', $id)->count();
-                if ($sessionCount > 0) {
+                $binding = $entity->getBindingInfo();
+                if ($binding['is_bound']) {
                     return [
                         'success' => false,
-                        'message' => "Tidak dapat menghapus titik sumber '{$name}': Data terikat dengan {$sessionCount} sesi penimbangan sampah.",
+                        'message' => "Tidak dapat menghapus titik sumber '{$name}': " . implode('. ', $binding['reasons']),
+                        'binding' => $binding,
                     ];
                 }
                 $entity->delete();
@@ -290,12 +361,12 @@ class MasterDataController extends Controller
             case 'type':
                 $entity = WasteType::findOrFail($id);
                 $name = $entity->name;
-                $weighingCount = WeighingItem::where('waste_type_id', $id)->count();
-                $salesCount = SaleItem::where('waste_type_id', $id)->count();
-                if ($weighingCount > 0 || $salesCount > 0) {
+                $binding = $entity->getBindingInfo();
+                if ($binding['is_bound']) {
                     return [
                         'success' => false,
-                        'message' => "Tidak dapat menghapus jenis sampah '{$name}': Data terikat dengan {$weighingCount} data timbangan dan {$salesCount} data penjualan.",
+                        'message' => "Tidak dapat menghapus jenis sampah '{$name}': " . implode('. ', $binding['reasons']),
+                        'binding' => $binding,
                     ];
                 }
                 $entity->delete();
@@ -304,11 +375,12 @@ class MasterDataController extends Controller
             case 'vendor':
                 $entity = Vendor::findOrFail($id);
                 $name = $entity->name;
-                $pickupCount = Pickup::where('vendor_id', $id)->count();
-                if ($pickupCount > 0) {
+                $binding = $entity->getBindingInfo();
+                if ($binding['is_bound']) {
                     return [
                         'success' => false,
-                        'message' => "Tidak dapat menghapus vendor '{$name}': Data terikat dengan {$pickupCount} transaksi pengangkutan residu.",
+                        'message' => "Tidak dapat menghapus vendor '{$name}': " . implode('. ', $binding['reasons']),
+                        'binding' => $binding,
                     ];
                 }
                 $entity->delete();
@@ -317,11 +389,12 @@ class MasterDataController extends Controller
             case 'buyer':
                 $entity = Buyer::findOrFail($id);
                 $name = $entity->name;
-                $salesCount = Sale::where('buyer_id', $id)->count();
-                if ($salesCount > 0) {
+                $binding = $entity->getBindingInfo();
+                if ($binding['is_bound']) {
                     return [
                         'success' => false,
-                        'message' => "Tidak dapat menghapus pembeli/pengepul '{$name}': Data terikat dengan {$salesCount} transaksi penjualan sampah.",
+                        'message' => "Tidak dapat menghapus pembeli/pengepul '{$name}': " . implode('. ', $binding['reasons']),
+                        'binding' => $binding,
                     ];
                 }
                 $entity->delete();
@@ -330,11 +403,12 @@ class MasterDataController extends Controller
             case 'category':
                 $entity = ExpenseCategory::findOrFail($id);
                 $name = $entity->name;
-                $expenseCount = Expense::where('expense_category_id', $id)->count();
-                if ($expenseCount > 0) {
+                $binding = $entity->getBindingInfo();
+                if ($binding['is_bound']) {
                     return [
                         'success' => false,
-                        'message' => "Tidak dapat menghapus kategori pengeluaran '{$name}': Data terikat dengan {$expenseCount} catatan pengeluaran operasional.",
+                        'message' => "Tidak dapat menghapus kategori pengeluaran '{$name}': " . implode('. ', $binding['reasons']),
+                        'binding' => $binding,
                     ];
                 }
                 $entity->delete();
