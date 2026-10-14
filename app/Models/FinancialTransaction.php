@@ -135,40 +135,51 @@ class FinancialTransaction extends Model
      */
     public static function recordTransaction(
         int $campusId,
-        string $date,
-        string $type,
-        string $source,
-        float $amount,
+        string $date = '',
+        string $type = '',
+        string $source = '',
+        float $amount = 0.0,
         ?string $description = null,
         ?int $refId = null,
-        ?int $createdBy = null
+        ?int $createdBy = null,
+        ?string $tanggal = null,
+        ?string $jenis = null,
+        ?string $sumber = null,
+        ?float $nominal = null,
+        ?string $keterangan = null
     ): self {
-        $normType = match(strtoupper($type)) {
+        $actualDate = $tanggal ?? $date;
+        $actualType = $jenis ?? $type;
+        $actualSource = $sumber ?? $source;
+        $actualAmount = $nominal ?? $amount;
+        $actualDescription = $keterangan ?? $description;
+
+        $normType = match(strtoupper((string) $actualType)) {
             'K', 'CREDIT' => 'credit',
             'D', 'DEBIT' => 'debit',
-            default => $type
+            default => (string) $actualType
         };
 
-        $normSource = match(strtolower($source)) {
+        $normSource = match(strtolower((string) $actualSource)) {
             'penjualan', 'sales' => 'sales',
             'pengangkutan', 'pickup' => 'pickup',
             'operasional', 'operational' => 'operational',
             'saldo_awal', 'initial_balance' => 'initial_balance',
-            default => $source
+            default => (string) $actualSource
         };
 
-        $formattedDate = Carbon::parse($date)->format('Y-m-d');
+        $formattedDate = Carbon::parse($actualDate)->format('Y-m-d');
 
-        return DB::transaction(function () use ($campusId, $formattedDate, $normType, $normSource, $refId, $amount, $description, $createdBy) {
+        return DB::transaction(function () use ($campusId, $formattedDate, $normType, $normSource, $refId, $actualAmount, $actualDescription, $createdBy) {
             $transaction = static::create([
                 'campus_id' => $campusId,
                 'transaction_date' => $formattedDate,
                 'type' => $normType,
                 'source' => $normSource,
                 'ref_id' => $refId,
-                'amount' => $amount,
-                'description' => $description,
-                'created_by' => $createdBy,
+                'amount' => $actualAmount,
+                'description' => $actualDescription,
+                'created_by' => $createdBy ?? auth()->id(),
             ]);
 
             GeneralLedger::recalculateLedgerFromDate($campusId, $formattedDate);

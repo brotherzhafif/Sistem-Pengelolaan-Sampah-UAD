@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\WasteType;
 use App\Models\WeighingItem;
 use App\Models\WeighingSession;
 use App\Livewire\Pages\Weighing\Index as WeighingComponent;
@@ -107,7 +108,7 @@ class WeighingController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus data penimbangan.');
         }
 
-        $session = WeighingSession::findOrFail($sessionId);
+        $session = WeighingSession::with(['items.wasteType'])->findOrFail($sessionId);
 
         // Otorisasi: hanya Super Admin atau user dari kampus bersangkutan
         if ($user->campus_id && $user->campus_id !== $session->campus_id && !$user->hasRole(['super_admin', 'Super Admin'])) {
@@ -115,6 +116,45 @@ class WeighingController extends Controller
                 'success' => false,
                 'message' => 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.',
             ];
+        }
+
+        // Validasi Integritas: Cek apakah sampah dari sesi ini sudah diserap penjualan atau pengangkutan
+        // 1. Cek sampah bernilai jual (is_sellable = true)
+        foreach ($session->items as $item) {
+            $weight = (float) $item->weight_kg;
+            if ($weight <= 0) {
+                continue;
+            }
+
+            if ($item->wasteType?->is_sellable) {
+                $availableStock = WasteType::getAvailableStock($item->waste_type_id, $session->campus_id);
+                // Jika bobot sesi ini lebih besar dari sisa stok tersedia saat ini, berarti sebagian sudah terjual!
+                if ($weight > $availableStock) {
+                    $soldWeight = $weight - $availableStock;
+                    $wasteName = $item->wasteType->name;
+                    return [
+                        'success' => false,
+                        'message' => "Tidak dapat menghapus penimbangan: Sampah '{$wasteName}' sudah terjual " . number_format($soldWeight, 1, ',', '.') . " kg (sisa stok saat ini hanya " . number_format($availableStock, 1, ',', '.') . " kg). Harap batalkan transaksi penjualan terkait terlebih dahulu.",
+                    ];
+                }
+            }
+        }
+
+        // 2. Cek sampah tidak bernilai jual / residu (is_sellable = false)
+        $nonSellableWeight = (float) $session->items
+            ->filter(fn($i) => !empty($i->wasteType) && !$i->wasteType->is_sellable)
+            ->sum('weight_kg');
+
+        if ($nonSellableWeight > 0) {
+            $stockSummary = WasteType::getStockSummary($session->campus_id);
+            $availableResidual = (float) ($stockSummary['residual_stock_kg'] ?? 0.0);
+            if ($nonSellableWeight > $availableResidual) {
+                $pickedUpWeight = $nonSellableWeight - $availableResidual;
+                return [
+                    'success' => false,
+                    'message' => "Tidak dapat menghapus penimbangan: Sampah residu/organik dari sesi ini sudah terangkut oleh vendor sebanyak " . number_format($pickedUpWeight, 1, ',', '.') . " kg (sisa residu saat ini hanya " . number_format($availableResidual, 1, ',', '.') . " kg). Harap batalkan transaksi pengangkutan terkait terlebih dahulu.",
+                ];
+            }
         }
 
         $session->delete();
