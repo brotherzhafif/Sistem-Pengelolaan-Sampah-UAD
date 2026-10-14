@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Pickups\Index as PickupComponent;
+use App\Models\ActivityLog;
 use App\Models\BukuBesar;
 use App\Models\Pickup;
 use App\Models\WasteType;
@@ -84,6 +85,20 @@ class PickupController extends Controller
             'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
         ]);
 
+        ActivityLog::record(
+            module: 'pickups',
+            action: 'create',
+            description: "Mencatat pengangkutan residu (#{$pickup->id}) seberat " . number_format($volume, 1, ',', '.') . " kg senilai Rp " . number_format($totalCost, 0, ',', '.'),
+            properties: [
+                'pickup_id' => $pickup->id,
+                'vendor_id' => $vendorId,
+                'volume_kg' => $volume,
+                'cost_per_kg' => $costPerKg,
+                'total_cost' => $totalCost,
+            ],
+            campusId: $campusId
+        );
+
         $newBalance = BukuBesar::getLatestBalance($campusId);
         $toastMsg = "Pengangkutan " . number_format($volume, 1, ',', '.') . " kg tersimpan → Biaya Rp " . number_format($totalCost, 0, ',', '.') . " → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
 
@@ -115,6 +130,19 @@ class PickupController extends Controller
                 'message' => 'Anda tidak memiliki otoritas untuk menghapus data pengangkutan kampus ini.',
             ];
         }
+
+        ActivityLog::record(
+            module: 'pickups',
+            action: 'delete',
+            description: "Menghapus data pengangkutan residu (#{$pickup->id}) seberat " . number_format((float) $pickup->volume_kg, 1, ',', '.') . " kg",
+            properties: [
+                'pickup_id' => $pickup->id,
+                'campus_id' => $pickup->campus_id,
+                'volume_kg' => (float) $pickup->volume_kg,
+                'total_cost' => (float) $pickup->total_cost,
+            ],
+            campusId: $pickup->campus_id
+        );
 
         $pickup->delete(); // Observer otomatis hapus jurnal debet keuangan & re-sync buku besar
 

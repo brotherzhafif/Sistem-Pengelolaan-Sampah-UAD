@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\ActivityLog;
 use App\Models\WasteType;
 use App\Models\WeighingItem;
 use App\Models\WeighingSession;
@@ -91,6 +92,19 @@ class WeighingController extends Controller
             }
         }
 
+        ActivityLog::record(
+            module: 'weighing',
+            action: 'create',
+            description: "Mencatat sesi penimbangan sampah harian (#{$session->id}) tanggal {$session->weigh_date}",
+            properties: [
+                'session_id' => $session->id,
+                'campus_id' => $campusToSave,
+                'weigh_date' => $session->weigh_date,
+                'items_count' => count($items),
+            ],
+            campusId: $campusToSave
+        );
+
         return [
             'success' => true,
             'session' => $session,
@@ -156,6 +170,18 @@ class WeighingController extends Controller
                 ];
             }
         }
+
+        ActivityLog::record(
+            module: 'weighing',
+            action: 'delete',
+            description: "Menghapus sesi penimbangan sampah harian (#{$session->id}) tanggal {$session->weigh_date}",
+            properties: [
+                'session_id' => $session->id,
+                'campus_id' => $session->campus_id,
+                'weigh_date' => $session->weigh_date,
+            ],
+            campusId: $session->campus_id
+        );
 
         $session->delete();
 

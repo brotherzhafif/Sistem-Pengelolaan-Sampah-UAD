@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Sales\Index as SalesComponent;
+use App\Models\ActivityLog;
 use App\Models\BukuBesar;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -107,6 +108,19 @@ class SaleController extends Controller
             ]);
         }
 
+        ActivityLog::record(
+            module: 'sales',
+            action: 'create',
+            description: "Mencatat transaksi penjualan sampah (#{$sale->id}) senilai Rp " . number_format($totalAmount, 0, ',', '.'),
+            properties: [
+                'sale_id' => $sale->id,
+                'buyer_id' => $data['buyer_id'],
+                'total_amount' => $totalAmount,
+                'items_count' => count($itemsToSell),
+            ],
+            campusId: $targetCampusId
+        );
+
         $newBalance = BukuBesar::getLatestBalance($targetCampusId);
         $toastMsg = "Penjualan Rp " . number_format($totalAmount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
 
@@ -138,6 +152,18 @@ class SaleController extends Controller
                 'message' => 'Anda tidak memiliki otoritas untuk menghapus data kampus ini.',
             ];
         }
+
+        ActivityLog::record(
+            module: 'sales',
+            action: 'delete',
+            description: "Menghapus transaksi penjualan sampah (#{$sale->id}) senilai Rp " . number_format((float) $sale->total_amount, 0, ',', '.'),
+            properties: [
+                'sale_id' => $sale->id,
+                'campus_id' => $sale->campus_id,
+                'total_amount' => (float) $sale->total_amount,
+            ],
+            campusId: $sale->campus_id
+        );
 
         $sale->delete(); // Observer otomatis hapus jurnal keuangan & sinkronkan buku besar
 

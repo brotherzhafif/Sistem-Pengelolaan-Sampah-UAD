@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Master\Index as MasterComponent;
+use App\Models\ActivityLog;
 use App\Models\Buyer;
 use App\Models\ExpenseCategory;
 use App\Models\Vendor;
@@ -67,6 +68,14 @@ class MasterDataController extends Controller
             ]
         );
 
+        ActivityLog::record(
+            module: 'master_data',
+            action: $editingId ? 'update' : 'create',
+            description: ($editingId ? 'Memperbarui' : 'Menambahkan') . " titik sumber sampah '{$source->name}'",
+            properties: ['source_id' => $source->id, 'campus_id' => $source->campus_id, 'name' => $source->name],
+            campusId: $targetCampusId
+        );
+
         return [
             'success' => true,
             'source' => $source,
@@ -103,6 +112,13 @@ class MasterDataController extends Controller
             ]
         );
 
+        ActivityLog::record(
+            module: 'master_data',
+            action: $editingId ? 'update' : 'create',
+            description: ($editingId ? 'Memperbarui' : 'Menambahkan') . " jenis sampah '{$type->name}' ({$type->category})",
+            properties: ['waste_type_id' => $type->id, 'name' => $type->name, 'category' => $type->category, 'is_sellable' => $type->is_sellable]
+        );
+
         return [
             'success' => true,
             'waste_type' => $type,
@@ -137,6 +153,13 @@ class MasterDataController extends Controller
             ]
         );
 
+        ActivityLog::record(
+            module: 'master_data',
+            action: $editingId ? 'update' : 'create',
+            description: ($editingId ? 'Memperbarui' : 'Menambahkan') . " vendor armada pengangkut '{$vendor->name}'",
+            properties: ['vendor_id' => $vendor->id, 'name' => $vendor->name, 'cost_per_kg' => $vendor->cost_per_kg]
+        );
+
         return [
             'success' => true,
             'vendor' => $vendor,
@@ -168,6 +191,13 @@ class MasterDataController extends Controller
             ]
         );
 
+        ActivityLog::record(
+            module: 'master_data',
+            action: $editingId ? 'update' : 'create',
+            description: ($editingId ? 'Memperbarui' : 'Menambahkan') . " data pembeli/pengepul '{$buyer->name}'",
+            properties: ['buyer_id' => $buyer->id, 'name' => $buyer->name]
+        );
+
         return [
             'success' => true,
             'buyer' => $buyer,
@@ -193,6 +223,13 @@ class MasterDataController extends Controller
         $cat = ExpenseCategory::updateOrCreate(
             ['id' => $editingId],
             ['name' => strip_tags(trim($data['name']))]
+        );
+
+        ActivityLog::record(
+            module: 'master_data',
+            action: $editingId ? 'update' : 'create',
+            description: ($editingId ? 'Memperbarui' : 'Menambahkan') . " kategori pengeluaran '{$cat->name}'",
+            properties: ['category_id' => $cat->id, 'name' => $cat->name]
         );
 
         return [
@@ -232,28 +269,45 @@ class MasterDataController extends Controller
 
         switch ($type) {
             case 'source':
-                WasteSource::findOrFail($id)->delete();
+                $entity = WasteSource::findOrFail($id);
+                $name = $entity->name;
+                $entity->delete();
                 $msg = 'Titik sumber sampah berhasil dihapus.';
                 break;
             case 'type':
-                WasteType::findOrFail($id)->delete();
+                $entity = WasteType::findOrFail($id);
+                $name = $entity->name;
+                $entity->delete();
                 $msg = 'Jenis sampah berhasil dihapus.';
                 break;
             case 'vendor':
-                Vendor::findOrFail($id)->delete();
+                $entity = Vendor::findOrFail($id);
+                $name = $entity->name;
+                $entity->delete();
                 $msg = 'Vendor pengangkut berhasil dihapus.';
                 break;
             case 'buyer':
-                Buyer::findOrFail($id)->delete();
+                $entity = Buyer::findOrFail($id);
+                $name = $entity->name;
+                $entity->delete();
                 $msg = 'Pembeli/Pengepul berhasil dihapus.';
                 break;
             case 'category':
-                ExpenseCategory::findOrFail($id)->delete();
+                $entity = ExpenseCategory::findOrFail($id);
+                $name = $entity->name;
+                $entity->delete();
                 $msg = 'Kategori pengeluaran berhasil dihapus.';
                 break;
             default:
                 return ['success' => false, 'message' => 'Tipe data master tidak valid.'];
         }
+
+        ActivityLog::record(
+            module: 'master_data',
+            action: 'delete',
+            description: "Menghapus master data {$type} '{$name}' (#{$id})",
+            properties: ['type' => $type, 'id' => $id, 'name' => $name]
+        );
 
         return ['success' => true, 'message' => $msg];
     }

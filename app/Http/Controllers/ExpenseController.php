@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Expenses\Index as ExpenseComponent;
+use App\Models\ActivityLog;
 use App\Models\Campus;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -63,6 +64,19 @@ class ExpenseController extends Controller
             'created_by' => auth()->id(),
         ]);
 
+        ActivityLog::record(
+            module: 'expenses',
+            action: 'create',
+            description: "Mencatat pengeluaran operasional (#{$expense->id}) senilai Rp " . number_format($amount, 0, ',', '.') . " - {$expense->description}",
+            properties: [
+                'expense_id' => $expense->id,
+                'amount' => $amount,
+                'expense_category_id' => (int) $data['expense_category_id'],
+                'description' => $expense->description,
+            ],
+            campusId: $campusId
+        );
+
         $newBalance = BukuBesar::getLatestBalance($campusId);
         $message = "Pengeluaran Rp " . number_format($amount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
 
@@ -92,6 +106,19 @@ class ExpenseController extends Controller
                 'message' => 'Anda tidak memiliki otoritas untuk menghapus data pengeluaran kampus ini.',
             ];
         }
+
+        ActivityLog::record(
+            module: 'expenses',
+            action: 'delete',
+            description: "Menghapus pengeluaran operasional (#{$expense->id}) senilai Rp " . number_format((float) $expense->amount, 0, ',', '.') . " - {$expense->description}",
+            properties: [
+                'expense_id' => $expense->id,
+                'campus_id' => $expense->campus_id,
+                'amount' => (float) $expense->amount,
+                'description' => $expense->description,
+            ],
+            campusId: $expense->campus_id
+        );
 
         $expense->delete(); // ExpenseObserver auto deletes from keuangan & updates buku_besar
 

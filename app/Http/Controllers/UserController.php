@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Users\Index as UserComponent;
+use App\Models\ActivityLog;
 use App\Models\Campus;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -108,6 +109,14 @@ class UserController extends Controller
 
             $user->syncRoles([$selectedRole]);
 
+            ActivityLog::record(
+                module: 'users',
+                action: 'create',
+                description: "Menambahkan pengguna baru '{$user->name}' ({$user->email}) dengan peran {$selectedRole}",
+                properties: ['user_id' => $user->id, 'role' => $selectedRole, 'campus_id' => $campusToSave],
+                campusId: $campusToSave
+            );
+
             return [
                 'success' => true,
                 'user' => $user,
@@ -131,6 +140,14 @@ class UserController extends Controller
             if ($isSuperAdmin || in_array($selectedRole, ['petugas_tps', 'petugas_penjualan', 'keuangan'])) {
                 $user->syncRoles([$selectedRole]);
             }
+
+            ActivityLog::record(
+                module: 'users',
+                action: 'update',
+                description: "Memperbarui data pengguna '{$user->name}' ({$user->email})",
+                properties: ['user_id' => $user->id, 'role' => $selectedRole, 'campus_id' => $campusToSave],
+                campusId: $campusToSave
+            );
 
             return [
                 'success' => true,
@@ -174,6 +191,17 @@ class UserController extends Controller
         }
 
         $userName = $user->name;
+        $userEmail = $user->email;
+        $campusId = $user->campus_id;
+
+        ActivityLog::record(
+            module: 'users',
+            action: 'delete',
+            description: "Menghapus akun pengguna '{$userName}' ({$userEmail})",
+            properties: ['deleted_user_id' => $user->id, 'name' => $userName, 'email' => $userEmail],
+            campusId: $campusId
+        );
+
         $user->delete();
 
         return [

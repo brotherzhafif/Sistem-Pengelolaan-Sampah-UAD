@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Finance\Index as FinanceComponent;
+use App\Models\ActivityLog;
 use App\Models\Keuangan;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -45,16 +46,29 @@ class FinanceController extends Controller
 
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
         $targetCampusId = $isSuperAdmin ? (int) $data['initialCampusId'] : (int) $user->campus_id;
+        $amount = (float) $data['initialAmount'];
 
         Keuangan::recordTransaction(
             campusId: $targetCampusId,
             date: $data['initialDate'],
             jenis: 'K',
             sumber: 'saldo_awal',
-            nominal: (float) $data['initialAmount'],
+            nominal: $amount,
             keterangan: !empty($data['initialNotes']) ? strip_tags(trim($data['initialNotes'])) : 'Saldo kas awal pembukuan TPS',
             refId: null,
             createdBy: auth()->id()
+        );
+
+        ActivityLog::record(
+            module: 'finance',
+            action: 'create',
+            description: "Menetapkan saldo kas awal TPS Kampus senilai Rp " . number_format($amount, 0, ',', '.'),
+            properties: [
+                'campus_id' => $targetCampusId,
+                'amount' => $amount,
+                'date' => $data['initialDate'],
+            ],
+            campusId: $targetCampusId
         );
 
         return [
