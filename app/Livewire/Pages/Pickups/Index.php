@@ -80,7 +80,7 @@ class Index extends Component
         
         $firstVendor = Vendor::getActiveVendors()->first();
         $this->formVendorId = $firstVendor?->id;
-        $this->formCostPerKg = $firstVendor ? (string) (float) $firstVendor->cost_per_kg : '0';
+        $this->formCostPerKg = $firstVendor ? (string) (float) $firstVendor->cost_per_kg : '';
         
         $this->formDate = Carbon::today()->format('Y-m-d');
         $this->formVolumeKg = '';
@@ -92,14 +92,26 @@ class Index extends Component
 
     public function openCreateModal(): void
     {
+        $this->resetErrorBag();
+        $this->resetValidation();
         $this->resetForm();
         $this->showCreateModal = true;
+        $this->dispatch('open-pickup-modal');
     }
 
     public function closeCreateModal(): void
     {
+        $this->resetErrorBag();
+        $this->resetValidation();
         $this->showCreateModal = false;
         $this->dispatch('close-modal');
+    }
+
+    public function updatedFormCampusId(): void
+    {
+        $this->resetErrorBag();
+        $this->resetValidation();
+        $this->calculateTotalCost();
     }
 
     public function updatedFormVendorId($value = null): void
@@ -110,17 +122,34 @@ class Index extends Component
             if ($vendor) {
                 $this->formCostPerKg = (string) (float) $vendor->cost_per_kg;
                 $this->calculateTotalCost();
+                $this->resetErrorBag('formCostPerKg');
             }
+        } else {
+            $this->formCostPerKg = '';
+            $this->calculateTotalCost();
         }
     }
 
     public function updatedFormVolumeKg(): void
     {
+        $volume = floatval($this->formVolumeKg ?: 0);
+        $maxStock = $this->availableResidualStock;
+        if ($volume > $maxStock) {
+            $this->addError('formVolumeKg', 'Muatan melebihi sisa residu (' . number_format($maxStock, 1, ',', '.') . ' kg)');
+        } else {
+            $this->resetErrorBag('formVolumeKg');
+        }
         $this->calculateTotalCost();
     }
 
     public function updatedFormCostPerKg(): void
     {
+        $cost = floatval($this->formCostPerKg ?: 0);
+        if ($cost <= 0) {
+            $this->addError('formCostPerKg', 'Tarif vendor per kg wajib diisi dan lebih dari 0.');
+        } else {
+            $this->resetErrorBag('formCostPerKg');
+        }
         $this->calculateTotalCost();
     }
 
@@ -129,6 +158,25 @@ class Index extends Component
         $volume = floatval($this->formVolumeKg ?: 0);
         $cost = floatval($this->formCostPerKg ?: 0);
         $this->formTotalCost = (string) round($volume * $cost, 2);
+    }
+
+    public function getAvailableResidualStockProperty(): float
+    {
+        $stockSummary = WasteType::getStockSummary($this->formCampusId);
+        return (float) ($stockSummary['residual_stock_kg'] ?? 0.0);
+    }
+
+    public function getCanSubmitProperty(): bool
+    {
+        $volume = floatval($this->formVolumeKg ?: 0);
+        $cost = floatval($this->formCostPerKg ?: 0);
+        $maxResidual = $this->availableResidualStock;
+
+        return !empty($this->formCampusId)
+            && !empty($this->formVendorId)
+            && $volume > 0
+            && $volume <= $maxResidual
+            && $cost > 0;
     }
 
     public function savePickup(PickupController $controller): void
@@ -146,6 +194,8 @@ class Index extends Component
             ]);
 
             $this->showCreateModal = false;
+            $this->resetErrorBag();
+            $this->resetValidation();
             $this->resetForm();
             $this->dispatch('close-modal');
             $this->dispatch('toast', message: $result['message'], type: 'success');

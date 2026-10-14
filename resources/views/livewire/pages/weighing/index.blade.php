@@ -63,7 +63,10 @@
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
             <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Residu (Perlu Angkut)</span>
+                <div>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Residu (Perlu Angkut)</span>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Semua sampah yang tidak bisa dijual</p>
+                </div>
                 <div class="w-7 h-7 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -74,7 +77,7 @@
                 <span class="font-mono text-2xl font-bold text-amber-600">{{ number_format($stockSummary['residual_stock_kg'], 1) }}</span>
                 <span class="text-xs text-slate-500 font-medium">kg</span>
             </div>
-            <p class="text-[11px] text-slate-400 mt-1">Residu & sisa organik ke vendor</p>
+            <p class="text-[11px] text-slate-400 mt-1">Residu & sisa organik ke vendor pengangkut</p>
         </div>
     </div>
 

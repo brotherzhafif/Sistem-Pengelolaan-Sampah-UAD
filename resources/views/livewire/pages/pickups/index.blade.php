@@ -58,7 +58,10 @@
                 <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-slate-500"></div>
                     <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sisa Residu di TPS</span>
+                        <div>
+                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sisa Residu di TPS</span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Semua sampah yang tidak bisa dijual</p>
+                        </div>
                         <div class="w-7 h-7 rounded-md bg-slate-50 text-slate-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -69,7 +72,7 @@
                         <span class="font-mono text-2xl font-bold text-slate-900">{{ number_format($stockSummary['residual_stock_kg'], 1, ',', '.') }}</span>
                         <span class="text-xs text-slate-500 font-medium">kg</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">Antrean penjemputan pengangkutan</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Antrean penjemputan pengangkutan vendor</p>
                 </div>
             </div>
 
@@ -98,7 +101,7 @@
 
                 @if ($canCreate)
                 <div class="flex items-center gap-2">
-                    <button @click="showModal = true; $wire.openCreateModal()"
+                    <button wire:click="openCreateModal"
                             type="button"
                             class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm shadow-amber-600/20 transition active:scale-95 cursor-pointer">
                         <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -276,14 +279,30 @@
 
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Volume Muatan (kg) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="0.1" min="0" wire:model.live.debounce.300ms="formVolumeKg" placeholder="0.0" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                    @error('formVolumeKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                    <input type="number" step="0.1" min="0.1" max="{{ $this->availableResidualStock }}" 
+                                           wire:model.live.debounce.300ms="formVolumeKg" 
+                                           x-on:input="
+                                               let maxVal = {{ (float) $this->availableResidualStock }};
+                                               let val = parseFloat($el.value);
+                                               if (!isNaN(val) && val > maxVal) {
+                                                   $el.value = maxVal;
+                                                   $wire.set('formVolumeKg', maxVal);
+                                                   $wire.calculateTotalCost();
+                                               }
+                                           "
+                                           placeholder="0.0" 
+                                           class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">
+                                        Sisa Residu di TPS: <strong class="text-amber-700 font-mono">{{ number_format($this->availableResidualStock, 1, ',', '.') }} kg</strong>
+                                    </div>
+                                    @error('formVolumeKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp)</label>
-                                    <input type="number" step="50" min="0" wire:model.live.debounce.300ms="formCostPerKg" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                    @error('formCostPerKg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp) <span class="text-rose-500">*</span></label>
+                                    <input type="number" step="50" min="1" wire:model.live.debounce.300ms="formCostPerKg" placeholder="Contoh: 150" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Otomatis terisi dari data vendor</div>
+                                    @error('formCostPerKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
                             </div>
 
@@ -325,7 +344,9 @@
                                 <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="submit" class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer">
+                                <button type="submit" 
+                                        @if(!$this->canSubmit) disabled @endif
+                                        class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400">
                                     Simpan & Catat Debet Kas
                                 </button>
                             </div>
