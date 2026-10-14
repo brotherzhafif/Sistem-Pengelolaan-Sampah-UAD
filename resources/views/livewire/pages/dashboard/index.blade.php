@@ -270,7 +270,7 @@
                         <div class="flex items-center justify-between mb-2">
                             <h4 class="font-bold text-xs text-slate-900">Neraca Sirkular Keuangan TPS</h4>
                             <a href="{{ route('finance') }}" class="text-[11px] font-semibold text-emerald-600 hover:text-emerald-700">
-                                Buku Kas &rarr;
+                                Buku Kas
                             </a>
                         </div>
                         <div class="space-y-2 text-xs">
@@ -434,7 +434,7 @@
                     </div>
                     <div class="p-3 bg-slate-50/60 border-t border-slate-100 text-center">
                         <a href="{{ route('weighing') }}" class="text-xs font-semibold text-emerald-600 hover:text-emerald-700">
-                            Buka Modul Penimbangan &rarr;
+                            Buka Modul Penimbangan
                         </a>
                     </div>
                 @endif
@@ -466,7 +466,7 @@
                     </div>
                     <div class="p-3 bg-slate-50/60 border-t border-slate-100 text-center">
                         <a href="{{ route('sales') }}" class="text-xs font-semibold text-sky-600 hover:text-sky-700">
-                            Buka Modul Penjualan &rarr;
+                            Buka Modul Penjualan
                         </a>
                     </div>
                 @endif
@@ -498,7 +498,7 @@
                     </div>
                     <div class="p-3 bg-slate-50/60 border-t border-slate-100 text-center">
                         <a href="{{ route('pickups') }}" class="text-xs font-semibold text-amber-600 hover:text-amber-700">
-                            Buka Modul Pengangkutan &rarr;
+                            Buka Modul Pengangkutan
                         </a>
                     </div>
                 @endif
@@ -530,7 +530,7 @@
                     </div>
                     <div class="p-3 bg-slate-50/60 border-t border-slate-100 text-center">
                         <a href="{{ route('expenses') }}" class="text-xs font-semibold text-rose-600 hover:text-rose-700">
-                            Buka Modul Pengeluaran &rarr;
+                            Buka Modul Pengeluaran
                         </a>
                     </div>
                 @endif

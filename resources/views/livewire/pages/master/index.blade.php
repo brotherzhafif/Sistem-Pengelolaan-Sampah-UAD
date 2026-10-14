@@ -672,15 +672,17 @@
                     </div>
 
                     <div class="flex items-center justify-center gap-3 mt-6">
-                        <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                        <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                             Tutup
                         </button>
                         @php
                             $primaryBinding = !empty($deleteBindingInfo['bindings']) ? $deleteBindingInfo['bindings'][0] : null;
                         @endphp
                         @if($primaryBinding)
-                            <a href="{{ $primaryBinding['url'] }}" class="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm shadow-blue-600/20 transition active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer">
-                                <span>Lihat {{ $primaryBinding['label'] }} &rarr;</span>
+                            <a href="{{ $primaryBinding['url'] }}" 
+                               class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition active:scale-95 text-center flex items-center justify-center cursor-pointer"
+                               style="background-color: #059669; color: #ffffff;">
+                                <span>Lihat {{ $primaryBinding['label'] }}</span>
                             </a>
                         @endif
                     </div>
@@ -696,10 +698,10 @@
                         Apakah Anda yakin ingin menghapus <span class="font-bold text-slate-800">'{{ $deleteTargetName }}'</span>? Data ini belum terikat dengan transaksi apapun dan dapat dihapus dengan aman.
                     </p>
                     <div class="flex items-center justify-center gap-3 mt-6">
-                        <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                        <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                             Batal
                         </button>
-                        <button type="button" wire:click="executeDelete" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                        <button type="button" wire:click="executeDelete" class="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer" style="background-color: #e11d48; color: #ffffff;">
                             Ya, Hapus Data
                         </button>
                     </div>

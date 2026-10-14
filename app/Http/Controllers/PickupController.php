@@ -100,7 +100,7 @@ class PickupController extends Controller
         );
 
         $newBalance = BukuBesar::getLatestBalance($campusId);
-        $toastMsg = "Pengangkutan " . number_format($volume, 1, ',', '.') . " kg tersimpan → Biaya Rp " . number_format($totalCost, 0, ',', '.') . " → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
+        $toastMsg = "Pengangkutan " . number_format($volume, 1, ',', '.') . " kg tersimpan Biaya Rp " . number_format($totalCost, 0, ',', '.') . " Saldo: Rp " . number_format($newBalance, 0, ',', '.');
 
         return [
             'success' => true,

@@ -388,7 +388,7 @@
                                 @endforeach
                             </div>
                             <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                                     Tutup
                                 </button>
                                 @php
@@ -398,8 +398,10 @@
                                     $targetLabel = $firstSale ? 'Lihat Penjualan #' . $firstSale->id : ($firstPickup ? 'Lihat Pengangkutan #' . $firstPickup->id : 'Lihat Data Terkait');
                                 @endphp
                                 @if($targetUrl)
-                                    <a href="{{ $targetUrl }}" class="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition text-center flex items-center justify-center gap-1.5 cursor-pointer">
-                                        <span>{{ $targetLabel }} &rarr;</span>
+                                    <a href="{{ $targetUrl }}" 
+                                       class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition active:scale-95 text-center flex items-center justify-center cursor-pointer"
+                                       style="background-color: #059669; color: #ffffff;">
+                                        <span>{{ $targetLabel }}</span>
                                     </a>
                                 @endif
                             </div>
@@ -414,10 +416,10 @@
                                 Tindakan ini akan menghapus catatan penimbangan dan seluruh rincian bobot sampah di dalamnya. Data yang dihapus tidak dapat dipulihkan.
                             </p>
                             <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="button" wire:click="deleteSession" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                                <button type="button" wire:click="deleteSession" class="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer" style="background-color: #e11d48; color: #ffffff;">
                                     Ya, Hapus Sesi
                                 </button>
                             </div>
@@ -467,13 +469,13 @@
                                         </ul>
                                         <div class="mt-2.5 flex flex-wrap gap-2">
                                             @foreach ($detailBinding['sales'] as $bs)
-                                                <a href="{{ route('sales', ['view' => $bs->id]) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition">
-                                                    <span>Lihat Penjualan #{{ $bs->id }} (Rp {{ number_format($bs->total_amount, 0, ',', '.') }}) &rarr;</span>
+                                                <a href="{{ route('sales', ['view' => $bs->id]) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition" style="background-color: #059669; color: #ffffff;">
+                                                    <span>Lihat Penjualan #{{ $bs->id }} (Rp {{ number_format($bs->total_amount, 0, ',', '.') }})</span>
                                                 </a>
                                             @endforeach
                                             @foreach ($detailBinding['pickups'] as $bp)
-                                                <a href="{{ route('pickups', ['view' => $bp->id]) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-semibold transition">
-                                                    <span>Lihat Pengangkutan #{{ $bp->id }} ({{ number_format($bp->volume_kg, 1, ',', '.') }} kg) &rarr;</span>
+                                                <a href="{{ route('pickups', ['view' => $bp->id]) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-semibold transition" style="background-color: #e11d48; color: #ffffff;">
+                                                    <span>Lihat Pengangkutan #{{ $bp->id }} ({{ number_format($bp->volume_kg, 1, ',', '.') }} kg)</span>
                                                 </a>
                                             @endforeach
                                         </div>

@@ -76,7 +76,6 @@
                                    @click="notifOpen = false"
                                    class="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 hover:text-emerald-700 transition">
                                     <span>{{ $alert['action_label'] }}</span>
-                                    <span>&rarr;</span>
                                 </a>
                             </div>
                         @endif

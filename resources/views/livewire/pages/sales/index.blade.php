@@ -413,11 +413,13 @@
                                 </p>
                             </div>
                             <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                                     Tutup
                                 </button>
-                                <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" class="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm shadow-blue-600/20 transition active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer">
-                                    <span>Lihat Jurnal Kas #FT-{{ $deleteBindingInfo['financial_transaction']?->id }} &rarr;</span>
+                                <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" 
+                                   class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition active:scale-95 text-center flex items-center justify-center cursor-pointer"
+                                   style="background-color: #059669; color: #ffffff;">
+                                    <span>Lihat Jurnal Kas #FT-{{ $deleteBindingInfo['financial_transaction']?->id }}</span>
                                 </a>
                             </div>
                         @else
@@ -431,10 +433,10 @@
                                 Tindakan ini akan membatalkan penjualan, mengembalikan kuota stok sampah di TPS, dan menghapus catatan penjualan ini secara permanen.
                             </p>
                             <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="button" wire:click="deleteSale" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                                <button type="button" wire:click="deleteSale" class="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer" style="background-color: #e11d48; color: #ffffff;">
                                     Ya, Hapus Transaksi
                                 </button>
                             </div>

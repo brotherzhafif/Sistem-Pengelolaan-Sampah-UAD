@@ -270,7 +270,7 @@
             <button type="button" 
                     wire:click="nextStep"
                     class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
-                <span>Lanjut ke Pengetahuan (Knowledge) &rarr;</span>
+                <span>Lanjut ke Pengetahuan (Knowledge)</span>
             </button>
         </div>
     </div>
@@ -331,7 +331,7 @@
                 &larr; Kembali
             </button>
             <button type="button" wire:click="nextStep" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
-                <span>Lanjut ke Sikap (Attitude) &rarr;</span>
+                <span>Lanjut ke Sikap (Attitude)</span>
             </button>
         </div>
     </div>
@@ -394,7 +394,7 @@
                 &larr; Kembali
             </button>
             <button type="button" wire:click="nextStep" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
-                <span>Lanjut ke Perilaku (Practice) &rarr;</span>
+                <span>Lanjut ke Perilaku (Practice)</span>
             </button>
         </div>
     </div>
@@ -457,7 +457,7 @@
                 &larr; Kembali
             </button>
             <button type="button" wire:click="nextStep" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
-                <span>Lanjut ke Kepuasan (Satisfaction) &rarr;</span>
+                <span>Lanjut ke Kepuasan (Satisfaction)</span>
             </button>
         </div>
     </div>
@@ -519,7 +519,7 @@
                 &larr; Kembali
             </button>
             <button type="button" wire:click="nextStep" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
-                <span>Lanjut ke Fasilitas & Hambatan &rarr;</span>
+                <span>Lanjut ke Fasilitas & Hambatan</span>
             </button>
         </div>
     </div>
@@ -633,7 +633,7 @@
                 &larr; Kembali
             </button>
             <button type="button" wire:click="nextStep" class="px-6 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition flex items-center gap-2 cursor-pointer">
-                <span>Review & Kirim &rarr;</span>
+                <span>Review & Kirim</span>
             </button>
         </div>
     </div>

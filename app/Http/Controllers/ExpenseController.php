@@ -78,7 +78,7 @@ class ExpenseController extends Controller
         );
 
         $newBalance = BukuBesar::getLatestBalance($campusId);
-        $message = "Pengeluaran Rp " . number_format($amount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
+        $message = "Pengeluaran Rp " . number_format($amount, 0, ',', '.') . " tersimpan Saldo: Rp " . number_format($newBalance, 0, ',', '.');
 
         return [
             'success' => true,

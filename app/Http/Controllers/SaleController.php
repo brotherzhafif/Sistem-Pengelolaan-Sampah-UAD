@@ -122,7 +122,7 @@ class SaleController extends Controller
         );
 
         $newBalance = BukuBesar::getLatestBalance($targetCampusId);
-        $toastMsg = "Penjualan Rp " . number_format($totalAmount, 0, ',', '.') . " tersimpan → Saldo: Rp " . number_format($newBalance, 0, ',', '.');
+        $toastMsg = "Penjualan Rp " . number_format($totalAmount, 0, ',', '.') . " tersimpan Saldo: Rp " . number_format($newBalance, 0, ',', '.');
 
         return [
             'success' => true,

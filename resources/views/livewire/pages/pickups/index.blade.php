@@ -158,15 +158,7 @@
                                         <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 mb-0.5 truncate" title="{{ $p->campus->name }}">
                                             {{ $p->campus->name }}
                                         </span>
-                                        <div class="font-semibold text-slate-800 truncate" title="{{ $p->vendor->name }}">{{ $p->vendor->name }}</div>
-                                        <div class="mt-1 flex items-center gap-1">
-                                            <a href="{{ route('finance', ['view' => $p->financialTransaction?->id]) }}" 
-                                               class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition"
-                                               title="Lihat di Jurnal Buku Kas Keuangan (#FT-{{ $p->financialTransaction?->id ?? 'FT' }})">
-                                                <svg class="w-2.5 h-2.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                                <span>Buku Kas #{{ $p->financialTransaction?->id ?? 'FT' }} &rarr;</span>
-                                            </a>
-                                        </div>
+                                         <div class="font-semibold text-slate-800 truncate" title="{{ $p->vendor->name }}">{{ $p->vendor->name }}</div>
                                     </td>
                                     <td class="py-2.5 px-3 truncate">
                                         <div class="text-slate-800 truncate" title="{{ $p->driver_name ?: '-' }}">{{ $p->driver_name ?: '-' }}</div>
@@ -393,11 +385,13 @@
                                 </p>
                             </div>
                             <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                                     Tutup
                                 </button>
-                                <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" class="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm shadow-blue-600/20 transition active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer">
-                                    <span>Lihat Jurnal Kas #FT-{{ $deleteBindingInfo['financial_transaction']?->id }} &rarr;</span>
+                                <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" 
+                                   class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition active:scale-95 text-center flex items-center justify-center cursor-pointer"
+                                   style="background-color: #059669; color: #ffffff;">
+                                    <span>Lihat Jurnal Kas #FT-{{ $deleteBindingInfo['financial_transaction']?->id }}</span>
                                 </a>
                             </div>
                         @else
@@ -411,10 +405,10 @@
                                 Apakah Anda yakin ingin menghapus catatan pengangkutan ini? Data yang dihapus tidak dapat dipulihkan.
                             </p>
                             <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="button" wire:click="deletePickup" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                                <button type="button" wire:click="deletePickup" class="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer" style="background-color: #e11d48; color: #ffffff;">
                                     Ya, Hapus Data
                                 </button>
                             </div>
