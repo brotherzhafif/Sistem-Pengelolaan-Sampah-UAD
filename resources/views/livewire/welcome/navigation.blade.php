@@ -2,7 +2,7 @@
     @auth
         <a
             href="{{ url('/dashboard') }}"
-            class="btn btn-primary btn-sm text-white font-semibold shadow-md shadow-primary/20 hover:scale-105 transition duration-200"
+            class="btn bg-emerald-600 hover:bg-emerald-700 border-none btn-sm text-white font-semibold shadow-md shadow-emerald-600/20 hover:scale-105 transition duration-200"
             wire:navigate
         >
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -13,7 +13,7 @@
     @else
         <a
             href="{{ route('login') }}"
-            class="btn btn-ghost btn-sm font-semibold text-neutral hover:bg-base-200"
+            class="btn btn-ghost btn-sm font-semibold text-slate-700 hover:text-emerald-700 hover:bg-slate-100"
             wire:navigate
         >
             Masuk
@@ -22,7 +22,7 @@
         @if (Route::has('register'))
             <a
                 href="{{ route('register') }}"
-                class="btn btn-primary btn-sm text-white font-semibold shadow-md shadow-primary/20 hover:scale-105 transition duration-200"
+                class="btn bg-emerald-600 hover:bg-emerald-700 border-none btn-sm text-white font-semibold shadow-md shadow-emerald-600/20 hover:scale-105 transition duration-200"
                 wire:navigate
             >
                 Daftar
