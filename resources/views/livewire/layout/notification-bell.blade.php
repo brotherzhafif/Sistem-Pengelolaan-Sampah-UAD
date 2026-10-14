@@ -1,3 +1,4 @@
+<div>
 @if($totalAlerts > 0)
 <div class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40" 
      x-data="{ notifOpen: false }" 
@@ -109,3 +110,4 @@
     </div>
 </div>
 @endif
+</div>
