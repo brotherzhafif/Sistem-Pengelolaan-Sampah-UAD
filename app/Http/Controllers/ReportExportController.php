@@ -185,9 +185,9 @@ class ReportExportController extends Controller
                 $data['title'] = 'LAPORAN REKAPITULASI BUKU KAS OPERASIONAL TPS';
                 $query = Keuangan::with('campus')
                     ->when($campusId, fn($q) => $q->where('campus_id', $campusId))
-                    ->when($dateFrom, fn($q) => $q->whereDate('tanggal', '>=', $dateFrom))
-                    ->when($dateTo, fn($q) => $q->whereDate('tanggal', '<=', $dateTo))
-                    ->orderBy('tanggal', 'desc')
+                    ->when($dateFrom, fn($q) => $q->whereDate('transaction_date', '>=', $dateFrom))
+                    ->when($dateTo, fn($q) => $q->whereDate('transaction_date', '<=', $dateTo))
+                    ->orderBy('transaction_date', 'desc')
                     ->orderBy('id', 'desc');
 
                 $records = $query->get();
@@ -501,9 +501,9 @@ class ReportExportController extends Controller
 
                     $records = Keuangan::with('campus')
                         ->when($campusId, fn($q) => $q->where('campus_id', $campusId))
-                        ->when($dateFrom, fn($q) => $q->whereDate('tanggal', '>=', $dateFrom))
-                        ->when($dateTo, fn($q) => $q->whereDate('tanggal', '<=', $dateTo))
-                        ->orderBy('tanggal', 'desc')
+                        ->when($dateFrom, fn($q) => $q->whereDate('transaction_date', '>=', $dateFrom))
+                        ->when($dateTo, fn($q) => $q->whereDate('transaction_date', '<=', $dateTo))
+                        ->orderBy('transaction_date', 'desc')
                         ->orderBy('id', 'desc')
                         ->get();
 

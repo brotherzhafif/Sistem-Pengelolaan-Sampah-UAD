@@ -425,25 +425,25 @@ class Index extends Component
         } elseif ($this->activeTab === 'finance') {
             $baseQuery = Keuangan::query()
                 ->when($campusId, fn($q) => $q->where('campus_id', $campusId))
-                ->when($this->filterDateFrom, fn($q) => $q->whereDate('tanggal', '>=', $this->filterDateFrom))
-                ->when($this->filterDateTo, fn($q) => $q->whereDate('tanggal', '<=', $this->filterDateTo));
+                ->when($this->filterDateFrom, fn($q) => $q->whereDate('transaction_date', '>=', $this->filterDateFrom))
+                ->when($this->filterDateTo, fn($q) => $q->whereDate('transaction_date', '<=', $this->filterDateTo));
 
             $pagedData = (clone $baseQuery)
                 ->with(['campus', 'creator'])
-                ->orderBy('tanggal', 'desc')
+                ->orderBy('transaction_date', 'desc')
                 ->orderBy('id', 'desc')
                 ->paginate(8);
 
             $allFin = (clone $baseQuery)->get();
-            $totalKredit = (float) $allFin->where('jenis', 'K')->sum('nominal');
-            $totalDebet = (float) $allFin->where('jenis', 'D')->sum('nominal');
+            $totalKredit = (float) $allFin->filter(fn($x) => in_array($x->type ?? $x->jenis, ['K', 'kredit', 'credit']))->sum(fn($x) => (float) ($x->amount ?? $x->nominal));
+            $totalDebet = (float) $allFin->filter(fn($x) => in_array($x->type ?? $x->jenis, ['D', 'debet', 'debit']))->sum(fn($x) => (float) ($x->amount ?? $x->nominal));
             $saldoBersih = $totalKredit - $totalDebet;
 
             // Komposisi Pengeluaran
-            $expenseGroups = $allFin->where('jenis', 'D')->groupBy('sumber');
+            $expenseGroups = $allFin->filter(fn($x) => in_array($x->type ?? $x->jenis, ['D', 'debet', 'debit']))->groupBy(fn($x) => $x->source ?? $x->sumber);
             $expenseComposition = [];
             foreach ($expenseGroups as $src => $list) {
-                $nominal = (float) $list->sum('nominal');
+                $nominal = (float) $list->sum(fn($x) => (float) ($x->amount ?? $x->nominal));
                 $srcLabel = match ($src) {
                     'pengangkutan' => 'Biaya Angkut Residu',
                     'operasional' => 'Operasional TPS / Alat',

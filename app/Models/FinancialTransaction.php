@@ -207,7 +207,7 @@ class FinancialTransaction extends Model
 
     // Accessors untuk kompatibilitas tampilan lama
     public function getTanggalAttribute() { return $this->transaction_date; }
-    public function getJenisAttribute() { return $this->type === 'credit' ? 'K' : 'D'; }
+    public function getJenisAttribute() { return in_array($this->type, ['credit', 'K', 'kredit']) ? 'K' : 'D'; }
     public function getSumberAttribute() { return $this->source; }
     public function getNominalAttribute() { return $this->amount; }
     public function getKeteranganAttribute() { return $this->description; }
