@@ -4,9 +4,11 @@ namespace App\Livewire\Pages\ActivityLogs;
 
 use App\Models\ActivityLog;
 use App\Models\Campus;
+use Livewire\Attributes\Layout;
 use Livewire\Component;
 use Livewire\WithPagination;
 
+#[Layout('layouts.app')]
 class Index extends Component
 {
     use WithPagination;
