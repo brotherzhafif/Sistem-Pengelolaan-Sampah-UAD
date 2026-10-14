@@ -5,10 +5,16 @@ namespace App\Http\Controllers;
 use App\Livewire\Pages\Master\Index as MasterComponent;
 use App\Models\ActivityLog;
 use App\Models\Buyer;
+use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\Pickup;
+use App\Models\Sale;
+use App\Models\SaleItem;
 use App\Models\Vendor;
 use App\Models\WasteSource;
 use App\Models\WasteType;
+use App\Models\WeighingItem;
+use App\Models\WeighingSession;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -271,30 +277,66 @@ class MasterDataController extends Controller
             case 'source':
                 $entity = WasteSource::findOrFail($id);
                 $name = $entity->name;
+                $sessionCount = WeighingSession::where('waste_source_id', $id)->count();
+                if ($sessionCount > 0) {
+                    return [
+                        'success' => false,
+                        'message' => "Tidak dapat menghapus titik sumber '{$name}': Data terikat dengan {$sessionCount} sesi penimbangan sampah.",
+                    ];
+                }
                 $entity->delete();
                 $msg = 'Titik sumber sampah berhasil dihapus.';
                 break;
             case 'type':
                 $entity = WasteType::findOrFail($id);
                 $name = $entity->name;
+                $weighingCount = WeighingItem::where('waste_type_id', $id)->count();
+                $salesCount = SaleItem::where('waste_type_id', $id)->count();
+                if ($weighingCount > 0 || $salesCount > 0) {
+                    return [
+                        'success' => false,
+                        'message' => "Tidak dapat menghapus jenis sampah '{$name}': Data terikat dengan {$weighingCount} data timbangan dan {$salesCount} data penjualan.",
+                    ];
+                }
                 $entity->delete();
                 $msg = 'Jenis sampah berhasil dihapus.';
                 break;
             case 'vendor':
                 $entity = Vendor::findOrFail($id);
                 $name = $entity->name;
+                $pickupCount = Pickup::where('vendor_id', $id)->count();
+                if ($pickupCount > 0) {
+                    return [
+                        'success' => false,
+                        'message' => "Tidak dapat menghapus vendor '{$name}': Data terikat dengan {$pickupCount} transaksi pengangkutan residu.",
+                    ];
+                }
                 $entity->delete();
                 $msg = 'Vendor pengangkut berhasil dihapus.';
                 break;
             case 'buyer':
                 $entity = Buyer::findOrFail($id);
                 $name = $entity->name;
+                $salesCount = Sale::where('buyer_id', $id)->count();
+                if ($salesCount > 0) {
+                    return [
+                        'success' => false,
+                        'message' => "Tidak dapat menghapus pembeli/pengepul '{$name}': Data terikat dengan {$salesCount} transaksi penjualan sampah.",
+                    ];
+                }
                 $entity->delete();
                 $msg = 'Pembeli/Pengepul berhasil dihapus.';
                 break;
             case 'category':
                 $entity = ExpenseCategory::findOrFail($id);
                 $name = $entity->name;
+                $expenseCount = Expense::where('expense_category_id', $id)->count();
+                if ($expenseCount > 0) {
+                    return [
+                        'success' => false,
+                        'message' => "Tidak dapat menghapus kategori pengeluaran '{$name}': Data terikat dengan {$expenseCount} catatan pengeluaran operasional.",
+                    ];
+                }
                 $entity->delete();
                 $msg = 'Kategori pengeluaran berhasil dihapus.';
                 break;

@@ -159,6 +159,14 @@
                                             {{ $p->campus->name }}
                                         </span>
                                         <div class="font-semibold text-slate-800 truncate" title="{{ $p->vendor->name }}">{{ $p->vendor->name }}</div>
+                                        <div class="mt-1 flex items-center gap-1">
+                                            <a href="{{ route('finance', ['view' => $p->financialTransaction?->id]) }}" 
+                                               class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition"
+                                               title="Lihat di Jurnal Buku Kas Keuangan (#FT-{{ $p->financialTransaction?->id ?? 'FT' }})">
+                                                <svg class="w-2.5 h-2.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                <span>Buku Kas #{{ $p->financialTransaction?->id ?? 'FT' }} &rarr;</span>
+                                            </a>
+                                        </div>
                                     </td>
                                     <td class="py-2.5 px-3 truncate">
                                         <div class="text-slate-800 truncate" title="{{ $p->driver_name ?: '-' }}">{{ $p->driver_name ?: '-' }}</div>
@@ -295,6 +303,9 @@
                                     <div class="text-[10px] text-slate-500 font-medium mt-0.5">
                                         Sisa Residu di TPS: <strong class="text-amber-700 font-mono">{{ number_format($this->availableResidualStock, 1, ',', '.') }} kg</strong>
                                     </div>
+                                    <div class="text-[10px] text-rose-600 font-bold mt-0.5">
+                                        Maks. input: {{ number_format($this->availableResidualStock, 1, ',', '.') }} kg (Sisa residu belum diangkut)
+                                    </div>
                                     @error('formVolumeKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
 
@@ -371,6 +382,22 @@
                             <h3 class="text-sm font-bold text-slate-900">Konfirmasi Penghapusan Log Pengangkutan</h3>
                             <p class="text-xs text-slate-500 mt-1">Apakah Anda yakin ingin menghapus catatan pengangkutan ini? Entri debet di buku kas akan otomatis disesuaikan.</p>
                         </div>
+                        @if ($deleteBindingInfo && $deleteBindingInfo['is_bound'])
+                            <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-left">
+                                <div class="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>Keterikatan Buku Kas Keuangan:</span>
+                                </div>
+                                <p class="text-[11px] text-blue-800 mt-1">
+                                    {{ $deleteBindingInfo['reason'] }}
+                                </p>
+                                <div class="mt-2">
+                                    <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 underline">
+                                        <span>Lihat Jurnal Keuangan #FT-{{ $deleteBindingInfo['financial_transaction']?->id }} &rarr;</span>
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
                         <div class="flex items-center justify-center gap-3 pt-2">
                             <button @click="deleteModal = false; $wire.cancelDelete()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
                                 Batal

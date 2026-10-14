@@ -132,43 +132,20 @@ class WeighingController extends Controller
             ];
         }
 
-        // Validasi Integritas: Cek apakah sampah dari sesi ini sudah diserap penjualan atau pengangkutan
-        // 1. Cek sampah bernilai jual (is_sellable = true)
-        foreach ($session->items as $item) {
-            $weight = (float) $item->weight_kg;
-            if ($weight <= 0) {
-                continue;
-            }
+        // Validasi Keterikatan: Cek apakah sesi penimbangan ini terikat transaksi Penjualan atau Pengangkutan
+        $bindingInfo = $session->getBindingInfo();
+        if ($bindingInfo['is_bound']) {
+            $saleLinks = $bindingInfo['sales']->map(fn($s) => "Penjualan #{$s->id} (" . $s->sale_date->translatedFormat('d M Y') . ")")->join(', ');
+            $pickupLinks = $bindingInfo['pickups']->map(fn($p) => "Pengangkutan #{$p->id} (" . $p->pickup_date->translatedFormat('d M Y') . ")")->join(', ');
 
-            if ($item->wasteType?->is_sellable) {
-                $availableStock = WasteType::getAvailableStock($item->waste_type_id, $session->campus_id);
-                // Jika bobot sesi ini lebih besar dari sisa stok tersedia saat ini, berarti sebagian sudah terjual!
-                if ($weight > $availableStock) {
-                    $soldWeight = $weight - $availableStock;
-                    $wasteName = $item->wasteType->name;
-                    return [
-                        'success' => false,
-                        'message' => "Tidak dapat menghapus penimbangan: Sampah '{$wasteName}' sudah terjual " . number_format($soldWeight, 1, ',', '.') . " kg (sisa stok saat ini hanya " . number_format($availableStock, 1, ',', '.') . " kg). Harap batalkan transaksi penjualan terkait terlebih dahulu.",
-                    ];
-                }
-            }
-        }
+            $boundDetails = [];
+            if ($saleLinks) $boundDetails[] = $saleLinks;
+            if ($pickupLinks) $boundDetails[] = $pickupLinks;
 
-        // 2. Cek sampah tidak bernilai jual / residu (is_sellable = false)
-        $nonSellableWeight = (float) $session->items
-            ->filter(fn($i) => !empty($i->wasteType) && !$i->wasteType->is_sellable)
-            ->sum('weight_kg');
-
-        if ($nonSellableWeight > 0) {
-            $stockSummary = WasteType::getStockSummary($session->campus_id);
-            $availableResidual = (float) ($stockSummary['residual_stock_kg'] ?? 0.0);
-            if ($nonSellableWeight > $availableResidual) {
-                $pickedUpWeight = $nonSellableWeight - $availableResidual;
-                return [
-                    'success' => false,
-                    'message' => "Tidak dapat menghapus penimbangan: Sampah residu/organik dari sesi ini sudah terangkut oleh vendor sebanyak " . number_format($pickedUpWeight, 1, ',', '.') . " kg (sisa residu saat ini hanya " . number_format($availableResidual, 1, ',', '.') . " kg). Harap batalkan transaksi pengangkutan terkait terlebih dahulu.",
-                ];
-            }
+            return [
+                'success' => false,
+                'message' => "Tidak dapat menghapus sesi penimbangan (#{$session->id}): Data terkunci dan terikat dengan transaksi [" . implode(' | ', $boundDetails) . "]. " . implode('. ', $bindingInfo['reasons']),
+            ];
         }
 
         ActivityLog::record(

@@ -39,6 +39,25 @@ class Expense extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function financialTransaction()
+    {
+        return $this->hasOne(FinancialTransaction::class, 'ref_id')->where('source', 'operational');
+    }
+
+    /**
+     * Mengambil informasi keterikatan pengeluaran operasional dengan Buku Kas Keuangan.
+     */
+    public function getBindingInfo(): array
+    {
+        $ft = FinancialTransaction::where('source', 'operational')->where('ref_id', $this->id)->first();
+        return [
+            'is_bound' => $ft !== null,
+            'financial_transaction' => $ft,
+            'category' => $this->category,
+            'reason' => $ft ? "Terikat dengan Jurnal Buku Kas Keuangan #FT-{$ft->id} (Biaya Debet: Rp " . number_format((float) $this->amount, 0, ',', '.') . ")" : null,
+        ];
+    }
+
     /**
      * Scope query berdasarkan ID Kampus.
      */

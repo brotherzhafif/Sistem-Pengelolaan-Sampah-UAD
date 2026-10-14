@@ -38,6 +38,7 @@ class Index extends Component
 
     // Modal Confirmation Deletion & View Detail state
     public ?int $confirmDeletePickupId = null;
+    public ?array $deleteBindingInfo = null;
     public ?int $viewPickupId = null;
 
     public function viewPickup(int $id): void
@@ -65,6 +66,10 @@ class Index extends Component
         }
         $this->filterDateFrom = Carbon::now()->subDays(30)->format('Y-m-d');
         $this->filterDateTo = Carbon::today()->format('Y-m-d');
+
+        if (request()->has('view')) {
+            $this->viewPickupId = (int) request()->get('view');
+        }
 
         $this->resetForm();
     }
@@ -212,11 +217,14 @@ class Index extends Component
     public function confirmDelete(int $id): void
     {
         $this->confirmDeletePickupId = $id;
+        $pickup = Pickup::find($id);
+        $this->deleteBindingInfo = $pickup ? $pickup->getBindingInfo() : null;
     }
 
     public function cancelDelete(): void
     {
         $this->confirmDeletePickupId = null;
+        $this->deleteBindingInfo = null;
         $this->dispatch('close-modal');
     }
 

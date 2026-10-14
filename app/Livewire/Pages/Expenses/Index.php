@@ -26,6 +26,7 @@ class Index extends Component
     public bool $showCreateModal = false;
     public ?int $viewExpenseId = null;
     public ?int $deleteExpenseId = null;
+    public ?array $deleteBindingInfo = null;
 
     // Form fields
     public $formCampusId = null;
@@ -51,6 +52,10 @@ class Index extends Component
         $this->filterDateFrom = Carbon::now()->subDays(30)->format('Y-m-d');
         $this->filterDateTo = Carbon::today()->format('Y-m-d');
         $this->formDate = Carbon::today()->format('Y-m-d');
+
+        if (request()->has('view')) {
+            $this->viewExpenseId = (int) request()->get('view');
+        }
 
         $this->resetForm();
     }
@@ -111,11 +116,14 @@ class Index extends Component
     public function confirmDelete(int $id): void
     {
         $this->deleteExpenseId = $id;
+        $expense = Expense::find($id);
+        $this->deleteBindingInfo = $expense ? $expense->getBindingInfo() : null;
     }
 
     public function cancelDelete(): void
     {
         $this->deleteExpenseId = null;
+        $this->deleteBindingInfo = null;
     }
 
     public function deleteExpense(ExpenseController $controller): void

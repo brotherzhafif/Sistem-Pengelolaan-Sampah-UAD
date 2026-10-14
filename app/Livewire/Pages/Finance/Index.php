@@ -53,6 +53,10 @@ class Index extends Component
         $this->filterDateTo = Carbon::today()->format('Y-m-d');
         $this->initialDate = Carbon::today()->format('Y-m-d');
 
+        if (request()->has('view')) {
+            $this->viewKeuanganId = (int) request()->get('view');
+        }
+
         $this->resetBalanceForm();
     }
 

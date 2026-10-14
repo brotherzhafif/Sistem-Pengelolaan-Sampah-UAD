@@ -45,9 +45,28 @@ class Sale extends Model
         return $this->hasMany(SaleItem::class);
     }
 
+    public function financialTransaction()
+    {
+        return $this->hasOne(FinancialTransaction::class, 'ref_id')->where('source', 'sales');
+    }
+
     public function getTotalWeightAttribute(): float
     {
         return (float) $this->items->sum('weight_kg');
+    }
+
+    /**
+     * Mengambil informasi keterikatan transaksi penjualan dengan Buku Kas Keuangan.
+     */
+    public function getBindingInfo(): array
+    {
+        $ft = FinancialTransaction::where('source', 'sales')->where('ref_id', $this->id)->first();
+        return [
+            'is_bound' => $ft !== null,
+            'financial_transaction' => $ft,
+            'buyer' => $this->buyer,
+            'reason' => $ft ? "Terikat dengan Jurnal Buku Kas Keuangan #FT-{$ft->id} (Pemasukan Kredit: Rp " . number_format((float) $this->total_amount, 0, ',', '.') . ")" : null,
+        ];
     }
 
     /**

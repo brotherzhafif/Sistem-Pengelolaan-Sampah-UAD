@@ -1,6 +1,6 @@
 <div x-data="{ 
     balanceModal: @entangle('showBalanceModal'), 
-    detailModal: false 
+    detailModal: {{ !empty($viewKeuanganId) ? 'true' : 'false' }} 
 }" 
 @close-modal.window="balanceModal = false; detailModal = false"
 class="space-y-6">

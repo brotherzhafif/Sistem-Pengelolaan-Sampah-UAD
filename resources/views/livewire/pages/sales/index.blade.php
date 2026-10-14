@@ -169,6 +169,14 @@
                                             <span class="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"></span>
                                             <span>{{ $sale->items->count() }} Jenis Terpilah</span>
                                         </div>
+                                        <div class="mt-1 flex items-center gap-1">
+                                            <a href="{{ route('finance', ['view' => $sale->financialTransaction?->id]) }}" 
+                                               class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition"
+                                               title="Lihat di Jurnal Buku Kas Keuangan (#FT-{{ $sale->financialTransaction?->id ?? 'FT' }})">
+                                                <svg class="w-2.5 h-2.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                                                <span>Buku Kas #{{ $sale->financialTransaction?->id ?? 'FT' }} &rarr;</span>
+                                            </a>
+                                        </div>
                                     </td>
                                     <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-sm">
                                         {{ number_format($sale->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
@@ -322,6 +330,9 @@
                                                     <div class="text-[10px] text-slate-500 font-medium mt-0.5">
                                                         Stok: <strong class="text-emerald-700 font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</strong>
                                                     </div>
+                                                    <div class="text-[10px] text-rose-600 font-bold mt-0.5">
+                                                        Maks. input: {{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg
+                                                    </div>
                                                 </div>
                                                 <div class="col-span-3">
                                                     <input type="number" step="0.01" min="0" max="{{ $item['available_stock_kg'] }}"
@@ -338,6 +349,9 @@
                                                            "
                                                            placeholder="0.0" 
                                                            class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                                    <div class="text-[10px] text-rose-500 font-medium text-right mt-0.5">
+                                                        Maks: {{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg
+                                                    </div>
                                                     @error("saleItems.{$index}.weight_kg")
                                                         <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
                                                     @enderror
@@ -396,6 +410,22 @@
                         <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
                             Tindakan ini akan membatalkan penjualan, mengembalikan kuota stok sampah di TPS, dan menghapus pencatatan jurnal Kredit di buku kas kampus.
                         </p>
+                        @if ($deleteBindingInfo && $deleteBindingInfo['is_bound'])
+                            <div class="mt-3 p-3 rounded-xl bg-blue-50 border border-blue-200 text-left">
+                                <div class="text-xs font-bold text-blue-900 flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>Keterikatan Buku Kas Keuangan:</span>
+                                </div>
+                                <p class="text-[11px] text-blue-800 mt-1">
+                                    {{ $deleteBindingInfo['reason'] }}
+                                </p>
+                                <div class="mt-2">
+                                    <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 underline">
+                                        <span>Lihat Jurnal Keuangan #FT-{{ $deleteBindingInfo['financial_transaction']?->id }} &rarr;</span>
+                                    </a>
+                                </div>
+                            </div>
+                        @endif
                         <div class="flex items-center justify-center gap-3 mt-6">
                             <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
                                 Batal

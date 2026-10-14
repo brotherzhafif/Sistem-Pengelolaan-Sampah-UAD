@@ -45,6 +45,25 @@ class Pickup extends Model
         return $this->belongsTo(User::class, 'created_by');
     }
 
+    public function financialTransaction()
+    {
+        return $this->hasOne(FinancialTransaction::class, 'ref_id')->where('source', 'pickup');
+    }
+
+    /**
+     * Mengambil informasi keterikatan transaksi pengangkutan residu dengan Buku Kas Keuangan.
+     */
+    public function getBindingInfo(): array
+    {
+        $ft = FinancialTransaction::where('source', 'pickup')->where('ref_id', $this->id)->first();
+        return [
+            'is_bound' => $ft !== null,
+            'financial_transaction' => $ft,
+            'vendor' => $this->vendor,
+            'reason' => $ft ? "Terikat dengan Jurnal Buku Kas Keuangan #FT-{$ft->id} (Biaya Debet: Rp " . number_format((float) $this->total_cost, 0, ',', '.') . ")" : null,
+        ];
+    }
+
     /**
      * Scope query berdasarkan ID Kampus.
      */
