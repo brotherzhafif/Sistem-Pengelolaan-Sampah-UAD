@@ -14,7 +14,7 @@ return new class extends Migration
         // 1. Master Titik Sumber Sampah per Kampus (Area Taman, Kantin, Asrama, Gedung Rektorat, TPS)
         Schema::create('waste_sources', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('campus_id')->constrained('campuses')->cascadeOnDelete();
+            $table->foreignId('campus_id')->constrained('campuses')->restrictOnDelete();
             $table->string('name', 100);
             $table->string('description', 255)->nullable();
             $table->boolean('is_active')->default(true);

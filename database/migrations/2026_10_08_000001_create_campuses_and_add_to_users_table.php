@@ -25,7 +25,7 @@ return new class extends Migration
                 ->nullable()
                 ->after('id')
                 ->constrained('campuses')
-                ->nullOnDelete();
+                ->restrictOnDelete();
         });
     }
 

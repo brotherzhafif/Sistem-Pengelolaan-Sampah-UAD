@@ -14,10 +14,10 @@ return new class extends Migration
         // 1. Sesi Penimbangan Harian (Weighing Sessions)
         Schema::create('weighing_sessions', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('campus_id')->constrained('campuses')->cascadeOnDelete();
-            $table->foreignId('waste_source_id')->nullable()->constrained('waste_sources')->nullOnDelete();
+            $table->foreignId('campus_id')->constrained('campuses')->restrictOnDelete();
+            $table->foreignId('waste_source_id')->nullable()->constrained('waste_sources')->restrictOnDelete();
             $table->date('weigh_date');
-            $table->foreignId('created_by')->constrained('users')->cascadeOnDelete();
+            $table->foreignId('created_by')->constrained('users')->restrictOnDelete();
             $table->text('notes')->nullable();
             $table->timestamps();
 
@@ -27,8 +27,8 @@ return new class extends Migration
         // 2. Rincian Item Penimbangan per Jenis Sampah (Weighing Items)
         Schema::create('weighing_items', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('weighing_session_id')->constrained('weighing_sessions')->cascadeOnDelete();
-            $table->foreignId('waste_type_id')->constrained('waste_types')->cascadeOnDelete();
+            $table->foreignId('weighing_session_id')->constrained('weighing_sessions')->restrictOnDelete();
+            $table->foreignId('waste_type_id')->constrained('waste_types')->restrictOnDelete();
             $table->decimal('weight_kg', 10, 2); // Bobot dalam kilogram
             $table->decimal('volume_m3', 8, 3)->nullable(); // Estimasi volume m³ (opsional)
             $table->timestamps();

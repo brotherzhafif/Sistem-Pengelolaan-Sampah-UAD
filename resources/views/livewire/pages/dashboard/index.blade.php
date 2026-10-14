@@ -32,117 +32,147 @@
                     
                     <!-- KPI 1: Timbangan Hari Ini -->
                     <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Timbang Hari Ini</span>
-                        <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                            </svg>
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Timbang Hari Ini</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">Sampah masuk hari ini</p>
+                            </div>
+                            <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($todayWeighedKg, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">kg</span>
+                        </div>
+                        <div class="mt-1.5 flex items-center justify-between text-[10px] border-t border-slate-100 pt-1.5">
+                            <span class="text-slate-500">Sesi Timbang:</span>
+                            <span class="font-mono font-semibold text-emerald-600">{{ $todaySessionsCount ?? 0 }} Sesi Hari Ini</span>
                         </div>
                     </div>
-                    <div class="mt-2.5 flex items-baseline gap-1">
-                        <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($todayWeighedKg, 1, ',', '.') }}</span>
-                        <span class="text-[11px] text-slate-500 font-medium">kg</span>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-1 truncate">Sampah masuk hari ini</p>
-                </div>
 
-                <!-- KPI 2: Total Akumulasi Masuk -->
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-teal-500"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Akumulasi</span>
-                        <div class="w-6 h-6 rounded-md bg-teal-50 text-teal-600 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                            </svg>
+                    <!-- KPI 2: Total Akumulasi Masuk -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-teal-500"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Total Akumulasi</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">Semua timbulan tercatat</p>
+                            </div>
+                            <div class="w-6 h-6 rounded-md bg-teal-50 text-teal-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($totalAllWeighedKg, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">kg</span>
+                        </div>
+                        <div class="mt-1.5 flex items-center justify-between text-[10px] border-t border-slate-100 pt-1.5">
+                            <span class="text-slate-500">Estimasi Ruang:</span>
+                            <span class="font-mono font-semibold text-teal-700">{{ number_format($totalAllVolumeM3, 2, ',', '.') }} m³</span>
                         </div>
                     </div>
-                    <div class="mt-2.5 flex items-baseline gap-1">
-                        <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($totalAllWeighedKg, 1, ',', '.') }}</span>
-                        <span class="text-[11px] text-slate-500 font-medium">kg</span>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-1 truncate">{{ number_format($totalAllVolumeM3, 2, ',', '.') }} m³ volume</p>
-                </div>
 
-                <!-- KPI 3: Stok Terpilah Anorganik -->
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
-                    <div class="flex items-center justify-between">
-                        <div>
-                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stok Terpilah (Siap Jual)</span>
-                            <p class="text-[9px] text-slate-400">Sampah bernilai jual belum terjual</p>
+                    <!-- KPI 3: Stok Terpilah Anorganik -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stok Terpilah (Siap Jual)</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">Sampah bernilai jual belum terjual</p>
+                            </div>
+                            <div class="w-6 h-6 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                                </svg>
+                            </div>
                         </div>
-                        <div class="w-6 h-6 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($sellableStockKg, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">kg</span>
+                        </div>
+                        <div class="mt-1.5 flex items-center justify-between text-[10px] border-t border-slate-100 pt-1.5">
+                            <span class="text-slate-500">Potensi Kas:</span>
+                            <span class="font-mono font-semibold text-emerald-600">Rp {{ number_format($potentialRevenue ?? 0, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    <div class="mt-2.5 flex items-baseline gap-1">
-                        <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($sellableStockKg, 1, ',', '.') }}</span>
-                        <span class="text-[11px] text-slate-500 font-medium">kg</span>
-                    </div>
-                    <div class="mt-1.5 flex items-center justify-between text-[10px] border-t border-slate-100 pt-1.5">
-                        <span class="text-slate-500">Potensi Kas:</span>
-                        <span class="font-mono font-semibold text-emerald-600">Rp {{ number_format($potentialRevenue ?? 0, 0, ',', '.') }}</span>
-                    </div>
-                </div>
 
-                <!-- KPI 4: Stok Residu TPA -->
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stok Residu</span>
-                        <div class="w-6 h-6 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
+                    <!-- KPI 4: Stok Residu TPA -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stok Residu</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">Sampah akhir non-daur ulang</p>
+                            </div>
+                            <div class="w-6 h-6 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($residualStockKg, 1, ',', '.') }}</span>
+                            <span class="text-[11px] text-slate-500 font-medium">kg</span>
+                        </div>
+                        <div class="mt-1.5 flex items-center justify-between text-[10px] border-t border-slate-100 pt-1.5">
+                            <span class="text-slate-500">Status Vendor:</span>
+                            <span class="font-mono font-semibold {{ $residualStockKg > 0 ? 'text-amber-600' : 'text-emerald-600' }}">{{ $residualStockKg > 0 ? 'Menunggu Armada' : 'TPS Bersih' }}</span>
                         </div>
                     </div>
-                    <div class="mt-2.5 flex items-baseline gap-1">
-                        <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($residualStockKg, 1, ',', '.') }}</span>
-                        <span class="text-[11px] text-slate-500 font-medium">kg</span>
-                    </div>
-                    <p class="text-[10px] text-amber-600 font-medium mt-1 truncate">Menunggu armada vendor</p>
-                </div>
 
-                <!-- KPI 5: Tingkat Pengalihan TPA (Diversion Rate) -->
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Diversion Rate</span>
-                        <div class="w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                    <!-- KPI 5: Tingkat Pengalihan TPA (Diversion Rate) -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-indigo-500"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Diversion Rate</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">Teralihkan dari TPA Piyungan</p>
+                            </div>
+                            <div class="w-6 h-6 rounded-md bg-indigo-50 text-indigo-600 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-0.5">
+                            <span class="font-mono text-xl font-bold text-indigo-700">{{ $diversionRate }}</span>
+                            <span class="text-xs text-indigo-500 font-bold">%</span>
+                        </div>
+                        <div class="mt-1.5 flex items-center justify-between text-[10px] border-t border-slate-100 pt-1.5">
+                            <span class="text-slate-500">Target Lestari:</span>
+                            <span class="font-mono font-semibold {{ $diversionRate >= 70 ? 'text-indigo-600' : 'text-amber-600' }}">&ge; 70% ({{ $diversionRate >= 70 ? 'Optimal' : 'Tingkatkan' }})</span>
                         </div>
                     </div>
-                    <div class="mt-2.5 flex items-baseline gap-0.5">
-                        <span class="font-mono text-xl font-bold text-indigo-700">{{ $diversionRate }}</span>
-                        <span class="text-xs text-indigo-500 font-bold">%</span>
-                    </div>
-                    <p class="text-[10px] text-slate-400 mt-1 truncate">Teralihkan dari TPA Piyungan</p>
-                </div>
 
-                <!-- KPI 6: Saldo Kas Sirkular Realtime -->
-                <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-600"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Saldo Kas Sirkular</span>
-                        <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center">
-                            <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
+                    <!-- KPI 6: Saldo Kas Sirkular Realtime -->
+                    <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
+                        <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-600"></div>
+                        <div class="flex items-center justify-between">
+                            <div>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Saldo Kas Sirkular</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">Kas operasional aktif TPS</p>
+                            </div>
+                            <div class="w-6 h-6 rounded-md bg-emerald-50 text-emerald-700 flex items-center justify-center">
+                                <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                            </div>
+                        </div>
+                        <div class="mt-2.5 flex items-baseline gap-1">
+                            <span class="text-[10px] font-semibold text-slate-400">Rp</span>
+                            <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($saldoKas, 0, ',', '.') }}</span>
+                        </div>
+                        <div class="mt-1.5 flex items-center justify-between text-[10px] border-t border-slate-100 pt-1.5">
+                            <span class="text-slate-500">Total Penjualan:</span>
+                            <span class="font-mono font-semibold text-emerald-600">Rp {{ number_format($salesRevenue, 0, ',', '.') }}</span>
                         </div>
                     </div>
-                    <div class="mt-2.5 flex items-baseline gap-1">
-                        <span class="text-[10px] font-semibold text-slate-400">Rp</span>
-                        <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($saldoKas, 0, ',', '.') }}</span>
-                    </div>
-                    <p class="text-[10px] text-emerald-600 font-medium mt-1 truncate">Kas operasional aktif</p>
-                </div>
 
             </div>
 

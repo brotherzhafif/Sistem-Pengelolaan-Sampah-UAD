@@ -160,7 +160,10 @@ class WeighingController extends Controller
             campusId: $session->campus_id
         );
 
-        $session->delete();
+        \Illuminate\Support\Facades\DB::transaction(function () use ($session) {
+            $session->items()->delete();
+            $session->delete();
+        });
 
         return [
             'success' => true,

@@ -36,6 +36,9 @@ class DashboardController extends Controller
     {
         // 1. Timbangan Hari Ini & Akumulasi (dari Model WeighingItem)
         $todayWeighedKg = WeighingItem::getTodayWeighedKg($campusId);
+        $todaySessionsCount = WeighingSession::whereDate('weigh_date', \Carbon\Carbon::today()->format('Y-m-d'))
+            ->when($campusId, fn($q) => $q->where('campus_id', $campusId))
+            ->count();
         $totalAccumulation = WeighingItem::getTotalAccumulation($campusId);
 
         // 2. Stok Terpilah & Residu Realtime (dari Model WasteType)
@@ -62,6 +65,7 @@ class DashboardController extends Controller
 
         return [
             'todayWeighedKg' => $todayWeighedKg,
+            'todaySessionsCount' => $todaySessionsCount,
             'totalAllWeighedKg' => $totalAccumulation['totalKg'],
             'totalAllVolumeM3' => $totalAccumulation['totalVolumeM3'],
             'sellableStockKg' => $stockSummary['sellable_stock_kg'],

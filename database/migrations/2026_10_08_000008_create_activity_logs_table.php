@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('activity_logs', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('user_id')->nullable()->constrained('users')->nullOnDelete();
-            $table->foreignId('campus_id')->nullable()->constrained('campuses')->nullOnDelete();
+            $table->foreignId('user_id')->nullable()->constrained('users')->restrictOnDelete();
+            $table->foreignId('campus_id')->nullable()->constrained('campuses')->restrictOnDelete();
             $table->string('module', 50)->index();
             $table->string('action', 50)->index();
             $table->text('description');

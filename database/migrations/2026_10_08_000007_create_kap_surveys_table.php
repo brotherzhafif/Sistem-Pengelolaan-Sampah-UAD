@@ -13,7 +13,7 @@ return new class extends Migration
     {
         Schema::create('kap_surveys', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('campus_id')->constrained('campuses')->onDelete('cascade');
+            $table->foreignId('campus_id')->constrained('campuses')->restrictOnDelete();
             $table->string('respondent_name')->nullable();
             $table->string('respondent_identifier')->nullable(); // NIM / NIP
             $table->string('respondent_role', 30); // mahasiswa, dosen, tendik

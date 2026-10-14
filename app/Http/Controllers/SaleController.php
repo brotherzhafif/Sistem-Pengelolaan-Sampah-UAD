@@ -174,7 +174,10 @@ class SaleController extends Controller
             campusId: $sale->campus_id
         );
 
-        $sale->delete(); // Observer otomatis hapus jurnal keuangan & sinkronkan buku besar
+        \Illuminate\Support\Facades\DB::transaction(function () use ($sale) {
+            $sale->items()->delete();
+            $sale->delete(); // Observer otomatis hapus jurnal keuangan & sinkronkan buku besar
+        });
 
         return [
             'success' => true,
