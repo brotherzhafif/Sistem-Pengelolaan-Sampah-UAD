@@ -70,7 +70,10 @@
                 <div class="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs relative overflow-hidden transition hover:shadow-xs">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
                     <div class="flex items-center justify-between">
-                        <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stok Terpilah</span>
+                        <div>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stok Terpilah (Siap Jual)</span>
+                            <p class="text-[9px] text-slate-400">Anorganik belum terjual</p>
+                        </div>
                         <div class="w-6 h-6 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
                             <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -81,7 +84,10 @@
                         <span class="font-mono text-xl font-bold text-slate-900">{{ number_format($sellableStockKg, 1, ',', '.') }}</span>
                         <span class="text-[11px] text-slate-500 font-medium">kg</span>
                     </div>
-                    <p class="text-[10px] text-sky-600 font-medium mt-1 truncate">Siap jual ke pengepul</p>
+                    <div class="mt-1.5 flex items-center justify-between text-[10px] border-t border-slate-100 pt-1.5">
+                        <span class="text-slate-500">Potensi Kas:</span>
+                        <span class="font-mono font-semibold text-emerald-600">Rp {{ number_format($potentialRevenue ?? 0, 0, ',', '.') }}</span>
+                    </div>
                 </div>
 
                 <!-- KPI 4: Stok Residu TPA -->

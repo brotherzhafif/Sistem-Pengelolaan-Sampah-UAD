@@ -79,28 +79,46 @@ class Index extends Component
         $this->formDate = Carbon::today()->format('Y-m-d');
         $this->formNotes = '';
 
-        // Ambil jenis sampah terpilah (is_sellable = true)
-        $sellableTypes = WasteType::getActiveSellableTypes();
+        $this->loadSellableItems();
+    }
+
+    public function loadSellableItems(): void
+    {
+        // Hanya ambil jenis sampah terpilah (is_sellable = true) yang memiliki stok tersedia (> 0 kg) dari penimbangan
+        $availableTypes = WasteType::getSellableTypesWithAvailableStock($this->formCampusId);
         $this->saleItems = [];
-        foreach ($sellableTypes as $type) {
+        foreach ($availableTypes as $type) {
             $this->saleItems[] = [
-                'waste_type_id' => $type->id,
-                'waste_name' => $type->name,
+                'waste_type_id' => $type['waste_type_id'],
+                'waste_name' => $type['waste_name'],
+                'available_stock_kg' => (float) $type['available_stock_kg'],
                 'weight_kg' => '',
-                'price_per_kg' => (float) $type->default_price_per_kg,
+                'price_per_kg' => (float) $type['default_price_per_kg'],
                 'subtotal' => 0.0,
             ];
         }
     }
 
+    public function updatedFormCampusId(): void
+    {
+        $this->resetErrorBag();
+        $this->resetValidation();
+        $this->loadSellableItems();
+    }
+
     public function openCreateModal(): void
     {
+        $this->resetErrorBag();
+        $this->resetValidation();
         $this->resetForm();
         $this->showCreateModal = true;
+        $this->dispatch('open-sales-modal');
     }
 
     public function closeCreateModal(): void
     {
+        $this->resetErrorBag();
+        $this->resetValidation();
         $this->showCreateModal = false;
         $this->dispatch('close-modal');
     }
@@ -109,6 +127,14 @@ class Index extends Component
     {
         if (isset($this->saleItems[$index])) {
             $weight = floatval($this->saleItems[$index]['weight_kg'] ?? 0);
+            $maxStock = floatval($this->saleItems[$index]['available_stock_kg'] ?? 0);
+
+            if ($weight > $maxStock) {
+                $this->addError("saleItems.{$index}.weight_kg", "Maksimal bobot " . number_format($maxStock, 1, ',', '.') . " kg");
+            } else {
+                $this->resetErrorBag("saleItems.{$index}.weight_kg");
+            }
+
             $price = floatval($this->saleItems[$index]['price_per_kg'] ?? 0);
             $this->saleItems[$index]['subtotal'] = round($weight * $price, 2);
         }
@@ -125,6 +151,27 @@ class Index extends Component
         return round($total, 2);
     }
 
+    public function getCanSubmitProperty(): bool
+    {
+        if (empty($this->saleItems)) {
+            return false;
+        }
+
+        $hasPositiveWeight = false;
+        foreach ($this->saleItems as $index => $item) {
+            $weight = floatval($item['weight_kg'] ?? 0);
+            $maxStock = floatval($item['available_stock_kg'] ?? 0);
+            if ($weight > $maxStock) {
+                return false;
+            }
+            if ($weight > 0) {
+                $hasPositiveWeight = true;
+            }
+        }
+
+        return $hasPositiveWeight && $this->totalSaleAmount > 0;
+    }
+
     public function saveSale(SaleController $controller): void
     {
         try {
@@ -137,6 +184,8 @@ class Index extends Component
             ]);
 
             $this->showCreateModal = false;
+            $this->resetErrorBag();
+            $this->resetValidation();
             $this->resetForm();
             $this->dispatch('close-modal');
             $this->dispatch('toast', message: $result['message'], type: 'success');

@@ -101,6 +101,7 @@ class WasteType extends Model
         $totalWeighed = 0.0;
         $totalSold = 0.0;
         $sellableStock = 0.0;
+        $potentialRevenue = 0.0;
         $grossResidualStock = 0.0;
 
         foreach ($allWasteTypes as $type) {
@@ -112,8 +113,11 @@ class WasteType extends Model
             $totalWeighed += $weighed;
             $totalSold += $sold;
 
+            $itemPotentialRevenue = 0.0;
             if ($type->is_sellable) {
                 $sellableStock += $available;
+                $itemPotentialRevenue = $available * (float) $type->default_price_per_kg;
+                $potentialRevenue += $itemPotentialRevenue;
             } else {
                 $grossResidualStock += $available;
             }
@@ -127,6 +131,7 @@ class WasteType extends Model
                 'total_weighed_kg' => $weighed,
                 'total_sold_kg' => $sold,
                 'available_stock_kg' => $available,
+                'potential_revenue' => $itemPotentialRevenue,
                 'total_volume_m3' => $volume,
             ];
         }
@@ -138,9 +143,23 @@ class WasteType extends Model
             'total_sold_kg' => $totalSold,
             'total_picked_up_kg' => $totalPickedUp,
             'sellable_stock_kg' => $sellableStock,
+            'potential_revenue' => $potentialRevenue,
             'residual_stock_kg' => $netResidualStock,
             'items_breakdown' => collect($itemsBreakdown),
         ];
+    }
+
+    /**
+     * Mengambil daftar jenis sampah terpilah yang memiliki stok tersedia (> 0 kg)
+     * untuk penimbangan yang sudah dilakukan pada kampus tertentu.
+     */
+    public static function getSellableTypesWithAvailableStock(int|string|null $campusId = null): array
+    {
+        $summary = static::getStockSummary($campusId);
+        return $summary['items_breakdown']
+            ->filter(fn ($item) => !empty($item['is_sellable']) && (float) $item['available_stock_kg'] > 0)
+            ->values()
+            ->all();
     }
 
     /**

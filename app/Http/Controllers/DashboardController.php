@@ -65,6 +65,7 @@ class DashboardController extends Controller
             'totalAllWeighedKg' => $totalAccumulation['totalKg'],
             'totalAllVolumeM3' => $totalAccumulation['totalVolumeM3'],
             'sellableStockKg' => $stockSummary['sellable_stock_kg'],
+            'potentialRevenue' => $stockSummary['potential_revenue'] ?? 0.0,
             'residualStockKg' => $stockSummary['residual_stock_kg'],
             'organikKg' => $composition['organikKg'],
             'anorganikKg' => $composition['anorganikKg'],

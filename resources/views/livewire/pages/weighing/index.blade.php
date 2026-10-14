@@ -39,7 +39,10 @@
         <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
             <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
             <div class="flex items-center justify-between">
-                <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Terpilah (Siap Jual)</span>
+                <div>
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Terpilah (Siap Jual)</span>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Akumulasi anorganik belum terjual</p>
+                </div>
                 <div class="w-7 h-7 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
                     <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -50,7 +53,10 @@
                 <span class="font-mono text-2xl font-bold text-sky-600">{{ number_format($stockSummary['sellable_stock_kg'], 1) }}</span>
                 <span class="text-xs text-slate-500 font-medium">kg</span>
             </div>
-            <p class="text-[11px] text-slate-400 mt-1">Potensi pendapatan kas kampus</p>
+            <div class="mt-2 flex items-center justify-between text-[11px] border-t border-slate-100 pt-2">
+                <span class="text-slate-500">Potensi Pendapatan:</span>
+                <span class="font-mono font-semibold text-emerald-600">Rp {{ number_format($stockSummary['potential_revenue'] ?? 0, 0, ',', '.') }}</span>
+            </div>
         </div>
 
         <!-- Residu -->

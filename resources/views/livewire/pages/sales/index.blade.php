@@ -56,7 +56,10 @@
                 <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
                     <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sisa Stok Terpilah</span>
+                        <div>
+                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sisa Stok Terpilah</span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Akumulasi anorganik belum terjual</p>
+                        </div>
                         <div class="w-7 h-7 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -67,7 +70,10 @@
                         <span class="font-mono text-2xl font-bold text-amber-600">{{ number_format($stockSummary['sellable_stock_kg'], 1) }}</span>
                         <span class="text-xs text-slate-500 font-medium">kg</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">Tersedia di TPS siap untuk dijual</p>
+                    <div class="mt-2 flex items-center justify-between text-[11px] border-t border-slate-100 pt-2">
+                        <span class="text-slate-500">Potensi Pendapatan:</span>
+                        <span class="font-mono font-semibold text-emerald-600">Rp {{ number_format($stockSummary['potential_revenue'] ?? 0, 0, ',', '.') }}</span>
+                    </div>
                 </div>
             </div>
 
@@ -96,7 +102,7 @@
 
                 @if ($canCreate)
                     <div class="flex items-center gap-2">
-                        <button @click="showModal = true; $wire.openCreateModal()"
+                        <button wire:click="openCreateModal"
                                 type="button"
                                 class="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -288,41 +294,67 @@
                                     </div>
                                 @enderror
 
-                                <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
-                                    <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
-                                        <div class="col-span-4">Jenis Sampah</div>
-                                        <div class="col-span-3 text-right">Berat Terjual (kg)</div>
-                                        <div class="col-span-2 text-right">Harga / kg (Rp)</div>
-                                        <div class="col-span-3 text-right">Subtotal (Rp)</div>
-                                    </div>
-
-                                    @foreach ($saleItems as $index => $item)
-                                        <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
-                                            <div class="col-span-4">
-                                                <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
-                                            </div>
-                                            <div class="col-span-3">
-                                                <input type="number" step="0.01" min="0" 
-                                                       wire:model="saleItems.{{ $index }}.weight_kg" 
-                                                       wire:input="updateSubtotal({{ $index }})"
-                                                       placeholder="0.0" 
-                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
-                                                @error("saleItems.{$index}.weight_kg")
-                                                    <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
-                                                @enderror
-                                            </div>
-                                            <div class="col-span-2">
-                                                <input type="number" step="100" min="0" 
-                                                       wire:model="saleItems.{{ $index }}.price_per_kg" 
-                                                       wire:input="updateSubtotal({{ $index }})"
-                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
-                                            </div>
-                                            <div class="col-span-3 text-right font-mono font-bold text-xs text-slate-800">
-                                                Rp {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }}
-                                            </div>
+                                @if (empty($saleItems))
+                                    <div class="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 my-2">
+                                        <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-2.5">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
                                         </div>
-                                    @endforeach
-                                </div>
+                                        <h5 class="text-xs font-bold text-slate-800">Belum Ada Stok Sampah Anorganik Siap Jual</h5>
+                                        <p class="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                                            Hanya jenis sampah anorganik yang telah ditimbang dan memiliki sisa stok (> 0 kg) yang dapat dijual. Silakan lakukan penimbangan sampah terlebih dahulu pada modul Penimbangan.
+                                        </p>
+                                    </div>
+                                @else
+                                    <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                        <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                            <div class="col-span-4">Jenis Sampah</div>
+                                            <div class="col-span-3 text-right">Berat Terjual (kg)</div>
+                                            <div class="col-span-2 text-right">Harga / kg (Rp)</div>
+                                            <div class="col-span-3 text-right">Subtotal (Rp)</div>
+                                        </div>
+
+                                        @foreach ($saleItems as $index => $item)
+                                            <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
+                                                <div class="col-span-4">
+                                                    <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
+                                                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">
+                                                        Stok: <strong class="text-emerald-700 font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</strong>
+                                                    </div>
+                                                </div>
+                                                <div class="col-span-3">
+                                                    <input type="number" step="0.01" min="0" max="{{ $item['available_stock_kg'] }}"
+                                                           wire:model="saleItems.{{ $index }}.weight_kg" 
+                                                           wire:input="updateSubtotal({{ $index }})"
+                                                           x-on:input="
+                                                               let maxVal = {{ (float) $item['available_stock_kg'] }};
+                                                               let val = parseFloat($el.value);
+                                                               if (!isNaN(val) && val > maxVal) {
+                                                                   $el.value = maxVal;
+                                                                   $wire.set('saleItems.{{ $index }}.weight_kg', maxVal);
+                                                                   $wire.updateSubtotal({{ $index }});
+                                                               }
+                                                           "
+                                                           placeholder="0.0" 
+                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                                    @error("saleItems.{$index}.weight_kg")
+                                                        <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <input type="number" step="100" min="0" 
+                                                           wire:model="saleItems.{{ $index }}.price_per_kg" 
+                                                           wire:input="updateSubtotal({{ $index }})"
+                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                                </div>
+                                                <div class="col-span-3 text-right font-mono font-bold text-xs text-slate-800">
+                                                    Rp {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }}
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
 
                             <!-- Notes Field -->
@@ -337,7 +369,9 @@
                                 <button type="button" @click="showModal = false; $wire.closeCreateModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
+                                <button type="submit" 
+                                        @if(!$this->canSubmit) disabled @endif
+                                        class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400">
                                     Simpan Transaksi & Kredit Kas
                                 </button>
                             </div>
