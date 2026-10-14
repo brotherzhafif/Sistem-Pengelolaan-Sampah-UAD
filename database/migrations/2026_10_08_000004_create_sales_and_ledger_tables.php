@@ -38,35 +38,35 @@ return new class extends Migration
             $table->index('waste_type_id');
         });
 
-        // 3. Jurnal Buku Kas Keuangan (Tabel keuangan - SRS v2)
-        Schema::create('keuangan', function (Blueprint $table) {
+        // 3. Jurnal Buku Kas Keuangan (Financial Transactions)
+        Schema::create('financial_transactions', function (Blueprint $table) {
             $table->id();
             $table->foreignId('campus_id')->constrained('campuses')->cascadeOnDelete();
-            $table->date('tanggal');
-            $table->enum('jenis', ['K', 'D']); // K = Kredit (Pemasukan), D = Debet (Pengeluaran)
-            $table->enum('sumber', ['penjualan', 'pengangkutan', 'operasional', 'saldo_awal']);
+            $table->date('transaction_date');
+            $table->enum('type', ['credit', 'debit']); // credit = Masuk (K), debit = Keluar (D)
+            $table->enum('source', ['sales', 'pickup', 'operational', 'initial_balance']);
             $table->unsignedBigInteger('ref_id')->nullable(); // ID dari sales / pickups / expenses
-            $table->decimal('nominal', 14, 2);
-            $table->string('keterangan', 255)->nullable();
+            $table->decimal('amount', 14, 2);
+            $table->string('description', 255)->nullable();
             $table->foreignId('created_by')->nullable()->constrained('users')->nullOnDelete();
             $table->timestamps();
 
-            $table->index(['campus_id', 'tanggal']);
-            $table->index(['sumber', 'ref_id']);
+            $table->index(['campus_id', 'transaction_date']);
+            $table->index(['source', 'ref_id']);
         });
 
-        // 4. Saldo Harian Buku Besar per Kampus (Tabel buku_besar - SRS v2)
-        Schema::create('buku_besar', function (Blueprint $table) {
+        // 4. Saldo Harian Buku Besar per Kampus (General Ledgers)
+        Schema::create('general_ledgers', function (Blueprint $table) {
             $table->id();
             $table->foreignId('campus_id')->constrained('campuses')->cascadeOnDelete();
-            $table->date('tanggal');
-            $table->decimal('saldo_awal', 14, 2)->default(0.00);
-            $table->decimal('total_kredit', 14, 2)->default(0.00);
-            $table->decimal('total_debet', 14, 2)->default(0.00);
-            $table->decimal('saldo_akhir', 14, 2)->default(0.00);
+            $table->date('ledger_date');
+            $table->decimal('opening_balance', 14, 2)->default(0.00);
+            $table->decimal('total_credit', 14, 2)->default(0.00);
+            $table->decimal('total_debit', 14, 2)->default(0.00);
+            $table->decimal('closing_balance', 14, 2)->default(0.00);
             $table->timestamps();
 
-            $table->unique(['campus_id', 'tanggal']);
+            $table->unique(['campus_id', 'ledger_date']);
         });
     }
 
@@ -75,8 +75,8 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('buku_besar');
-        Schema::dropIfExists('keuangan');
+        Schema::dropIfExists('general_ledgers');
+        Schema::dropIfExists('financial_transactions');
         Schema::dropIfExists('sale_items');
         Schema::dropIfExists('sales');
     }

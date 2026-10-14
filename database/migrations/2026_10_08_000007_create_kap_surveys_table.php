@@ -18,18 +18,24 @@ return new class extends Migration
             $table->string('respondent_identifier')->nullable(); // NIM / NIP
             $table->string('respondent_role', 30); // mahasiswa, dosen, tendik
             $table->string('faculty_unit', 100); // Fakultas / Program Studi / Biro
-            $table->string('residence_type', 50); // kos, asrama, rumah_sendiri, kontrakan
+            $table->string('gender', 20)->nullable();
+            $table->boolean('has_attended_training')->default(false);
+            $table->boolean('is_willing_volunteer')->default(false);
+            $table->string('residence_type', 50)->nullable(); // kos, asrama, rumah_sendiri, kontrakan
             
             // Raw Likert Responses (Array of ratings 1 - 5)
             $table->json('knowledge_responses');
             $table->json('attitude_responses');
             $table->json('practice_responses');
+            $table->json('satisfaction_responses')->nullable();
             $table->json('facility_responses')->nullable();
+            $table->json('barrier_responses')->nullable();
 
             // Computed Scores (0.00 - 100.00)
             $table->decimal('knowledge_score', 5, 2)->default(0.00);
             $table->decimal('attitude_score', 5, 2)->default(0.00);
             $table->decimal('practice_score', 5, 2)->default(0.00);
+            $table->decimal('satisfaction_score', 5, 2)->default(0.00);
             $table->decimal('overall_score', 5, 2)->default(0.00);
 
             // Category classification
