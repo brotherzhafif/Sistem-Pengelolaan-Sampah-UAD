@@ -28,8 +28,13 @@
                 <!-- Page Top Header (If Provided) -->
                 @if (isset($header))
                     <header class="bg-white border-b border-slate-200 shrink-0 sticky top-0 z-20">
-                        <div class="max-w-7xl mx-auto py-4 px-4 sm:px-6 lg:px-8">
-                            {{ $header }}
+                        <div class="max-w-7xl mx-auto py-3.5 px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4">
+                            <div class="flex-1 min-w-0">
+                                {{ $header }}
+                            </div>
+                            <div class="flex items-center gap-3 shrink-0">
+                                <livewire:layout.notification-bell />
+                            </div>
                         </div>
                     </header>
                 @endif
@@ -40,9 +45,6 @@
                 </main>
             </div>
         </div>
-
-        <!-- Global Floating Notification Bell -->
-        <livewire:layout.notification-bell />
 
         <!-- Global Floating Toast / Snackbar (Bottom Right) -->
         <x-toast-notification />
