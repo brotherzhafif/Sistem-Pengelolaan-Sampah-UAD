@@ -1,51 +1,45 @@
-<div class="relative" 
+@if($totalAlerts > 0)
+<div class="fixed bottom-6 right-6 sm:bottom-8 sm:right-8 z-40" 
      x-data="{ notifOpen: false }" 
      @click.outside="notifOpen = false"
      @keydown.escape.window="notifOpen = false">
     
-    <!-- Header Notification Bell Button (Pojok Kanan Atas) -->
+    <!-- Medium-Sized Floating Notification Bell Button (Pojok Kanan Bawah) -->
     <button @click="notifOpen = !notifOpen" 
             type="button" 
-            class="relative w-10 h-10 rounded-xl bg-white border border-slate-200 hover:border-emerald-400 hover:bg-slate-50 text-slate-600 hover:text-emerald-700 shadow-2xs hover:shadow-xs transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center group"
-            title="Notifikasi & Peringatan Sistem">
-        <svg class="w-5 h-5 text-slate-600 group-hover:text-emerald-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            class="relative w-12 h-12 sm:w-13 sm:h-13 rounded-2xl bg-white/95 backdrop-blur-md border border-slate-200/90 hover:border-emerald-400 hover:bg-white text-slate-700 hover:text-emerald-700 shadow-lg hover:shadow-xl hover:-translate-y-0.5 transition-all duration-200 active:scale-95 cursor-pointer flex items-center justify-center group"
+            title="Notifikasi & Peringatan Operasional ({{ $totalAlerts }} aktif)">
+        <svg class="w-5 h-5 sm:w-6 sm:h-6 text-slate-700 group-hover:text-emerald-600 transition-colors" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
         </svg>
 
-        @if($totalAlerts > 0)
-            <span class="absolute -top-1 -right-1 flex h-4 w-4">
-                <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                <span class="relative inline-flex items-center justify-center rounded-full h-4 w-4 bg-rose-600 text-[10px] font-bold text-white leading-none shadow-sm ring-2 ring-white">
-                    {{ $totalAlerts }}
-                </span>
+        <!-- Red Alert Badge with Pulse -->
+        <span class="absolute -top-1 -right-1 flex h-5 w-5">
+            <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+            <span class="relative inline-flex items-center justify-center rounded-full h-5 w-5 bg-rose-600 text-[10px] font-bold text-white leading-none shadow-md ring-2 ring-white">
+                {{ $totalAlerts }}
             </span>
-        @endif
+        </span>
     </button>
 
-    <!-- Topbar Dropdown Popup Card (Opens Downwards from Top Right) -->
+    <!-- Floating Dropdown Popup Card (Opens UPWARDS above the button) -->
     <div x-show="notifOpen" 
          x-cloak
-         x-transition:enter="transition ease-out duration-150"
-         x-transition:enter-start="opacity-0 scale-95 -translate-y-1"
+         x-transition:enter="transition ease-out duration-200"
+         x-transition:enter-start="opacity-0 scale-95 translate-y-2"
          x-transition:enter-end="opacity-100 scale-100 translate-y-0"
-         x-transition:leave="transition ease-in duration-100"
+         x-transition:leave="transition ease-in duration-150"
          x-transition:leave-start="opacity-100 scale-100 translate-y-0"
-         x-transition:leave-end="opacity-0 scale-95 -translate-y-1"
-         class="absolute right-0 top-full mt-2 w-80 sm:w-96 rounded-2xl bg-white shadow-2xl border border-slate-200 z-50 overflow-hidden divide-y divide-slate-100">
+         x-transition:leave-end="opacity-0 scale-95 translate-y-2"
+         class="absolute right-0 bottom-full mb-3 w-80 sm:w-96 rounded-2xl bg-white/95 backdrop-blur-md shadow-2xl border border-slate-200/90 z-50 overflow-hidden divide-y divide-slate-100">
         
         <!-- Header Popup -->
         <div class="p-3.5 bg-slate-50/90 flex items-center justify-between border-b border-slate-100">
             <div class="flex items-center gap-2">
-                <span class="text-xs font-bold text-slate-900">Notifikasi Sistem</span>
-                @if($totalAlerts > 0)
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
-                        {{ $totalAlerts }} Peringatan
-                    </span>
-                @else
-                    <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-700">
-                        Semua Normal
-                    </span>
-                @endif
+                <span class="text-xs font-bold text-slate-900">Peringatan Operasional</span>
+                <span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">
+                    {{ $totalAlerts }} Peringatan
+                </span>
             </div>
             <a href="{{ route('notifications') }}"
                @click="notifOpen = false"
@@ -56,7 +50,7 @@
 
         <!-- Daftar Notifikasi (max 3) -->
         <div class="divide-y divide-slate-100 max-h-80 overflow-y-auto">
-            @forelse($alerts as $alert)
+            @foreach($alerts as $alert)
                 <div class="p-3.5 hover:bg-slate-50/80 transition flex items-start gap-3">
                     <div class="w-7 h-7 rounded-lg flex items-center justify-center shrink-0 mt-0.5 {{ $alert['type'] === 'danger' ? 'bg-rose-100 text-rose-600' : ($alert['type'] === 'warning' ? 'bg-amber-100 text-amber-600' : 'bg-emerald-100 text-emerald-600') }}">
                         @if($alert['type'] === 'danger')
@@ -87,15 +81,7 @@
                         @endif
                     </div>
                 </div>
-            @empty
-                <div class="py-8 text-center text-xs text-slate-400 px-4">
-                    <svg class="w-8 h-8 mx-auto text-emerald-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <span class="font-medium text-slate-600 block">Semua operasional lancar</span>
-                    <p class="text-[11px] text-slate-400 mt-0.5">Tidak ada peringatan aktif saat ini.</p>
-                </div>
-            @endforelse
+            @endforeach
         </div>
 
         <!-- Footer -->
@@ -122,3 +108,4 @@
         </div>
     </div>
 </div>
+@endif
