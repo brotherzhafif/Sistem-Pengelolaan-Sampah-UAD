@@ -174,33 +174,10 @@
                                 </div>
                             </td>
                             <td class="py-2.5 px-3">
-                                @php $binding = $session->getBindingInfo(); @endphp
                                 <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                                     <span>{{ $session->items->count() }} Jenis Tervalidasi</span>
                                 </div>
-                                @if ($binding['is_bound'])
-                                    <div class="mt-1 flex flex-wrap items-center gap-1">
-                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-700 border border-amber-200" title="Data Terkunci: Sampah telah terjual atau diangkut">
-                                            <svg class="w-2.5 h-2.5 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                            <span>Terkunci</span>
-                                        </span>
-                                        @foreach ($binding['sales'] as $bs)
-                                            <a href="{{ route('sales', ['view' => $bs->id]) }}" 
-                                               class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 hover:bg-emerald-100 hover:text-emerald-800 border border-emerald-200 transition"
-                                               title="Lihat Penjualan #{{ $bs->id }} ({{ $bs->sale_date->translatedFormat('d M Y') }})">
-                                                <span>Penjualan #{{ $bs->id }} &rarr;</span>
-                                            </a>
-                                        @endforeach
-                                        @foreach ($binding['pickups'] as $bp)
-                                            <a href="{{ route('pickups', ['view' => $bp->id]) }}" 
-                                               class="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded text-[10px] font-bold bg-rose-50 text-rose-700 hover:bg-rose-100 hover:text-rose-800 border border-rose-200 transition"
-                                               title="Lihat Pengangkutan #{{ $bp->id }} ({{ $bp->pickup_date->translatedFormat('d M Y') }})">
-                                                <span>Pengangkutan #{{ $bp->id }} &rarr;</span>
-                                            </a>
-                                        @endforeach
-                                    </div>
-                                @endif
                             </td>
                             <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-sm">
                                 {{ number_format($session->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
@@ -220,25 +197,14 @@
                                         </svg>
                                     </button>
                                     @if ($canCreate)
-                                        @if ($binding['is_bound'])
-                                            <button type="button" 
-                                                    disabled
-                                                    class="p-1.5 text-slate-300 cursor-not-allowed rounded-lg"
-                                                    title="Data terkunci: Tidak dapat dihapus karena sampah sudah terjual atau diangkut vendor">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                                </svg>
-                                            </button>
-                                        @else
-                                            <button @click="deleteModal = true; $wire.confirmDelete({{ $session->id }})" 
-                                                    type="button"
-                                                    class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
-                                                    title="Hapus Sesi">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                </svg>
-                                            </button>
-                                        @endif
+                                        <button @click="deleteModal = true; $wire.confirmDelete({{ $session->id }})" 
+                                                type="button"
+                                                class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
+                                                title="Hapus Sesi">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
                                     @endif
                                 </div>
                             </td>
@@ -409,34 +375,33 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                             </div>
-                            <h3 class="text-base font-bold text-slate-900">Sesi Penimbangan Terkunci</h3>
-                            <p class="text-xs text-rose-600 font-semibold mt-1.5 leading-relaxed">
+                            <h3 class="text-base font-bold text-slate-900">Tidak Dapat Menghapus Sesi Penimbangan</h3>
+                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
                                 Sesi penimbangan ini tidak dapat dihapus karena sampah telah diproses pada transaksi hilir:
                             </p>
-                            <div class="mt-3 p-3.5 rounded-xl bg-slate-50 border border-slate-200 text-left space-y-2">
+                            <div class="mt-3 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-left space-y-2">
                                 @foreach ($deleteBindingInfo['reasons'] as $r)
-                                    <div class="text-[11px] text-slate-700 flex items-start gap-1.5">
-                                        <span class="text-rose-500 font-bold">&bull;</span>
+                                    <div class="text-[11px] text-amber-900 flex items-start gap-1.5">
+                                        <span class="text-amber-600 font-bold">&bull;</span>
                                         <span>{{ $r }}</span>
                                     </div>
                                 @endforeach
-                                <div class="pt-2 border-t border-slate-200/80 flex flex-wrap gap-1.5">
-                                    @foreach ($deleteBindingInfo['sales'] as $bs)
-                                        <a href="{{ route('sales', ['view' => $bs->id]) }}" class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-emerald-100 text-emerald-800 hover:bg-emerald-200 transition">
-                                            <span>Buka Penjualan #{{ $bs->id }} &rarr;</span>
-                                        </a>
-                                    @endforeach
-                                    @foreach ($deleteBindingInfo['pickups'] as $bp)
-                                        <a href="{{ route('pickups', ['view' => $bp->id]) }}" class="inline-flex items-center gap-1 px-2 py-1 rounded text-[10px] font-bold bg-rose-100 text-rose-800 hover:bg-rose-200 transition">
-                                            <span>Buka Pengangkutan #{{ $bp->id }} &rarr;</span>
-                                        </a>
-                                    @endforeach
-                                </div>
                             </div>
-                            <div class="mt-6">
+                            <div class="flex items-center justify-center gap-3 mt-6">
                                 <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
-                                    Tutup & Kembali
+                                    Tutup
                                 </button>
+                                @php
+                                    $firstSale = $deleteBindingInfo['sales']->first();
+                                    $firstPickup = $deleteBindingInfo['pickups']->first();
+                                    $targetUrl = $firstSale ? route('sales', ['view' => $firstSale->id]) : ($firstPickup ? route('pickups', ['view' => $firstPickup->id]) : null);
+                                    $targetLabel = $firstSale ? 'Lihat Penjualan #' . $firstSale->id : ($firstPickup ? 'Lihat Pengangkutan #' . $firstPickup->id : 'Lihat Data Terkait');
+                                @endphp
+                                @if($targetUrl)
+                                    <a href="{{ $targetUrl }}" class="w-full py-2.5 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition text-center flex items-center justify-center gap-1.5 cursor-pointer">
+                                        <span>{{ $targetLabel }} &rarr;</span>
+                                    </a>
+                                @endif
                             </div>
                         @else
                             <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">

@@ -187,14 +187,6 @@ class="space-y-6">
                                             <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
                                             <span class="truncate" title="{{ $e->category->name }}">{{ Str::words($e->category->name, 2, '') }}</span>
                                         </span>
-                                        <div class="mt-1 flex items-center gap-1">
-                                            <a href="{{ route('finance', ['view' => $e->financialTransaction?->id]) }}" 
-                                               class="inline-flex items-center gap-1 text-[10px] font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 px-1.5 py-0.5 rounded border border-blue-200 transition"
-                                               title="Lihat di Jurnal Buku Kas Keuangan (#FT-{{ $e->financialTransaction?->id ?? 'FT' }})">
-                                                <svg class="w-2.5 h-2.5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
-                                                <span>Buku Kas #{{ $e->financialTransaction?->id ?? 'FT' }} &rarr;</span>
-                                            </a>
-                                        </div>
                                     </td>
                                     <td class="py-2.5 px-3 truncate text-slate-700" title="{{ $e->description }}">
                                         {{ $e->description }}
@@ -407,40 +399,53 @@ class="space-y-6">
                      x-cloak
                      style="display: none;"
                      class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
-                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-sm p-6 text-center space-y-4">
-                        <div class="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                            </svg>
-                        </div>
-                        <div>
-                            <h3 class="text-sm font-bold text-slate-900">Hapus Catatan Pengeluaran?</h3>
-                            <p class="text-xs text-slate-500 mt-1">Data pengeluaran dan catatan debet di Buku Kas akan otomatis dibatalkan.</p>
-                        </div>
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
                         @if ($deleteBindingInfo && $deleteBindingInfo['is_bound'])
-                            <div class="p-3 rounded-xl bg-blue-50 border border-blue-200 text-left">
-                                <div class="text-xs font-bold text-blue-900 flex items-center gap-1.5">
-                                    <svg class="w-4 h-4 text-blue-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span>Keterikatan Buku Kas Keuangan:</span>
+                            <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900">Tidak Dapat Menghapus Pengeluaran</h3>
+                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                                Catatan pengeluaran operasional ini tidak dapat dihapus karena telah tercatat dan terikat dengan mutasi jurnal buku kas keuangan kampus:
+                            </p>
+                            <div class="mt-3 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-left">
+                                <div class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
+                                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                                    <span>Keterikatan Buku Kas:</span>
                                 </div>
-                                <p class="text-[11px] text-blue-800 mt-1">
+                                <p class="text-[11px] text-amber-800 mt-1">
                                     {{ $deleteBindingInfo['reason'] }}
                                 </p>
-                                <div class="mt-2">
-                                    <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" class="inline-flex items-center gap-1 text-[11px] font-bold text-blue-700 hover:text-blue-900 underline">
-                                        <span>Lihat Jurnal Keuangan #FT-{{ $deleteBindingInfo['financial_transaction']?->id }} &rarr;</span>
-                                    </a>
-                                </div>
+                            </div>
+                            <div class="flex items-center justify-center gap-3 mt-6">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                    Tutup
+                                </button>
+                                <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" class="w-full py-2.5 px-4 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-semibold shadow-sm shadow-blue-600/20 transition active:scale-95 text-center flex items-center justify-center gap-1.5 cursor-pointer">
+                                    <span>Lihat Jurnal Kas #FT-{{ $deleteBindingInfo['financial_transaction']?->id }} &rarr;</span>
+                                </a>
+                            </div>
+                        @else
+                            <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900">Hapus Catatan Pengeluaran?</h3>
+                            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                Apakah Anda yakin ingin menghapus catatan pengeluaran ini? Data yang dihapus tidak dapat dipulihkan.
+                            </p>
+                            <div class="flex items-center justify-center gap-3 mt-6">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-lg border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="button" wire:click="deleteExpense" class="w-full py-2.5 px-4 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer">
+                                    Ya, Hapus Pengeluaran
+                                </button>
                             </div>
                         @endif
-                        <div class="flex items-center justify-center gap-2 pt-2">
-                            <button @click="deleteModal = false; $wire.cancelDelete()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
-                                Batal
-                            </button>
-                            <button wire:click="deleteExpense" @click="deleteModal = false" type="button" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer">
-                                Ya, Hapus
-                            </button>
-                        </div>
                     </div>
                 </div>
             </template>

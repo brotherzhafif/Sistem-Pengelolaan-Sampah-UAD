@@ -131,6 +131,15 @@ class PickupController extends Controller
             ];
         }
 
+        // Validasi Keterikatan: Cek apakah data pengangkutan terikat dengan Buku Kas
+        $bindingInfo = $pickup->getBindingInfo();
+        if ($bindingInfo['is_bound']) {
+            return [
+                'success' => false,
+                'message' => "Tidak dapat menghapus data pengangkutan (#{$pickup->id}): " . $bindingInfo['reason'],
+            ];
+        }
+
         ActivityLog::record(
             module: 'pickups',
             action: 'delete',

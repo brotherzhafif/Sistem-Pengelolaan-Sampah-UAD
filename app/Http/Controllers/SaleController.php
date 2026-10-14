@@ -153,6 +153,15 @@ class SaleController extends Controller
             ];
         }
 
+        // Validasi Keterikatan: Cek apakah transaksi penjualan terikat dengan Buku Kas
+        $bindingInfo = $sale->getBindingInfo();
+        if ($bindingInfo['is_bound']) {
+            return [
+                'success' => false,
+                'message' => "Tidak dapat menghapus transaksi penjualan (#{$sale->id}): " . $bindingInfo['reason'],
+            ];
+        }
+
         ActivityLog::record(
             module: 'sales',
             action: 'delete',

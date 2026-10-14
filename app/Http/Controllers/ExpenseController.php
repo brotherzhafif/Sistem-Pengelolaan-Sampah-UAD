@@ -107,6 +107,15 @@ class ExpenseController extends Controller
             ];
         }
 
+        // Validasi Keterikatan: Cek apakah catatan pengeluaran terikat dengan Buku Kas
+        $bindingInfo = $expense->getBindingInfo();
+        if ($bindingInfo['is_bound']) {
+            return [
+                'success' => false,
+                'message' => "Tidak dapat menghapus data pengeluaran (#{$expense->id}): " . $bindingInfo['reason'],
+            ];
+        }
+
         ActivityLog::record(
             module: 'expenses',
             action: 'delete',
