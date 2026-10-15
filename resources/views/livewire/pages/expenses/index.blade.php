@@ -1,9 +1,11 @@
 <div x-data="{ 
     showModal: @entangle('showCreateModal'), 
+    showEditModal: @entangle('showEditModal'),
     detailModal: false, 
     deleteModal: false 
 }" 
-@close-modal.window="showModal = false; detailModal = false; deleteModal = false"
+@close-modal.window="showModal = false; showEditModal = false; detailModal = false; deleteModal = false"
+@open-edit-expense-modal.window="showEditModal = true"
 class="space-y-6">
 
     <!-- Top Header -->
@@ -210,6 +212,15 @@ class="space-y-6">
                                                 </svg>
                                             </button>
                                             @if ($canCreate)
+                                            <!-- Edit Action Button -->
+                                            <button @click="showEditModal = true; $wire.openEditModal({{ $e->id }})"
+                                                    type="button"
+                                                    title="Edit Pengeluaran"
+                                                    class="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
                                             <!-- Delete Action Button -->
                                             <button @click="deleteModal = true; $wire.confirmDelete({{ $e->id }})"
                                                     type="button"
@@ -318,6 +329,107 @@ class="space-y-6">
                                 <button type="submit" wire:loading.attr="disabled" class="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50">
                                     <span wire:loading.remove wire:target="saveExpense">Simpan & Debet Kas</span>
                                     <span wire:loading wire:target="saveExpense">Menyimpan...</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Form Edit Pengeluaran (Teleported to Body for 100% Full Viewport Backdrop) -->
+            <template x-teleport="body">
+                <div x-show="showEditModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">
+                                    Edit Pengeluaran Operasional
+                                    @if ($editExpenseId)
+                                        <span class="text-xs font-mono font-normal text-slate-500">#EXP-{{ str_pad($editExpenseId, 5, '0', STR_PAD_LEFT) }}</span>
+                                    @endif
+                                </h3>
+                                <p class="text-xs text-slate-500">Perbarui nota biaya operasional dan sinkronkan kas</p>
+                            </div>
+                            <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <form wire:submit="updateExpense" class="p-6 space-y-4">
+                            <!-- Unit Kampus -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Unit Kampus <span class="text-rose-500">*</span></label>
+                                @if ($isSuperAdmin)
+                                    @if (!empty($editBindingInfo['is_bound']))
+                                        <div class="flex items-center justify-between text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-3 py-2 rounded-lg">
+                                            <span>{{ $campuses->firstWhere('id', $editCampusId)?->name ?? 'Kampus' }}</span>
+                                            <span class="text-[10px] text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">Terkunci</span>
+                                        </div>
+                                    @else
+                                        <select wire:model="editCampusId" class="w-full text-xs border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                            @foreach ($campuses as $campus)
+                                                <option value="{{ $campus->id }}">{{ $campus->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @endif
+                                @else
+                                    <div class="flex items-center justify-between text-xs font-semibold text-slate-800 bg-slate-100 border border-slate-200 px-3 py-2 rounded-lg">
+                                        <span>{{ auth()->user()->campus?->name ?? 'Kampus Umum' }}</span>
+                                        @if (!empty($editBindingInfo['is_bound']))
+                                            <span class="text-[10px] text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">Terkunci</span>
+                                        @endif
+                                    </div>
+                                @endif
+                                @error('editCampusId') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Kategori Pengeluaran -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Kategori Biaya Operasional <span class="text-rose-500">*</span></label>
+                                <select wire:model="editCategoryId" class="w-full text-xs border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                    @foreach ($categories as $cat)
+                                        <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                    @endforeach
+                                </select>
+                                @error('editCategoryId') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Tanggal Pengeluaran -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Transaksi / Nota <span class="text-rose-500">*</span></label>
+                                <input type="date" wire:model="editDate" class="w-full text-xs border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                @error('editDate') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Nominal Biaya (Rp) -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Nominal Biaya (Rp) <span class="text-rose-500">*</span></label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">Rp</span>
+                                    <input type="number" step="100" min="100" wire:model="editAmount" placeholder="Contoh: 150000" class="w-full text-xs font-mono font-bold border-slate-200 rounded-lg pl-9 pr-3 py-2 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                </div>
+                                <span class="text-[10px] text-slate-400 mt-1 block">Otomatis disinkronkan ke Jurnal Debet (D) di Buku Kas saat disimpan.</span>
+                                @error('editAmount') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Keterangan / Uraian -->
+                            <div>
+                                <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan / Rincian Pengeluaran <span class="text-rose-500">*</span></label>
+                                <textarea wire:model="editDescription" rows="3" placeholder="Uraikan peruntukan biaya..." class="w-full text-xs border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                @error('editDescription') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                            </div>
+
+                            <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                                <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="submit" 
+                                        class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                                        style="background-color: #059669; color: #ffffff;">
+                                    Simpan Perubahan
                                 </button>
                             </div>
                         </form>

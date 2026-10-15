@@ -35,6 +35,16 @@ class Index extends Component
     public string $formAmount = '';
     public string $formDescription = '';
 
+    // Edit state
+    public bool $showEditModal = false;
+    public ?int $editExpenseId = null;
+    public $editCampusId = null;
+    public $editCategoryId = null;
+    public string $editDate = '';
+    public string $editAmount = '';
+    public string $editDescription = '';
+    public ?array $editBindingInfo = null;
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -108,9 +118,56 @@ class Index extends Component
         $this->viewExpenseId = $id;
     }
 
-    public function closeViewModal(): void
+    public function openEditModal(int $id): void
     {
-        $this->viewExpenseId = null;
+        $this->resetValidation();
+        $expense = Expense::findOrFail($id);
+        $this->editExpenseId = $expense->id;
+        $this->editCampusId = $expense->campus_id;
+        $this->editCategoryId = $expense->expense_category_id;
+        $this->editDate = $expense->expense_date->format('Y-m-d');
+        $this->editAmount = (string) (int) $expense->amount;
+        $this->editDescription = $expense->description;
+        $this->editBindingInfo = $expense->getBindingInfo();
+        $this->showEditModal = true;
+        $this->dispatch('open-edit-expense-modal');
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
+        $this->editExpenseId = null;
+        $this->editBindingInfo = null;
+        $this->resetValidation();
+        $this->dispatch('close-modal');
+    }
+
+    public function updateExpense(ExpenseController $controller): void
+    {
+        if (!$this->editExpenseId) {
+            return;
+        }
+
+        try {
+            $result = $controller->update($this->editExpenseId, [
+                'campus_id' => $this->editCampusId,
+                'expense_category_id' => $this->editCategoryId,
+                'expense_date' => $this->editDate,
+                'amount' => $this->editAmount,
+                'description' => $this->editDescription,
+            ]);
+
+            $this->closeEditModal();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $msg) {
+                    $this->addError($key, $msg);
+                }
+            }
+        }
     }
 
     public function confirmDelete(int $id): void
