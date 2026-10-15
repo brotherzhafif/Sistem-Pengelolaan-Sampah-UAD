@@ -34,6 +34,16 @@ class Index extends Component
     // Multi-row items: [ ['waste_type_id' => x, 'weight_kg' => y, 'price_per_kg' => z, 'subtotal' => w] ]
     public array $saleItems = [];
 
+    // Modal Edit state
+    public bool $showEditModal = false;
+    public ?int $editSaleId = null;
+    public $editCampusId = null;
+    public $editBuyerId = null;
+    public string $editDate = '';
+    public string $editNotes = '';
+    public array $editItems = [];
+    public ?array $editBindingInfo = null;
+
     // Modal Confirmation Deletion & View Detail state
     public ?int $confirmDeleteSaleId = null;
     public ?array $deleteBindingInfo = null;
@@ -192,6 +202,148 @@ class Index extends Component
             $this->resetErrorBag();
             $this->resetValidation();
             $this->resetForm();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $msg) {
+                    $this->addError($key, $msg);
+                }
+            }
+        }
+    }
+
+    public function openEditModal(int $id): void
+    {
+        $this->resetErrorBag();
+        $this->resetValidation();
+
+        $sale = Sale::with(['items.wasteType', 'buyer'])->findOrFail($id);
+        $this->editSaleId = $sale->id;
+        $this->editCampusId = $sale->campus_id;
+        $this->editBuyerId = $sale->buyer_id;
+        $this->editDate = $sale->sale_date->format('Y-m-d');
+        $this->editNotes = $sale->notes ?? '';
+        $this->editBindingInfo = $sale->getBindingInfo();
+
+        $this->loadEditItems($sale);
+        $this->showEditModal = true;
+        $this->dispatch('open-edit-sales-modal');
+    }
+
+    public function loadEditItems(Sale $sale): void
+    {
+        $existingMap = $sale->items->keyBy('waste_type_id');
+        $allSellable = WasteType::where('is_sellable', true)->where('is_active', true)->orderBy('category')->orderBy('name')->get();
+
+        $this->editItems = [];
+        foreach ($allSellable as $type) {
+            $existingItem = $existingMap->get($type->id);
+            $soldWeightHere = $existingItem ? (float) $existingItem->weight_kg : 0.0;
+            $availableStock = WasteType::getAvailableStock($type->id, $sale->campus_id);
+            $maxStock = $availableStock + $soldWeightHere;
+
+            // Tampilkan jenis sampah jika memiliki stok atau memang ada di transaksi penjualan ini
+            if ($maxStock > 0 || $existingItem) {
+                $price = $existingItem ? (float) $existingItem->price_per_kg : (float) $type->default_price_per_kg;
+                $weight = $existingItem ? (float) $existingItem->weight_kg : '';
+                $subtotal = $existingItem ? (float) $existingItem->subtotal : 0.0;
+
+                $this->editItems[] = [
+                    'waste_type_id' => $type->id,
+                    'waste_name' => $type->name,
+                    'available_stock_kg' => (float) $maxStock,
+                    'existing_weight_kg' => (float) $soldWeightHere,
+                    'weight_kg' => $weight !== '' ? $weight : '',
+                    'price_per_kg' => $price,
+                    'subtotal' => $subtotal,
+                ];
+            }
+        }
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
+        $this->editSaleId = null;
+        $this->editBindingInfo = null;
+        $this->editItems = [];
+        $this->resetErrorBag();
+        $this->resetValidation();
+        $this->dispatch('close-modal');
+    }
+
+    public function updateEditSubtotal(int $index): void
+    {
+        if (isset($this->editItems[$index])) {
+            $weight = floatval($this->editItems[$index]['weight_kg'] ?? 0);
+            $maxStock = floatval($this->editItems[$index]['available_stock_kg'] ?? 0);
+
+            if ($weight > $maxStock) {
+                $this->addError("editItems.{$index}.weight_kg", "Maksimal bobot " . number_format($maxStock, 1, ',', '.') . " kg");
+            } else {
+                $this->resetErrorBag("editItems.{$index}.weight_kg");
+            }
+
+            $price = floatval($this->editItems[$index]['price_per_kg'] ?? 0);
+            $this->editItems[$index]['subtotal'] = round($weight * $price, 2);
+        }
+    }
+
+    public function getTotalEditSaleAmountProperty(): float
+    {
+        $total = 0.0;
+        foreach ($this->editItems as $item) {
+            $weight = floatval($item['weight_kg'] ?? 0);
+            $price = floatval($item['price_per_kg'] ?? 0);
+            $total += ($weight * $price);
+        }
+        return round($total, 2);
+    }
+
+    public function getCanSubmitEditProperty(): bool
+    {
+        if (empty($this->editItems)) {
+            return false;
+        }
+
+        $hasPositiveWeight = false;
+        foreach ($this->editItems as $index => $item) {
+            $weight = floatval($item['weight_kg'] ?? 0);
+            $maxStock = floatval($item['available_stock_kg'] ?? 0);
+            if ($weight > $maxStock) {
+                return false;
+            }
+            if ($weight > 0) {
+                $hasPositiveWeight = true;
+            }
+        }
+
+        return $hasPositiveWeight && $this->totalEditSaleAmount > 0;
+    }
+
+    public function updateSale(SaleController $controller): void
+    {
+        if (!$this->editSaleId) {
+            return;
+        }
+
+        try {
+            $result = $controller->update($this->editSaleId, [
+                'campus_id' => $this->editCampusId,
+                'buyer_id' => $this->editBuyerId,
+                'sale_date' => $this->editDate,
+                'notes' => $this->editNotes,
+                'items' => $this->editItems,
+            ]);
+
+            $this->showEditModal = false;
+            $this->editSaleId = null;
+            $this->editBindingInfo = null;
+            $this->editItems = [];
+            $this->resetErrorBag();
+            $this->resetValidation();
             $this->dispatch('close-modal');
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);

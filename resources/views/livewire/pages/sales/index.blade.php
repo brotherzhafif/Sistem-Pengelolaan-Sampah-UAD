@@ -1,9 +1,11 @@
 <div x-data="{ 
     showModal: false, 
+    showEditModal: false,
     deleteModal: false 
 }"
-@close-modal.window="showModal = false; deleteModal = false"
-@open-sales-modal.window="showModal = true">
+@close-modal.window="showModal = false; showEditModal = false; deleteModal = false"
+@open-sales-modal.window="showModal = true"
+@open-edit-sales-modal.window="showEditModal = true">
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
@@ -191,6 +193,14 @@
                                                 </svg>
                                             </button>
                                             @if ($canCreate)
+                                                <button @click="showEditModal = true; $wire.openEditModal({{ $sale->id }})" 
+                                                        type="button"
+                                                        class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition cursor-pointer"
+                                                        title="Edit Transaksi Penjualan">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                    </svg>
+                                                </button>
                                                 <button @click="deleteModal = true; $wire.confirmDelete({{ $sale->id }})" 
                                                         type="button"
                                                         class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
@@ -379,6 +389,180 @@
                                         @if(!$this->canSubmit) disabled @endif
                                         class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400">
                                     Simpan Transaksi & Kredit Kas
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Form Edit Penjualan (Teleported to Body for 100% Full Viewport Backdrop) -->
+            <template x-teleport="body">
+                <div x-show="showEditModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">
+                                    Edit Transaksi Penjualan Sampah 
+                                    @if ($editSaleId)
+                                        <span class="text-xs font-mono font-normal text-slate-500">#SALE-{{ str_pad($editSaleId, 5, '0', STR_PAD_LEFT) }}</span>
+                                    @endif
+                                </h3>
+                                <p class="text-xs text-slate-500">Perbarui rincian muatan penjualan sampah terpilah dan sinkronkan kas</p>
+                            </div>
+                            <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <form wire:submit="updateSale" class="p-6 space-y-6">
+                            <!-- Info Transaksi Grid -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
+                                    @if ($isSuperAdmin)
+                                        @if (!empty($editBindingInfo['is_bound']))
+                                            <div class="flex items-center justify-between text-xs font-semibold text-slate-700 bg-slate-100 border border-slate-200 px-3 py-2 rounded-lg">
+                                                <span>{{ $campuses->firstWhere('id', $editCampusId)?->name ?? 'Kampus' }}</span>
+                                                <span class="text-[10px] text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">Terkunci</span>
+                                            </div>
+                                        @else
+                                            <select wire:model="editCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                                @foreach ($campuses as $c)
+                                                    <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                                @endforeach
+                                            </select>
+                                        @endif
+                                    @else
+                                        <div class="flex items-center justify-between text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg">
+                                            <span>{{ auth()->user()->campus?->name }}</span>
+                                            @if (!empty($editBindingInfo['is_bound']))
+                                                <span class="text-[10px] text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">Terkunci</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    @error('editCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mitra Pembeli / Pengepul <span class="text-rose-500">*</span></label>
+                                    <select wire:model="editBuyerId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                        @foreach ($buyers as $b)
+                                            <option value="{{ $b->id }}">{{ $b->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('editBuyerId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
+                                    <input type="date" wire:model="editDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                    @error('editDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Items Matrix -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div>
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Jenis Sampah Terjual</h4>
+                                        <p class="text-[11px] text-slate-500">Sesuaikan bobot aktual terjual (kg) dan harga kesepakatan per kg.</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-bold text-slate-700">Total Nilai Baru: </span>
+                                        <span class="font-mono text-sm font-bold text-emerald-600">Rp {{ number_format($this->totalEditSaleAmount, 0, ',', '.') }}</span>
+                                    </div>
+                                </div>
+
+                                @error('editItems')
+                                    <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                                @if (empty($editItems))
+                                    <div class="p-6 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200 my-2">
+                                        <div class="w-10 h-10 rounded-full bg-amber-50 text-amber-600 flex items-center justify-center mx-auto mb-2.5">
+                                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                            </svg>
+                                        </div>
+                                        <h5 class="text-xs font-bold text-slate-800">Tidak Ada Jenis Sampah Yang Dapat Diedit</h5>
+                                    </div>
+                                @else
+                                    <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                        <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                            <div class="col-span-4">Jenis Sampah</div>
+                                            <div class="col-span-3 text-right">Berat Terjual (kg)</div>
+                                            <div class="col-span-2 text-right">Harga / kg (Rp)</div>
+                                            <div class="col-span-3 text-right">Subtotal (Rp)</div>
+                                        </div>
+
+                                        @foreach ($editItems as $index => $item)
+                                            <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
+                                                <div class="col-span-4">
+                                                    <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
+                                                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">
+                                                        Maks: <strong class="text-emerald-700 font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</strong>
+                                                        <span class="text-[9px] text-slate-400 block">(Sisa TPS + Terjual ini)</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-span-3">
+                                                    <input type="number" step="0.01" min="0" max="{{ $item['available_stock_kg'] }}"
+                                                           wire:model="editItems.{{ $index }}.weight_kg" 
+                                                           wire:input="updateEditSubtotal({{ $index }})"
+                                                           placeholder="0.0" 
+                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                                    @error("editItems.{$index}.weight_kg")
+                                                        <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
+                                                    @enderror
+                                                </div>
+                                                <div class="col-span-2">
+                                                    <input type="number" step="100" min="0" 
+                                                           wire:model="editItems.{{ $index }}.price_per_kg" 
+                                                           wire:input="updateEditSubtotal({{ $index }})"
+                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                                </div>
+                                                <div class="col-span-3 text-right font-mono font-bold text-xs text-slate-800">
+                                                    Rp {{ number_format($item['subtotal'] ?? 0, 0, ',', '.') }}
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
+                            </div>
+
+                            <!-- Total Pendapatan Kredit Preview Card -->
+                            <div class="p-4 rounded-xl bg-emerald-50/70 border border-emerald-200/60 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs font-bold text-emerald-900">Total Kredit Pemasukan Penjualan:</span>
+                                    <p class="text-[11px] text-emerald-700 mt-0.5">Otomatis disinkronkan ke Buku Kas saat disimpan</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono text-lg font-bold text-emerald-700">Rp {{ number_format(floatval($this->totalEditSaleAmount), 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Notes Field -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Transaksi (Opsional)</label>
+                                <textarea wire:model="editNotes" rows="2" placeholder="Nomor nota, keterangan pembayaran tunai/transfer, catatan armada pengepul..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                @error('editNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                                <button type="button" @click="showEditModal = false; $wire.closeEditModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="submit" 
+                                        @if(!$this->canSubmitEdit) disabled @endif
+                                        class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400"
+                                        style="background-color: #059669; color: #ffffff;">
+                                    Simpan Perubahan Penjualan
                                 </button>
                             </div>
                         </form>
