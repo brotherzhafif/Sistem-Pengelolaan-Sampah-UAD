@@ -36,6 +36,22 @@ class Index extends Component
     public string $formVehiclePlate = '';
     public string $formNotes = '';
 
+    // Modal Edit state
+    public bool $showEditModal = false;
+    public ?int $editPickupId = null;
+    public $editCampusId = null;
+    public $editVendorId = null;
+    public string $editDate = '';
+    public string $editVolumeKg = '';
+    public string $editCostPerKg = '';
+    public string $editTotalCost = '0';
+    public string $editDriverName = '';
+    public string $editVehiclePlate = '';
+    public string $editNotes = '';
+    public ?array $editBindingInfo = null;
+    public float $editAvailableResidual = 0.0;
+    public float $editOldVolumeKg = 0.0;
+
     // Modal Confirmation Deletion & View Detail state
     public ?int $confirmDeletePickupId = null;
     public ?array $deleteBindingInfo = null;
@@ -202,6 +218,108 @@ class Index extends Component
             $this->resetErrorBag();
             $this->resetValidation();
             $this->resetForm();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $msg) {
+                    $this->addError($key, $msg);
+                }
+            }
+        }
+    }
+
+    public function openEditModal(int $id): void
+    {
+        $this->resetErrorBag();
+        $this->resetValidation();
+
+        $pickup = Pickup::findOrFail($id);
+        $this->editPickupId = $pickup->id;
+        $this->editCampusId = $pickup->campus_id;
+        $this->editVendorId = $pickup->vendor_id;
+        $this->editDate = $pickup->pickup_date ? $pickup->pickup_date->format('Y-m-d') : Carbon::today()->format('Y-m-d');
+        $this->editVolumeKg = (string) (float) $pickup->volume_kg;
+        $this->editCostPerKg = (string) (float) $pickup->cost_per_kg;
+        $this->editTotalCost = (string) (float) $pickup->total_cost;
+        $this->editDriverName = (string) ($pickup->driver_name ?? '');
+        $this->editVehiclePlate = (string) ($pickup->vehicle_plate ?? '');
+        $this->editNotes = (string) ($pickup->notes ?? '');
+
+        $this->editBindingInfo = $pickup->getBindingInfo();
+        $this->editOldVolumeKg = (float) $pickup->volume_kg;
+        $stock = WasteType::getStockSummary($pickup->campus_id);
+        $this->editAvailableResidual = (float) ($stock['residual_stock_kg'] ?? 0.0);
+
+        $this->showEditModal = true;
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
+        $this->editPickupId = null;
+        $this->editBindingInfo = null;
+        $this->resetErrorBag();
+        $this->resetValidation();
+        $this->dispatch('close-modal');
+    }
+
+    public function updatedEditVendorId($value): void
+    {
+        if ($value) {
+            $vendor = Vendor::find((int) $value);
+            if ($vendor && (!is_numeric($this->editCostPerKg) || floatval($this->editCostPerKg) <= 0)) {
+                $this->editCostPerKg = (string) (float) $vendor->cost_per_kg;
+            }
+        }
+        $this->calculateEditTotal();
+    }
+
+    public function updatedEditVolumeKg(): void
+    {
+        $this->calculateEditTotal();
+    }
+
+    public function updatedEditCostPerKg(): void
+    {
+        $this->calculateEditTotal();
+    }
+
+    public function calculateEditTotal(): void
+    {
+        $vol = floatval($this->editVolumeKg);
+        $cost = floatval($this->editCostPerKg);
+        if ($vol > 0 && $cost > 0) {
+            $this->editTotalCost = (string) round($vol * $cost, 2);
+        } else {
+            $this->editTotalCost = '0';
+        }
+    }
+
+    public function updatePickup(PickupController $controller): void
+    {
+        if (!$this->editPickupId) {
+            return;
+        }
+
+        $this->resetErrorBag();
+        $this->resetValidation();
+
+        try {
+            $result = $controller->update($this->editPickupId, [
+                'campus_id' => $this->editCampusId,
+                'vendor_id' => $this->editVendorId,
+                'pickup_date' => $this->editDate,
+                'volume_kg' => $this->editVolumeKg,
+                'cost_per_kg' => $this->editCostPerKg,
+                'driver_name' => $this->editDriverName,
+                'vehicle_plate' => $this->editVehiclePlate,
+                'notes' => $this->editNotes,
+            ]);
+
+            $this->showEditModal = false;
+            $this->editPickupId = null;
             $this->dispatch('close-modal');
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);

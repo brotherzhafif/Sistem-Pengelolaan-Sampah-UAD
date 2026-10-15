@@ -1,8 +1,9 @@
 <div x-data="{ 
     showModal: false, 
+    showEditModal: @entangle('showEditModal'),
     deleteModal: false 
 }"
-@close-modal.window="showModal = false; deleteModal = false"
+@close-modal.window="showModal = false; showEditModal = false; deleteModal = false"
 @open-pickup-modal.window="showModal = true">
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -190,6 +191,14 @@
                                                 </svg>
                                             </button>
                                             @if ($canCreate)
+                                            <button wire:click="openEditModal({{ $p->id }})" 
+                                                    type="button" 
+                                                    title="Edit Catatan Pengangkutan"
+                                                    class="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition cursor-pointer">
+                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                </svg>
+                                            </button>
                                             <button @click="deleteModal = true; $wire.confirmDelete({{ $p->id }})" 
                                                     type="button" 
                                                     title="Hapus Catatan Pengangkutan"
@@ -351,6 +360,148 @@
                                         @if(!$this->canSubmit) disabled @endif
                                         class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400">
                                     Simpan & Catat Debet Kas
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Edit Pengangkutan (Teleported to Body) -->
+            <template x-teleport="body">
+                <div x-show="showEditModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div @click.away="showEditModal = false; $wire.closeEditModal()" 
+                         class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden animate-scaleUp">
+                        <!-- Header Modal Edit -->
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                            <div>
+                                <h3 class="font-bold text-base text-slate-800">Edit Catatan Pengangkutan Residu</h3>
+                                <p class="text-xs text-slate-500 mt-0.5">Penyesuaian data muatan residu dan sinkronisasi buku kas otomatis</p>
+                            </div>
+                            <button @click="showEditModal = false; $wire.closeEditModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                            </button>
+                        </div>
+
+                        <!-- Form Modal Edit -->
+                        <form wire:submit="updatePickup" class="p-6 space-y-4">
+                            @if (!empty($editBindingInfo['is_bound']))
+                                <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    <div class="text-xs">
+                                        <span class="font-bold">Transaksi pengangkutan ini terikat dengan Jurnal Buku Kas Keuangan.</span>
+                                        <p class="mt-0.5 text-amber-800 leading-relaxed">
+                                            Unit kampus dikunci. Perubahan volume muatan atau tarif akan otomatis memutakhirkan nominal biaya debet di buku kas.
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Kampus & Vendor -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Unit Kampus <span class="text-rose-500">*</span></label>
+                                    @if ($isSuperAdmin && empty($editBindingInfo['is_bound']))
+                                        <select wire:model="editCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                            @foreach ($campuses as $c)
+                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <div class="text-xs font-semibold text-slate-800 bg-slate-50 border border-slate-200 px-3 py-2 rounded-lg flex items-center justify-between">
+                                            <span>{{ $campuses->firstWhere('id', $editCampusId)?->name ?? auth()->user()->campus?->name }}</span>
+                                            @if (!empty($editBindingInfo['is_bound']))
+                                                <span class="text-[10px] text-amber-700 font-bold bg-amber-100 px-1.5 py-0.5 rounded border border-amber-200">Terkunci</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    @error('editCampusId') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Mitra Vendor Pengangkut <span class="text-rose-500">*</span></label>
+                                    <select wire:model.live="editVendorId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                        @foreach ($vendors as $v)
+                                            <option value="{{ $v->id }}">{{ $v->name }} (Rp {{ number_format($v->cost_per_kg, 0, ',', '.') }}/kg)</option>
+                                        @endforeach
+                                    </select>
+                                    @error('editVendorId') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Tanggal Pengangkutan -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pengangkutan <span class="text-rose-500">*</span></label>
+                                <input type="date" wire:model="editDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                @error('editDate') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Muatan & Tarif Grid -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Bobot Muatan Residu (kg) <span class="text-rose-500">*</span></label>
+                                    <input type="number" step="0.1" min="0.1" wire:model.live.debounce.300ms="editVolumeKg" placeholder="Contoh: 125.5" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                    <div class="text-[10px] text-slate-500 mt-1 flex items-center justify-between">
+                                        <span>Maks: <strong class="text-slate-800 font-mono">{{ number_format($editOldVolumeKg + $editAvailableResidual, 1, ',', '.') }} kg</strong></span>
+                                        <span>(Sisa TPS: {{ number_format($editAvailableResidual, 1, ',', '.') }} kg)</span>
+                                    </div>
+                                    @error('editVolumeKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp) <span class="text-rose-500">*</span></label>
+                                    <input type="number" step="50" min="0" wire:model.live.debounce.300ms="editCostPerKg" placeholder="Contoh: 150" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    @error('editCostPerKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Total Biaya Debet Preview Card -->
+                            <div class="p-4 rounded-xl bg-amber-50/70 border border-amber-200/60 flex items-center justify-between">
+                                <div>
+                                    <span class="text-xs font-bold text-amber-900">Total Biaya Operasional Pengangkutan:</span>
+                                    <p class="text-[11px] text-amber-700 mt-0.5">Otomatis disinkronkan ke Buku Kas saat disimpan</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="font-mono text-lg font-bold text-rose-600">Rp {{ number_format(floatval($editTotalCost), 0, ',', '.') }}</span>
+                                </div>
+                            </div>
+
+                            <!-- Armada & Driver Info -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Supir / Driver</label>
+                                    <input type="text" wire:model="editDriverName" placeholder="Contoh: Pak Joko" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                    @error('editDriverName') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nomor Plat Kendaraan</label>
+                                    <input type="text" wire:model="editVehiclePlate" placeholder="Contoh: AB 1234 CD" class="w-full uppercase font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                    @error('editVehiclePlate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Catatan -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan</label>
+                                <textarea wire:model="editNotes" rows="2" placeholder="Keterangan kondisi residu atau ritase truk..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500"></textarea>
+                                @error('editNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Footer Form Modal -->
+                            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                                <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="submit" 
+                                        class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                                        style="background-color: #059669; color: #ffffff;">
+                                    Simpan Perubahan
                                 </button>
                             </div>
                         </form>
