@@ -93,18 +93,18 @@
                     @endif
 
                     <!-- Tabel Kampus -->
-                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 flex justify-between items-center shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Unit Kampus UAD ({{ $campuses->count() }})</span>
                             <span class="text-[11px] text-slate-500 font-medium">PK Utama Sistem Relasional</span>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
                             <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
-                                        <th class="py-2.5 px-4 font-semibold">Nama Unit</th>
-                                        <th class="py-2.5 px-4 font-semibold">Kode</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Nama Unit</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Kode</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -149,6 +149,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if($campuses->count() > 7)
+                            <div class="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                                <span>Total: {{ $campuses->count() }} unit kampus</span>
+                                <span class="italic">Gulir ke bawah untuk data lainnya</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -200,17 +206,17 @@
                     </div>
 
                     <!-- Table List -->
-                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-200 flex justify-between items-center">
+                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 flex justify-between items-center shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Titik Sumber ({{ $sources->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
                             <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
-                                        <th class="py-2.5 px-4 font-semibold">Nama Titik Sumber</th>
-                                        <th class="py-2.5 px-4 font-semibold">Keterangan</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">Aksi</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Nama Titik Sumber</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Keterangan</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">Aksi</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -237,6 +243,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if($sources->count() > 7)
+                            <div class="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                                <span>Total: {{ $sources->count() }} titik sumber</span>
+                                <span class="italic">Gulir ke bawah untuk data lainnya</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -298,19 +310,19 @@
                     @endif
 
                     <!-- Table -->
-                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-200">
-                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">9 Kategori Granular Sistem UAD</span>
+                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 shrink-0">
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">9 Kategori Granular Sistem UAD ({{ $wasteTypes->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
                             <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
-                                        <th class="py-2.5 px-4 font-semibold">Jenis Sampah</th>
-                                        <th class="py-2.5 px-4 font-semibold">Kategori</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">Harga Default</th>
-                                        <th class="py-2.5 px-4 font-semibold text-center">Status Jual</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Jenis Sampah</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Kategori</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">Harga Default</th>
+                                        <th class="py-2.5 px-4 font-semibold text-center bg-slate-50">Status Jual</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -353,6 +365,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if($wasteTypes->count() > 7)
+                            <div class="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                                <span>Total: {{ $wasteTypes->count() }} jenis sampah</span>
+                                <span class="italic">Gulir ke bawah untuk data lainnya</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -407,18 +425,18 @@
                     @endif
 
                     <!-- Table -->
-                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-200">
-                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Vendor Pengangkut Residu</span>
+                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 shrink-0">
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Vendor Pengangkut Residu ({{ $vendors->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
                             <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
-                                        <th class="py-2.5 px-4 font-semibold">Nama Vendor</th>
-                                        <th class="py-2.5 px-4 font-semibold">Kontak</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">Tarif / Kg</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Nama Vendor</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Kontak</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">Tarif / Kg</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -454,6 +472,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if($vendors->count() > 7)
+                            <div class="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                                <span>Total: {{ $vendors->count() }} vendor</span>
+                                <span class="italic">Gulir ke bawah untuk data lainnya</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -503,17 +527,17 @@
                     @endif
 
                     <!-- Table -->
-                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-200">
-                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Pengepul / Pembeli Bank Sampah</span>
+                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 shrink-0">
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Pengepul / Pembeli Bank Sampah ({{ $buyers->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
                             <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
-                                        <th class="py-2.5 px-4 font-semibold">Nama Pengepul</th>
-                                        <th class="py-2.5 px-4 font-semibold">Kontak</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Nama Pengepul</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Kontak</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -548,6 +572,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if($buyers->count() > 7)
+                            <div class="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                                <span>Total: {{ $buyers->count() }} pengepul</span>
+                                <span class="italic">Gulir ke bawah untuk data lainnya</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif
@@ -593,16 +623,16 @@
                     @endif
 
                     <!-- Table -->
-                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                        <div class="p-4 border-b border-slate-200">
-                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Kategori Pengeluaran Operasional TPS</span>
+                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 shrink-0">
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Kategori Pengeluaran Operasional TPS ({{ $expenseCategories->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
                             <table class="w-full text-left text-xs">
-                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px]">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
-                                        <th class="py-2.5 px-4 font-semibold">Nama Kategori</th>
-                                        <th class="py-2.5 px-4 font-semibold text-right">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Nama Kategori</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
                                     </tr>
                                 </thead>
                                 <tbody class="divide-y divide-slate-100">
@@ -636,6 +666,12 @@
                                 </tbody>
                             </table>
                         </div>
+                        @if($expenseCategories->count() > 7)
+                            <div class="px-4 py-2 border-t border-slate-100 bg-slate-50/50 flex items-center justify-between text-[11px] text-slate-400 shrink-0">
+                                <span>Total: {{ $expenseCategories->count() }} kategori</span>
+                                <span class="italic">Gulir ke bawah untuk data lainnya</span>
+                            </div>
+                        @endif
                     </div>
                 </div>
             @endif
