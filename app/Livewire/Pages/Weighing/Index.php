@@ -39,6 +39,16 @@ class Index extends Component
     public ?int $confirmDeleteSessionId = null;
     public ?array $deleteBindingInfo = null;
 
+    // Edit Modal state
+    public bool $showEditModal = false;
+    public ?int $editSessionId = null;
+    public $editCampusId = null;
+    public $editSourceId = null;
+    public string $editDate = '';
+    public string $editNotes = '';
+    public array $editItems = [];
+    public ?array $editBindingInfo = null;
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -175,6 +185,75 @@ class Index extends Component
         }
     }
 
+    public function openEditModal(int $id): void
+    {
+        $session = WeighingSession::with(['items.wasteType'])->findOrFail($id);
+        $this->editSessionId = $session->id;
+        $this->editCampusId = $session->campus_id;
+        $this->editSourceId = $session->waste_source_id;
+        $this->editDate = $session->weigh_date->format('Y-m-d');
+        $this->editNotes = $session->notes ?? '';
+        $this->editBindingInfo = $session->getBindingInfo();
+
+        $activeTypes = WasteType::getActiveTypes();
+        $this->editItems = [];
+        foreach ($activeTypes as $type) {
+            $existingItem = $session->items->firstWhere('waste_type_id', $type->id);
+            $this->editItems[] = [
+                'waste_type_id' => $type->id,
+                'waste_name' => $type->name,
+                'category' => $type->category,
+                'is_sellable' => $type->is_sellable,
+                'weight_kg' => $existingItem ? (float) $existingItem->weight_kg : '',
+                'volume_m3' => $existingItem && $existingItem->volume_m3 ? (float) $existingItem->volume_m3 : '',
+            ];
+        }
+
+        $this->showEditModal = true;
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
+        $this->editSessionId = null;
+        $this->editBindingInfo = null;
+        $this->dispatch('close-modal');
+    }
+
+    public function updatedEditCampusId(): void
+    {
+        $this->editSourceId = WasteSource::getByCampus($this->editCampusId)->first()?->id;
+    }
+
+    public function updateWeighing(WeighingController $controller): void
+    {
+        if (!$this->editSessionId) {
+            return;
+        }
+
+        try {
+            $result = $controller->update($this->editSessionId, [
+                'campus_id' => $this->editCampusId,
+                'waste_source_id' => $this->editSourceId,
+                'weigh_date' => $this->editDate,
+                'notes' => $this->editNotes,
+                'items' => $this->editItems,
+            ]);
+
+            $this->showEditModal = false;
+            $this->editSessionId = null;
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            foreach ($e->errors() as $key => $messages) {
+                foreach ($messages as $msg) {
+                    $this->addError($key, $msg);
+                }
+            }
+        }
+    }
+
     public function render()
     {
         $user = auth()->user();
@@ -193,6 +272,7 @@ class Index extends Component
             'canCreate' => $canCreate,
             'campuses' => Campus::getActiveCampuses(),
             'wasteSources' => WasteSource::getByCampus($this->formCampusId),
+            'editWasteSources' => WasteSource::getByCampus($this->editCampusId),
             'sessions' => $sessions,
             'selectedSession' => $this->viewSessionId 
                 ? WeighingSession::getDetailedSession($this->viewSessionId) 

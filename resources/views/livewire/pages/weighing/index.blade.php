@@ -1,8 +1,9 @@
 <div x-data="{ 
     showModal: false, 
+    showEditModal: @entangle('showEditModal'),
     deleteModal: false 
 }"
-@close-modal.window="showModal = false; deleteModal = false"
+@close-modal.window="showModal = false; showEditModal = false; deleteModal = false"
 @open-weighing-modal.window="showModal = true">
     <x-slot name="header">
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
@@ -197,6 +198,14 @@
                                         </svg>
                                     </button>
                                     @if ($canCreate)
+                                        <button wire:click="openEditModal({{ $session->id }})" 
+                                                type="button"
+                                                title="Edit Sesi Penimbangan"
+                                                class="p-1.5 text-slate-400 hover:text-amber-600 hover:bg-amber-50 rounded-lg transition cursor-pointer">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                            </svg>
+                                        </button>
                                         <button @click="deleteModal = true; $wire.confirmDelete({{ $session->id }})" 
                                                 type="button"
                                                 class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer"
@@ -355,6 +364,157 @@
                                 </button>
                                 <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
                                     Simpan Data Penimbangan
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Form Edit Penimbangan (Teleported to Body) -->
+            <template x-teleport="body">
+                <div x-show="showEditModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-3xl max-h-[90vh] overflow-y-auto">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">Edit Sesi Penimbangan Sampah</h3>
+                                <p class="text-xs text-slate-500">Perbarui hasil timbangan dan rincian jenis sampah (#{{ $editSessionId }})</p>
+                            </div>
+                            <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        <form wire:submit="updateWeighing" class="p-6 space-y-6">
+                            @if (!empty($editBindingInfo['is_bound']))
+                                <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
+                                    <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                    </svg>
+                                    <div class="text-xs">
+                                        <span class="font-bold">Sesi penimbangan ini memiliki transaksi terkait (Penjualan / Pengangkutan).</span>
+                                        <p class="mt-0.5 text-amber-800 leading-relaxed">
+                                            Unit kampus dikunci, dan pengurangan bobot jenis sampah dibatasi agar tidak melebihi sisa stok yang telah diproses.
+                                        </p>
+                                    </div>
+                                </div>
+                            @endif
+
+                            <!-- Sesi Info Grid -->
+                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
+                                    @if ($isSuperAdmin && empty($editBindingInfo['is_bound']))
+                                        <select wire:model.live="editCampusId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                            @foreach ($campuses as $c)
+                                                <option value="{{ $c->id }}">{{ $c->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <div class="text-xs font-semibold text-slate-800 bg-white border border-slate-200 px-3 py-2 rounded-lg flex items-center justify-between">
+                                            <span>{{ $campuses->firstWhere('id', $editCampusId)?->name ?? auth()->user()->campus?->name }}</span>
+                                            @if (!empty($editBindingInfo['is_bound']))
+                                                <span class="text-[10px] text-amber-600 font-bold bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">Terkunci</span>
+                                            @endif
+                                        </div>
+                                    @endif
+                                    @error('editCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Titik Sumber</label>
+                                    <select wire:model="editSourceId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                        <option value="">-- Pilih Titik Lokasi --</option>
+                                        @foreach ($editWasteSources ?? [] as $s)
+                                            <option value="{{ $s->id }}">{{ $s->name }}</option>
+                                        @endforeach
+                                    </select>
+                                    @error('editSourceId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Timbang <span class="text-rose-500">*</span></label>
+                                    <input type="date" wire:model="editDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
+                                    @error('editDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Items Matrix -->
+                            <div>
+                                <div class="flex items-center justify-between mb-2">
+                                    <div>
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Rincian Jenis Sampah Terpilah</h4>
+                                        <p class="text-[11px] text-slate-500">Sesuaikan bobot aktual timbangan (kg). Kosongkan jika bernilai 0.</p>
+                                    </div>
+                                </div>
+
+                                @error('editItems')
+                                    <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                                <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                    <div class="grid grid-cols-12 gap-2 bg-slate-50 px-3 py-2 text-[11px] font-bold text-slate-600 uppercase tracking-wider">
+                                        <div class="col-span-6">Jenis Sampah</div>
+                                        <div class="col-span-3 text-right">Berat (kg) <span class="text-rose-500">*</span></div>
+                                        <div class="col-span-3 text-right">Volume (m³)</div>
+                                    </div>
+
+                                    @foreach ($editItems as $index => $item)
+                                        <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
+                                            <div class="col-span-6 flex items-center gap-2">
+                                                <span class="w-2 h-2 rounded-full 
+                                                    {{ $item['category'] === 'Organik' ? 'bg-emerald-500' : '' }}
+                                                    {{ $item['category'] === 'Anorganik' ? 'bg-sky-500' : '' }}
+                                                    {{ $item['category'] === 'Residu' ? 'bg-amber-500' : '' }}">
+                                                </span>
+                                                <div>
+                                                    <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
+                                                    <div class="text-[10px] text-slate-400">
+                                                        {{ $item['category'] }} 
+                                                        @if ($item['is_sellable'])
+                                                            <span class="text-sky-600 font-medium">| Siap Jual</span>
+                                                        @else
+                                                            <span class="text-amber-600 font-medium">| Residu/Kompos</span>
+                                                        @endif
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-span-3">
+                                                <input type="number" step="0.01" min="0" 
+                                                       wire:model="editItems.{{ $index }}.weight_kg" 
+                                                       placeholder="0.0" 
+                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                            </div>
+                                            <div class="col-span-3">
+                                                <input type="number" step="0.001" min="0" 
+                                                       wire:model="editItems.{{ $index }}.volume_m3" 
+                                                       placeholder="opsional" 
+                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
+                                            </div>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+
+                            <!-- Notes Field -->
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+                                <textarea wire:model="editNotes" rows="2" placeholder="Catatan perbaikan penimbangan..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                @error('editNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                            </div>
+
+                            <!-- Actions -->
+                            <div class="flex items-center justify-end gap-3 pt-3 border-t border-slate-100">
+                                <button type="button" @click="showEditModal = false; $wire.closeEditModal()" class="px-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="submit" class="px-5 py-2.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer" style="background-color: #059669; color: #ffffff;">
+                                    Simpan Perubahan
                                 </button>
                             </div>
                         </form>

@@ -125,3 +125,4 @@ return new class extends Migration
         // Revert to original settings if needed
     }
 };
+

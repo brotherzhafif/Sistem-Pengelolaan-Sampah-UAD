@@ -83,8 +83,8 @@
                         <div class="absolute top-0 left-0 right-0 h-1 bg-sky-500"></div>
                         <div class="flex items-center justify-between">
                             <div>
-                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stok Terpilah (Siap Jual)</span>
-                                <p class="text-[9px] text-slate-400 mt-0.5">Sampah bernilai jual belum terjual</p>
+                                <span class="text-[10px] font-bold uppercase tracking-wider text-slate-400">Stok Terpilah</span>
+                                <p class="text-[9px] text-slate-400 mt-0.5">Sampah bernilai belum terjual</p>
                             </div>
                             <div class="w-6 h-6 rounded-md bg-sky-50 text-sky-600 flex items-center justify-center">
                                 <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
