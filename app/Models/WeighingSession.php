@@ -97,82 +97,53 @@ class WeighingSession extends Model
      */
     public function getBindingInfo(): array
     {
-        $boundSales = collect();
-        $boundPickups = collect();
-        $reasons = [];
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
 
-        // 1. Cek keterikatan sampah bernilai jual dengan Transaksi Penjualan
-        foreach ($this->items as $item) {
-            $weight = (float) $item->weight_kg;
-            if ($weight <= 0 || !$item->wasteType?->is_sellable) {
-                continue;
-            }
+        // Cek keterikatan dengan penjualan sampah bernilai
+        $sellableTypeIds = $this->items
+            ->filter(fn($i) => (float) $i->weight_kg > 0 && !empty($i->wasteType?->is_sellable))
+            ->pluck('waste_type_id');
 
-            $availableStock = WasteType::getAvailableStock($item->waste_type_id, $this->campus_id);
-            
-            // Ambil transaksi penjualan yang memuat jenis sampah ini di unit kampus yang sama
-            $sales = Sale::where('campus_id', $this->campus_id)
+        if ($sellableTypeIds->isNotEmpty()) {
+            $hasSales = Sale::where('campus_id', $this->campus_id)
                 ->where('sale_date', '>=', $this->weigh_date)
-                ->whereHas('items', fn($q) => $q->where('waste_type_id', $item->waste_type_id))
-                ->with(['buyer'])
-                ->orderBy('sale_date', 'asc')
-                ->take(3)
-                ->get();
+                ->whereHas('items', fn($q) => $q->whereIn('waste_type_id', $sellableTypeIds))
+                ->exists();
 
-            if ($weight > $availableStock || $sales->isNotEmpty()) {
-                $wasteName = $item->wasteType->name;
-                if ($weight > $availableStock) {
-                    $soldWeight = $weight - $availableStock;
-                    $reasons[] = "Sampah '{$wasteName}' sudah terjual " . number_format($soldWeight, 1, ',', '.') . " kg (sisa stok TPS: " . number_format($availableStock, 1, ',', '.') . " kg)";
-                } else {
-                    $reasons[] = "Sampah '{$wasteName}' terikat dengan transaksi penjualan mitra";
-                }
-
-                foreach ($sales as $s) {
-                    if (!$boundSales->contains('id', $s->id)) {
-                        $boundSales->push($s);
-                    }
-                }
+            if ($hasSales) {
+                $features[] = 'Penjualan Sampah';
+                $primaryUrl = route('sales');
+                $primaryLabel = 'Lihat Penjualan';
             }
         }
 
-        // 2. Cek keterikatan sampah residu dengan Transaksi Pengangkutan
-        $nonSellableWeight = (float) $this->items
-            ->filter(fn($i) => !empty($i->wasteType) && !$i->wasteType->is_sellable)
-            ->sum('weight_kg');
-
-        if ($nonSellableWeight > 0) {
-            $stockSummary = WasteType::getStockSummary($this->campus_id);
-            $availableResidual = (float) ($stockSummary['residual_stock_kg'] ?? 0.0);
-
-            $pickups = Pickup::where('campus_id', $this->campus_id)
+        // Cek keterikatan dengan pengangkutan residu
+        $hasResidual = $this->items->contains(fn($i) => (float) $i->weight_kg > 0 && !empty($i->wasteType) && !$i->wasteType->is_sellable);
+        if ($hasResidual) {
+            $hasPickups = Pickup::where('campus_id', $this->campus_id)
                 ->where('pickup_date', '>=', $this->weigh_date)
-                ->with(['vendor'])
-                ->orderBy('pickup_date', 'asc')
-                ->take(3)
-                ->get();
+                ->exists();
 
-            if ($nonSellableWeight > $availableResidual || $pickups->isNotEmpty()) {
-                if ($nonSellableWeight > $availableResidual) {
-                    $pickedUpWeight = $nonSellableWeight - $availableResidual;
-                    $reasons[] = "Residu sampah telah terangkut vendor " . number_format($pickedUpWeight, 1, ',', '.') . " kg (sisa residu TPS: " . number_format($availableResidual, 1, ',', '.') . " kg)";
-                } else {
-                    $reasons[] = "Residu sampah terikat dengan transaksi pengangkutan vendor";
-                }
-
-                foreach ($pickups as $p) {
-                    if (!$boundPickups->contains('id', $p->id)) {
-                        $boundPickups->push($p);
-                    }
+            if ($hasPickups) {
+                $features[] = 'Pengangkutan Residu';
+                if (!$primaryUrl) {
+                    $primaryUrl = route('pickups');
+                    $primaryLabel = 'Lihat Pengangkutan';
                 }
             }
         }
 
         return [
-            'is_bound' => $boundSales->isNotEmpty() || $boundPickups->isNotEmpty(),
-            'sales' => $boundSales,
-            'pickups' => $boundPickups,
-            'reasons' => $reasons,
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'sales' => collect(),
+            'pickups' => collect(),
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 }

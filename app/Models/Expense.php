@@ -50,11 +50,20 @@ class Expense extends Model
     public function getBindingInfo(): array
     {
         $ft = FinancialTransaction::where('source', 'operational')->where('ref_id', $this->id)->first();
+        $features = $ft ? ['Buku Kas Keuangan'] : [];
+        $primaryUrl = $ft ? route('finance', ['view' => $ft->id]) : null;
+        $primaryLabel = 'Lihat Buku Kas';
+
         return [
             'is_bound' => $ft !== null,
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
             'financial_transaction' => $ft,
             'category' => $this->category,
-            'reason' => $ft ? "Terikat dengan Jurnal Buku Kas Keuangan #FT-{$ft->id} (Biaya Debet: Rp " . number_format((float) $this->amount, 0, ',', '.') . ")" : null,
+            'reason' => 'Buku Kas Keuangan',
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 

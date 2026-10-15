@@ -535,27 +535,27 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                             </div>
-                            <h3 class="text-base font-bold text-slate-900">Tidak Dapat Menghapus Sesi Penimbangan</h3>
+                            <h3 class="text-base font-bold text-slate-900">Data Tidak Dapat Dihapus</h3>
                             <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                                Sesi penimbangan ini tidak dapat dihapus karena sampah telah diproses pada transaksi hilir:
+                                Sesi penimbangan ini tidak dapat dihapus karena masih terikat dengan data pada fitur lain:
                             </p>
-                            <div class="mt-3 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-left space-y-2">
-                                @foreach ($deleteBindingInfo['reasons'] as $r)
-                                    <div class="text-[11px] text-amber-900 flex items-start gap-1.5">
-                                        <span class="text-amber-600 font-bold">&bull;</span>
-                                        <span>{{ $r }}</span>
-                                    </div>
-                                @endforeach
+                            <div class="mt-3.5 p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-left">
+                                <p class="text-[11px] font-semibold text-amber-900 mb-2">Terikat dengan fitur:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach ($deleteBindingInfo['features'] ?? $deleteBindingInfo['reasons'] ?? [] as $feature)
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300/60">
+                                            {{ $feature }}
+                                        </span>
+                                    @endforeach
+                                </div>
                             </div>
                             <div class="flex items-center justify-center gap-3 mt-6">
                                 <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                                     Tutup
                                 </button>
                                 @php
-                                    $firstSale = $deleteBindingInfo['sales']->first();
-                                    $firstPickup = $deleteBindingInfo['pickups']->first();
-                                    $targetUrl = $firstSale ? route('sales', ['view' => $firstSale->id]) : ($firstPickup ? route('pickups', ['view' => $firstPickup->id]) : null);
-                                    $targetLabel = $firstSale ? 'Lihat Penjualan #' . $firstSale->id : ($firstPickup ? 'Lihat Pengangkutan #' . $firstPickup->id : 'Lihat Data Terkait');
+                                    $targetUrl = $deleteBindingInfo['primary_url'] ?? (!empty($deleteBindingInfo['bindings']) ? $deleteBindingInfo['bindings'][0]['url'] : null);
+                                    $targetLabel = $deleteBindingInfo['primary_label'] ?? (!empty($deleteBindingInfo['bindings']) ? $deleteBindingInfo['bindings'][0]['label'] : 'Lihat Data Terkait');
                                 @endphp
                                 @if($targetUrl)
                                     <a href="{{ $targetUrl }}" 
@@ -617,26 +617,17 @@
                             <div class="p-6 space-y-5">
                                 @php $detailBinding = $selectedSession->getBindingInfo(); @endphp
                                 @if ($detailBinding['is_bound'])
-                                    <div class="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
+                                    <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900">
                                         <div class="flex items-center gap-2 font-bold text-xs">
                                             <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
-                                            <span>Status Keterikatan: Sesi Terkunci oleh Transaksi Hilir</span>
+                                            <span>Status Keterikatan: Sesi Terkunci oleh Fitur Lain</span>
                                         </div>
-                                        <ul class="text-[11px] text-amber-800 list-disc list-inside mt-1.5 space-y-0.5">
-                                            @foreach ($detailBinding['reasons'] as $r)
-                                                <li>{{ $r }}</li>
-                                            @endforeach
-                                        </ul>
-                                        <div class="mt-2.5 flex flex-wrap gap-2">
-                                            @foreach ($detailBinding['sales'] as $bs)
-                                                <a href="{{ route('sales', ['view' => $bs->id]) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] font-semibold transition" style="background-color: #059669; color: #ffffff;">
-                                                    <span>Lihat Penjualan #{{ $bs->id }} (Rp {{ number_format($bs->total_amount, 0, ',', '.') }})</span>
-                                                </a>
-                                            @endforeach
-                                            @foreach ($detailBinding['pickups'] as $bp)
-                                                <a href="{{ route('pickups', ['view' => $bp->id]) }}" class="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-rose-600 hover:bg-rose-700 text-white text-[11px] font-semibold transition" style="background-color: #e11d48; color: #ffffff;">
-                                                    <span>Lihat Pengangkutan #{{ $bp->id }} ({{ number_format($bp->volume_kg, 1, ',', '.') }} kg)</span>
-                                                </a>
+                                        <div class="mt-2.5 flex flex-wrap items-center gap-1.5">
+                                            <span class="text-[11px] font-medium text-amber-800">Terikat dengan:</span>
+                                            @foreach ($detailBinding['features'] ?? $detailBinding['reasons'] ?? [] as $feature)
+                                                <span class="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-amber-100 text-amber-900 border border-amber-300/60">
+                                                    {{ $feature }}
+                                                </span>
                                             @endforeach
                                         </div>
                                     </div>

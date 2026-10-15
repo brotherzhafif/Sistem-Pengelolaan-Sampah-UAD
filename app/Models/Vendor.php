@@ -51,33 +51,24 @@ class Vendor extends Model
      */
     public function getBindingInfo(): array
     {
-        $pickupCount = Pickup::where('vendor_id', $this->id)->count();
+        $hasPickups = Pickup::where('vendor_id', $this->id)->exists();
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
 
-        $bindings = [];
-        $reasons = [];
-
-        if ($pickupCount > 0) {
-            $samplePickups = Pickup::where('vendor_id', $this->id)
-                ->orderByDesc('id')
-                ->take(3)
-                ->get();
-
-            $bindings[] = [
-                'type' => 'pickups',
-                'label' => 'Pengangkutan Residu',
-                'count' => $pickupCount,
-                'url' => route('pickups', $samplePickups->isNotEmpty() ? ['view' => $samplePickups->first()->id] : []),
-                'badge' => "{$pickupCount} Pengangkutan",
-                'sample_ids' => $samplePickups->pluck('id')->toArray(),
-            ];
-            $sampleText = $samplePickups->isNotEmpty() ? " (contoh: Pengangkutan #" . $samplePickups->pluck('id')->implode(', #') . ")" : "";
-            $reasons[] = "Terikat dengan {$pickupCount} transaksi pengangkutan residu vendor{$sampleText}";
+        if ($hasPickups) {
+            $features[] = 'Pengangkutan Residu';
+            $primaryUrl = route('pickups');
+            $primaryLabel = 'Lihat Pengangkutan';
         }
 
         return [
-            'is_bound' => count($bindings) > 0,
-            'bindings' => $bindings,
-            'reasons' => $reasons,
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 }

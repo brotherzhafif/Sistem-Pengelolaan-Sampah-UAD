@@ -656,19 +656,19 @@
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                         </svg>
                     </div>
-                    <h3 class="text-base font-bold text-slate-900">Tidak Dapat Menghapus Data Master</h3>
-                    <div class="mt-3 text-left bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 space-y-2">
-                        <p class="text-xs font-semibold text-amber-900">
-                            Data <span class="font-bold">'{{ $deleteTargetName }}'</span> merupakan Primary Key (PK) yang mengikat data operasional di sistem:
-                        </p>
-                        <ul class="text-[11px] text-amber-800 space-y-1 list-disc pl-4">
-                            @foreach($deleteBindingInfo['reasons'] as $reason)
-                                <li>{{ $reason }}</li>
+                    <h3 class="text-base font-bold text-slate-900">Data Tidak Dapat Dihapus</h3>
+                    <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                        Data <span class="font-bold text-slate-800">'{{ $deleteTargetName }}'</span> tidak dapat dihapus karena masih terikat dengan data pada fitur lain:
+                    </p>
+                    <div class="mt-3.5 p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-left">
+                        <p class="text-[11px] font-semibold text-amber-900 mb-2">Terikat dengan fitur:</p>
+                        <div class="flex flex-wrap gap-1.5">
+                            @foreach($deleteBindingInfo['features'] ?? $deleteBindingInfo['reasons'] ?? [] as $feature)
+                                <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300/60">
+                                    {{ $feature }}
+                                </span>
                             @endforeach
-                        </ul>
-                        <p class="text-[10px] text-amber-700 pt-1.5 border-t border-amber-200/60 leading-relaxed">
-                            Berdasarkan prinsip integritas basis data, data yang sudah memiliki keterikatan relasional tidak dapat dihapus untuk mencegah kerusakan riwayat transaksi.
-                        </p>
+                        </div>
                     </div>
 
                     <div class="flex items-center justify-center gap-3 mt-6">

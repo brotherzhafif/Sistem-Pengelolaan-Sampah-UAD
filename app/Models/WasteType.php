@@ -213,52 +213,31 @@ class WasteType extends Model
      */
     public function getBindingInfo(): array
     {
-        $weighingCount = WeighingItem::where('waste_type_id', $this->id)->count();
-        $saleCount = SaleItem::where('waste_type_id', $this->id)->count();
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
 
-        $bindings = [];
-        $reasons = [];
-
-        if ($weighingCount > 0) {
-            $sampleSessions = WeighingSession::whereHas('items', fn($q) => $q->where('waste_type_id', $this->id))
-                ->orderByDesc('id')
-                ->take(3)
-                ->get();
-            
-            $bindings[] = [
-                'type' => 'weighing',
-                'label' => 'Sesi Penimbangan',
-                'count' => $weighingCount,
-                'url' => route('weighing', $sampleSessions->isNotEmpty() ? ['view' => $sampleSessions->first()->id] : []),
-                'badge' => "{$weighingCount} Timbangan",
-                'sample_ids' => $sampleSessions->pluck('id')->toArray(),
-            ];
-            $sampleText = $sampleSessions->isNotEmpty() ? " (contoh: Sesi #" . $sampleSessions->pluck('id')->implode(', #') . ")" : "";
-            $reasons[] = "Terikat dengan {$weighingCount} data timbangan di sesi penimbangan sampah{$sampleText}";
+        if (WeighingItem::where('waste_type_id', $this->id)->exists()) {
+            $features[] = 'Penimbangan Sampah';
+            $primaryUrl = route('weighing');
+            $primaryLabel = 'Lihat Penimbangan';
         }
 
-        if ($saleCount > 0) {
-            $sampleSales = Sale::whereHas('items', fn($q) => $q->where('waste_type_id', $this->id))
-                ->orderByDesc('id')
-                ->take(3)
-                ->get();
-
-            $bindings[] = [
-                'type' => 'sales',
-                'label' => 'Transaksi Penjualan',
-                'count' => $saleCount,
-                'url' => route('sales', $sampleSales->isNotEmpty() ? ['view' => $sampleSales->first()->id] : []),
-                'badge' => "{$saleCount} Penjualan",
-                'sample_ids' => $sampleSales->pluck('id')->toArray(),
-            ];
-            $sampleText = $sampleSales->isNotEmpty() ? " (contoh: Penjualan #" . $sampleSales->pluck('id')->implode(', #') . ")" : "";
-            $reasons[] = "Terikat dengan {$saleCount} transaksi penjualan sampah bernilai{$sampleText}";
+        if (SaleItem::where('waste_type_id', $this->id)->exists()) {
+            $features[] = 'Penjualan Sampah';
+            if (!$primaryUrl) {
+                $primaryUrl = route('sales');
+                $primaryLabel = 'Lihat Penjualan';
+            }
         }
 
         return [
-            'is_bound' => count($bindings) > 0,
-            'bindings' => $bindings,
-            'reasons' => $reasons,
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 }

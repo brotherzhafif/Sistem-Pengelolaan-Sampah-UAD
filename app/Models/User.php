@@ -108,74 +108,38 @@ class User extends Authenticatable
      */
     public function getBindingInfo(): array
     {
-        $sessionCount = WeighingSession::where('created_by', $this->id)->count();
-        $saleCount = Sale::where('created_by', $this->id)->count();
-        $pickupCount = Pickup::where('created_by', $this->id)->count();
-        $expenseCount = Expense::where('created_by', $this->id)->count();
-        $ftCount = FinancialTransaction::where('created_by', $this->id)->count();
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
 
-        $bindings = [];
-        $reasons = [];
-
-        if ($sessionCount > 0) {
-            $bindings[] = [
-                'type' => 'weighing',
-                'label' => 'Sesi Penimbangan',
-                'count' => $sessionCount,
-                'url' => route('weighing'),
-                'badge' => "{$sessionCount} Penimbangan",
-            ];
-            $reasons[] = "Telah mencatat {$sessionCount} sesi penimbangan sampah";
+        if (WeighingSession::where('created_by', $this->id)->exists()) {
+            $features[] = 'Penimbangan Sampah';
+            if (!$primaryUrl) { $primaryUrl = route('weighing'); $primaryLabel = 'Lihat Penimbangan'; }
         }
-
-        if ($saleCount > 0) {
-            $bindings[] = [
-                'type' => 'sales',
-                'label' => 'Transaksi Penjualan',
-                'count' => $saleCount,
-                'url' => route('sales'),
-                'badge' => "{$saleCount} Penjualan",
-            ];
-            $reasons[] = "Telah mencatat {$saleCount} transaksi penjualan sampah";
+        if (Sale::where('created_by', $this->id)->exists()) {
+            $features[] = 'Penjualan Sampah';
+            if (!$primaryUrl) { $primaryUrl = route('sales'); $primaryLabel = 'Lihat Penjualan'; }
         }
-
-        if ($pickupCount > 0) {
-            $bindings[] = [
-                'type' => 'pickups',
-                'label' => 'Pengangkutan Residu',
-                'count' => $pickupCount,
-                'url' => route('pickups'),
-                'badge' => "{$pickupCount} Pengangkutan",
-            ];
-            $reasons[] = "Telah mencatat {$pickupCount} transaksi pengangkutan residu";
+        if (Pickup::where('created_by', $this->id)->exists()) {
+            $features[] = 'Pengangkutan Residu';
+            if (!$primaryUrl) { $primaryUrl = route('pickups'); $primaryLabel = 'Lihat Pengangkutan'; }
         }
-
-        if ($expenseCount > 0) {
-            $bindings[] = [
-                'type' => 'expenses',
-                'label' => 'Pengeluaran Operasional',
-                'count' => $expenseCount,
-                'url' => route('expenses'),
-                'badge' => "{$expenseCount} Pengeluaran",
-            ];
-            $reasons[] = "Telah mencatat {$expenseCount} pengeluaran operasional";
+        if (Expense::where('created_by', $this->id)->exists()) {
+            $features[] = 'Pengeluaran Operasional';
+            if (!$primaryUrl) { $primaryUrl = route('expenses'); $primaryLabel = 'Lihat Pengeluaran'; }
         }
-
-        if ($ftCount > 0) {
-            $bindings[] = [
-                'type' => 'finance',
-                'label' => 'Buku Kas Keuangan',
-                'count' => $ftCount,
-                'url' => route('finance'),
-                'badge' => "{$ftCount} Transaksi Kas",
-            ];
-            $reasons[] = "Telah mencatat {$ftCount} mutasi buku kas keuangan";
+        if (FinancialTransaction::where('created_by', $this->id)->exists()) {
+            $features[] = 'Buku Kas Keuangan';
+            if (!$primaryUrl) { $primaryUrl = route('finance'); $primaryLabel = 'Lihat Buku Kas'; }
         }
 
         return [
-            'is_bound' => count($bindings) > 0,
-            'bindings' => $bindings,
-            'reasons' => $reasons,
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 }

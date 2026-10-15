@@ -48,33 +48,24 @@ class WasteSource extends Model
      */
     public function getBindingInfo(): array
     {
-        $sessionCount = WeighingSession::where('waste_source_id', $this->id)->count();
+        $hasWeighing = WeighingSession::where('waste_source_id', $this->id)->exists();
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
 
-        $bindings = [];
-        $reasons = [];
-
-        if ($sessionCount > 0) {
-            $sampleSessions = WeighingSession::where('waste_source_id', $this->id)
-                ->orderByDesc('id')
-                ->take(3)
-                ->get();
-
-            $bindings[] = [
-                'type' => 'weighing',
-                'label' => 'Sesi Penimbangan',
-                'count' => $sessionCount,
-                'url' => route('weighing', $sampleSessions->isNotEmpty() ? ['view' => $sampleSessions->first()->id] : []),
-                'badge' => "{$sessionCount} Penimbangan",
-                'sample_ids' => $sampleSessions->pluck('id')->toArray(),
-            ];
-            $sampleText = $sampleSessions->isNotEmpty() ? " (contoh: Sesi #" . $sampleSessions->pluck('id')->implode(', #') . ")" : "";
-            $reasons[] = "Terikat dengan {$sessionCount} sesi penimbangan sampah kampus{$sampleText}";
+        if ($hasWeighing) {
+            $features[] = 'Penimbangan Sampah';
+            $primaryUrl = route('weighing');
+            $primaryLabel = 'Lihat Penimbangan';
         }
 
         return [
-            'is_bound' => count($bindings) > 0,
-            'bindings' => $bindings,
-            'reasons' => $reasons,
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 }

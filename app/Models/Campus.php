@@ -99,103 +99,46 @@ class Campus extends Model
      */
     public function getBindingInfo(): array
     {
-        $userCount = User::where('campus_id', $this->id)->count();
-        $sourceCount = WasteSource::where('campus_id', $this->id)->count();
-        $sessionCount = WeighingSession::where('campus_id', $this->id)->count();
-        $saleCount = Sale::where('campus_id', $this->id)->count();
-        $pickupCount = Pickup::where('campus_id', $this->id)->count();
-        $expenseCount = Expense::where('campus_id', $this->id)->count();
-        $ftCount = FinancialTransaction::where('campus_id', $this->id)->count();
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
 
-        $bindings = [];
-        $reasons = [];
-
-        if ($userCount > 0) {
-            $bindings[] = [
-                'type' => 'users',
-                'label' => 'Akun Pengguna',
-                'count' => $userCount,
-                'url' => route('users'),
-                'badge' => "{$userCount} Pengguna",
-            ];
-            $reasons[] = "Terdaftar {$userCount} akun pengguna di unit kampus ini";
+        if (User::where('campus_id', $this->id)->exists()) {
+            $features[] = 'Data Pengguna';
+            if (!$primaryUrl) { $primaryUrl = route('users'); $primaryLabel = 'Lihat Pengguna'; }
         }
-
-        if ($sourceCount > 0) {
-            $bindings[] = [
-                'type' => 'sources',
-                'label' => 'Titik Sumber Sampah',
-                'count' => $sourceCount,
-                'url' => route('master-data'),
-                'badge' => "{$sourceCount} Titik Sumber",
-            ];
-            $reasons[] = "Terdapat {$sourceCount} titik sumber timbulan sampah";
+        if (WasteSource::where('campus_id', $this->id)->exists()) {
+            $features[] = 'Sumber Sampah (Master Data)';
+            if (!$primaryUrl) { $primaryUrl = route('master-data'); $primaryLabel = 'Lihat Master Data'; }
         }
-
-        if ($sessionCount > 0) {
-            $firstSession = WeighingSession::where('campus_id', $this->id)->latest('id')->first();
-            $bindings[] = [
-                'type' => 'weighing',
-                'label' => 'Sesi Penimbangan',
-                'count' => $sessionCount,
-                'url' => route('weighing', $firstSession ? ['view' => $firstSession->id] : []),
-                'badge' => "{$sessionCount} Penimbangan",
-            ];
-            $reasons[] = "Tercatat {$sessionCount} sesi penimbangan sampah operasional";
+        if (WeighingSession::where('campus_id', $this->id)->exists()) {
+            $features[] = 'Penimbangan Sampah';
+            if (!$primaryUrl) { $primaryUrl = route('weighing'); $primaryLabel = 'Lihat Penimbangan'; }
         }
-
-        if ($saleCount > 0) {
-            $firstSale = Sale::where('campus_id', $this->id)->latest('id')->first();
-            $bindings[] = [
-                'type' => 'sales',
-                'label' => 'Transaksi Penjualan',
-                'count' => $saleCount,
-                'url' => route('sales', $firstSale ? ['view' => $firstSale->id] : []),
-                'badge' => "{$saleCount} Penjualan",
-            ];
-            $reasons[] = "Tercatat {$saleCount} transaksi penjualan sampah terpilah";
+        if (Sale::where('campus_id', $this->id)->exists()) {
+            $features[] = 'Penjualan Sampah';
+            if (!$primaryUrl) { $primaryUrl = route('sales'); $primaryLabel = 'Lihat Penjualan'; }
         }
-
-        if ($pickupCount > 0) {
-            $firstPickup = Pickup::where('campus_id', $this->id)->latest('id')->first();
-            $bindings[] = [
-                'type' => 'pickups',
-                'label' => 'Pengangkutan Residu',
-                'count' => $pickupCount,
-                'url' => route('pickups', $firstPickup ? ['view' => $firstPickup->id] : []),
-                'badge' => "{$pickupCount} Pengangkutan",
-            ];
-            $reasons[] = "Tercatat {$pickupCount} transaksi pengangkutan residu TPS";
+        if (Pickup::where('campus_id', $this->id)->exists()) {
+            $features[] = 'Pengangkutan Residu';
+            if (!$primaryUrl) { $primaryUrl = route('pickups'); $primaryLabel = 'Lihat Pengangkutan'; }
         }
-
-        if ($expenseCount > 0) {
-            $firstExpense = Expense::where('campus_id', $this->id)->latest('id')->first();
-            $bindings[] = [
-                'type' => 'expenses',
-                'label' => 'Pengeluaran Operasional',
-                'count' => $expenseCount,
-                'url' => route('expenses', $firstExpense ? ['view' => $firstExpense->id] : []),
-                'badge' => "{$expenseCount} Pengeluaran",
-            ];
-            $reasons[] = "Tercatat {$expenseCount} pos pengeluaran operasional kas TPS";
+        if (Expense::where('campus_id', $this->id)->exists()) {
+            $features[] = 'Pengeluaran Operasional';
+            if (!$primaryUrl) { $primaryUrl = route('expenses'); $primaryLabel = 'Lihat Pengeluaran'; }
         }
-
-        if ($ftCount > 0) {
-            $firstFt = FinancialTransaction::where('campus_id', $this->id)->latest('id')->first();
-            $bindings[] = [
-                'type' => 'finance',
-                'label' => 'Buku Kas Keuangan',
-                'count' => $ftCount,
-                'url' => route('finance', $firstFt ? ['view' => $firstFt->id] : []),
-                'badge' => "{$ftCount} Transaksi Kas",
-            ];
-            $reasons[] = "Tercatat {$ftCount} mutasi buku kas keuangan kampus";
+        if (FinancialTransaction::where('campus_id', $this->id)->exists()) {
+            $features[] = 'Buku Kas Keuangan';
+            if (!$primaryUrl) { $primaryUrl = route('finance'); $primaryLabel = 'Lihat Buku Kas'; }
         }
 
         return [
-            'is_bound' => count($bindings) > 0,
-            'bindings' => $bindings,
-            'reasons' => $reasons,
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 }

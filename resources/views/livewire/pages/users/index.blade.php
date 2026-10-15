@@ -444,19 +444,19 @@
                     </div>
 
                     <div>
-                        <h3 class="font-bold text-sm text-slate-900">Tidak Dapat Menghapus Pengguna</h3>
-                        <div class="mt-3 text-left bg-amber-50/80 border border-amber-200 rounded-xl p-3.5 space-y-2">
-                            <p class="text-xs font-semibold text-amber-900">
-                                Akun <span class="font-bold">'{{ $deleteUserName }}'</span> memiliki rekam jejak transaksi aktif di sistem:
-                            </p>
-                            <ul class="text-[11px] text-amber-800 space-y-1 list-disc pl-4">
-                                @foreach($deleteBindingInfo['reasons'] as $reason)
-                                    <li>{{ $reason }}</li>
+                        <h3 class="font-bold text-sm text-slate-900">Data Tidak Dapat Dihapus</h3>
+                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                            Akun <span class="font-bold text-slate-800">'{{ $deleteUserName }}'</span> tidak dapat dihapus karena masih terikat dengan data pada fitur lain:
+                        </p>
+                        <div class="mt-3.5 p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-left">
+                            <p class="text-[11px] font-semibold text-amber-900 mb-2">Terikat dengan fitur:</p>
+                            <div class="flex flex-wrap gap-1.5">
+                                @foreach($deleteBindingInfo['features'] ?? $deleteBindingInfo['reasons'] ?? [] as $feature)
+                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300/60">
+                                        {{ $feature }}
+                                    </span>
                                 @endforeach
-                            </ul>
-                            <p class="text-[10px] text-amber-700 pt-1.5 border-t border-amber-200/60 leading-relaxed">
-                                Untuk menjaga integritas data audit dan riwayat transaksi, akun ini tidak boleh dihapus.
-                            </p>
+                            </div>
                         </div>
                     </div>
 
@@ -464,11 +464,15 @@
                         <button type="button" @click="deleteModal = false; $wire.closeDeleteModal()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                             Tutup
                         </button>
-                        @if(!empty($deleteBindingInfo['bindings']) && count($deleteBindingInfo['bindings']) > 0)
-                            <a href="{{ $deleteBindingInfo['bindings'][0]['url'] }}" 
+                        @php
+                            $targetUrl = $deleteBindingInfo['primary_url'] ?? (!empty($deleteBindingInfo['bindings']) ? $deleteBindingInfo['bindings'][0]['url'] : null);
+                            $targetLabel = $deleteBindingInfo['primary_label'] ?? (!empty($deleteBindingInfo['bindings']) ? $deleteBindingInfo['bindings'][0]['label'] : 'Lihat Data Terkait');
+                        @endphp
+                        @if($targetUrl)
+                            <a href="{{ $targetUrl }}" 
                                class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition active:scale-95 text-center flex items-center justify-center cursor-pointer"
                                style="background-color: #059669; color: #ffffff;">
-                                <span>Lihat {{ $deleteBindingInfo['bindings'][0]['label'] }}</span>
+                                <span>{{ $targetLabel }}</span>
                             </a>
                         @endif
                     </div>

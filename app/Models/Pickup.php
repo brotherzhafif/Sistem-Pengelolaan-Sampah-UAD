@@ -56,11 +56,20 @@ class Pickup extends Model
     public function getBindingInfo(): array
     {
         $ft = FinancialTransaction::where('source', 'pickup')->where('ref_id', $this->id)->first();
+        $features = $ft ? ['Buku Kas Keuangan'] : [];
+        $primaryUrl = $ft ? route('finance', ['view' => $ft->id]) : null;
+        $primaryLabel = 'Lihat Buku Kas';
+
         return [
             'is_bound' => $ft !== null,
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
             'financial_transaction' => $ft,
             'vendor' => $this->vendor,
-            'reason' => $ft ? "Terikat dengan Jurnal Buku Kas Keuangan #FT-{$ft->id} (Biaya Debet: Rp " . number_format((float) $this->total_cost, 0, ',', '.') . ")" : null,
+            'reason' => 'Buku Kas Keuangan',
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 

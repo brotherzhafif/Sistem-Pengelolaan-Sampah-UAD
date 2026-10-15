@@ -36,33 +36,24 @@ class Buyer extends Model
      */
     public function getBindingInfo(): array
     {
-        $salesCount = Sale::where('buyer_id', $this->id)->count();
+        $hasSales = Sale::where('buyer_id', $this->id)->exists();
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
 
-        $bindings = [];
-        $reasons = [];
-
-        if ($salesCount > 0) {
-            $sampleSales = Sale::where('buyer_id', $this->id)
-                ->orderByDesc('id')
-                ->take(3)
-                ->get();
-
-            $bindings[] = [
-                'type' => 'sales',
-                'label' => 'Transaksi Penjualan',
-                'count' => $salesCount,
-                'url' => route('sales', $sampleSales->isNotEmpty() ? ['view' => $sampleSales->first()->id] : []),
-                'badge' => "{$salesCount} Penjualan",
-                'sample_ids' => $sampleSales->pluck('id')->toArray(),
-            ];
-            $sampleText = $sampleSales->isNotEmpty() ? " (contoh: Penjualan #" . $sampleSales->pluck('id')->implode(', #') . ")" : "";
-            $reasons[] = "Terikat dengan {$salesCount} transaksi penjualan sampah bernilai{$sampleText}";
+        if ($hasSales) {
+            $features[] = 'Penjualan Sampah';
+            $primaryUrl = route('sales');
+            $primaryLabel = 'Lihat Penjualan';
         }
 
         return [
-            'is_bound' => count($bindings) > 0,
-            'bindings' => $bindings,
-            'reasons' => $reasons,
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 }

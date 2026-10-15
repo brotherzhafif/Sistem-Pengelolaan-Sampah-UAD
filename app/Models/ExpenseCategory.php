@@ -35,33 +35,24 @@ class ExpenseCategory extends Model
      */
     public function getBindingInfo(): array
     {
-        $expenseCount = Expense::where('expense_category_id', $this->id)->count();
+        $hasExpenses = Expense::where('expense_category_id', $this->id)->exists();
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
 
-        $bindings = [];
-        $reasons = [];
-
-        if ($expenseCount > 0) {
-            $sampleExpenses = Expense::where('expense_category_id', $this->id)
-                ->orderByDesc('id')
-                ->take(3)
-                ->get();
-
-            $bindings[] = [
-                'type' => 'expenses',
-                'label' => 'Pengeluaran Operasional',
-                'count' => $expenseCount,
-                'url' => route('expenses', $sampleExpenses->isNotEmpty() ? ['view' => $sampleExpenses->first()->id] : []),
-                'badge' => "{$expenseCount} Pengeluaran",
-                'sample_ids' => $sampleExpenses->pluck('id')->toArray(),
-            ];
-            $sampleText = $sampleExpenses->isNotEmpty() ? " (contoh: Pengeluaran #" . $sampleExpenses->pluck('id')->implode(', #') . ")" : "";
-            $reasons[] = "Terikat dengan {$expenseCount} pos pengeluaran kas operasional{$sampleText}";
+        if ($hasExpenses) {
+            $features[] = 'Pengeluaran Operasional';
+            $primaryUrl = route('expenses');
+            $primaryLabel = 'Lihat Pengeluaran';
         }
 
         return [
-            'is_bound' => count($bindings) > 0,
-            'bindings' => $bindings,
-            'reasons' => $reasons,
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 }

@@ -399,27 +399,31 @@
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                             </div>
-                            <h3 class="text-base font-bold text-slate-900">Tidak Dapat Menghapus Penjualan</h3>
+                            <h3 class="text-base font-bold text-slate-900">Data Tidak Dapat Dihapus</h3>
                             <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                                Transaksi penjualan ini tidak dapat dihapus karena telah tercatat dan terikat dengan mutasi jurnal buku kas keuangan kampus:
+                                Transaksi penjualan ini tidak dapat dihapus karena masih terikat dengan data pada fitur lain:
                             </p>
-                            <div class="mt-3 p-3.5 rounded-xl bg-amber-50/80 border border-amber-200 text-left">
-                                <div class="text-xs font-bold text-amber-900 flex items-center gap-1.5">
-                                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
-                                    <span>Keterikatan Buku Kas:</span>
+                            <div class="mt-3.5 p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-left">
+                                <p class="text-[11px] font-semibold text-amber-900 mb-2">Terikat dengan fitur:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach ($deleteBindingInfo['features'] ?? $deleteBindingInfo['reasons'] ?? ['Buku Kas Keuangan'] as $feature)
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300/60">
+                                            {{ $feature }}
+                                        </span>
+                                    @endforeach
                                 </div>
-                                <p class="text-[11px] text-amber-800 mt-1">
-                                    {{ $deleteBindingInfo['reason'] }}
-                                </p>
                             </div>
                             <div class="flex items-center justify-center gap-3 mt-6">
                                 <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
                                     Tutup
                                 </button>
-                                <a href="{{ route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]) }}" 
+                                @php
+                                    $targetUrl = $deleteBindingInfo['primary_url'] ?? route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]);
+                                @endphp
+                                <a href="{{ $targetUrl }}" 
                                    class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition active:scale-95 text-center flex items-center justify-center cursor-pointer"
                                    style="background-color: #059669; color: #ffffff;">
-                                    <span>Lihat Jurnal Kas #FT-{{ $deleteBindingInfo['financial_transaction']?->id }}</span>
+                                    <span>Lihat Jurnal Kas</span>
                                 </a>
                             </div>
                         @else

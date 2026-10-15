@@ -61,11 +61,20 @@ class Sale extends Model
     public function getBindingInfo(): array
     {
         $ft = FinancialTransaction::where('source', 'sales')->where('ref_id', $this->id)->first();
+        $features = $ft ? ['Buku Kas Keuangan'] : [];
+        $primaryUrl = $ft ? route('finance', ['view' => $ft->id]) : null;
+        $primaryLabel = 'Lihat Buku Kas';
+
         return [
             'is_bound' => $ft !== null,
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
             'financial_transaction' => $ft,
             'buyer' => $this->buyer,
-            'reason' => $ft ? "Terikat dengan Jurnal Buku Kas Keuangan #FT-{$ft->id} (Pemasukan Kredit: Rp " . number_format((float) $this->total_amount, 0, ',', '.') . ")" : null,
+            'reason' => 'Buku Kas Keuangan',
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
         ];
     }
 
