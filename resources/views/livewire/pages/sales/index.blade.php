@@ -249,7 +249,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="saveSale" novalidate class="p-6 space-y-6">
+                        <form wire:submit="saveSale" class="p-6 space-y-6">
                             <!-- Info Transaksi Grid -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
@@ -386,9 +386,10 @@
                                     Batal
                                 </button>
                                 <button type="submit" 
-                                        @if(!$this->canSubmit) disabled @endif
-                                        class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400">
-                                    Simpan Transaksi & Kredit Kas
+                                        wire:loading.attr="disabled"
+                                        class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="saveSale">Simpan Transaksi & Kredit Kas</span>
+                                    <span wire:loading wire:target="saveSale">Menyimpan...</span>
                                 </button>
                             </div>
                         </form>
@@ -418,7 +419,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="updateSale" novalidate class="p-6 space-y-6">
+                        <form wire:submit="updateSale" class="p-6 space-y-6">
                             <!-- Info Transaksi Grid -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
@@ -559,10 +560,11 @@
                                     Batal
                                 </button>
                                 <button type="submit" 
-                                        @if(!$this->canSubmitEdit) disabled @endif
-                                        class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400"
+                                        wire:loading.attr="disabled"
+                                        class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50"
                                         style="background-color: #059669; color: #ffffff;">
-                                    Simpan Perubahan Penjualan
+                                    <span wire:loading.remove wire:target="updateSale">Simpan Perubahan Penjualan</span>
+                                    <span wire:loading wire:target="updateSale">Menyimpan...</span>
                                 </button>
                             </div>
                         </form>

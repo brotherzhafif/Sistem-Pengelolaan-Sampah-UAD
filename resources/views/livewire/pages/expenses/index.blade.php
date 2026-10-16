@@ -270,7 +270,7 @@ class="space-y-6">
                             </button>
                         </div>
 
-                        <form wire:submit="saveExpense" novalidate class="p-6 space-y-4">
+                        <form wire:submit="saveExpense" class="p-6 space-y-4">
                             <!-- Unit Kampus -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Unit Kampus <span class="text-rose-500">*</span></label>
@@ -358,7 +358,7 @@ class="space-y-6">
                             </button>
                         </div>
 
-                        <form wire:submit="updateExpense" novalidate class="p-6 space-y-4">
+                        <form wire:submit="updateExpense" class="p-6 space-y-4">
                             <!-- Unit Kampus -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Unit Kampus <span class="text-rose-500">*</span></label>

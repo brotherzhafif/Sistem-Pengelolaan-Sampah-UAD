@@ -144,9 +144,20 @@ class Index extends Component
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'formCampusId',
+                'waste_source_id' => 'formSourceId',
+                'weigh_date' => 'formDate',
+                'notes' => 'formNotes',
+                'items' => 'formItems',
+            ];
             foreach ($e->errors() as $key => $messages) {
+                $targetKey = $keyMap[$key] ?? $key;
                 foreach ($messages as $msg) {
-                    $this->addError($key, $msg);
+                    $this->addError($targetKey, $msg);
+                    if ($targetKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
                 }
             }
         }
@@ -246,9 +257,20 @@ class Index extends Component
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'editCampusId',
+                'waste_source_id' => 'editSourceId',
+                'weigh_date' => 'editDate',
+                'notes' => 'editNotes',
+                'items' => 'editItems',
+            ];
             foreach ($e->errors() as $key => $messages) {
+                $targetKey = $keyMap[$key] ?? $key;
                 foreach ($messages as $msg) {
-                    $this->addError($key, $msg);
+                    $this->addError($targetKey, $msg);
+                    if ($targetKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
                 }
             }
         }

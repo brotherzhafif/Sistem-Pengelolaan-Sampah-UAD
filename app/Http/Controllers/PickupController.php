@@ -44,7 +44,7 @@ class PickupController extends Controller
             'campus_id' => ['required', 'exists:campuses,id'],
             'vendor_id' => ['required', 'exists:vendors,id'],
             'pickup_date' => ['required', 'date'],
-            'volume_kg' => ['required', 'numeric', 'min:0.1', 'max:50000'],
+            'volume_kg' => ['required', 'numeric', 'min:0.01', 'max:50000'],
             'cost_per_kg' => ['required', 'numeric', 'min:0'],
             'driver_name' => ['nullable', 'string', 'max:100'],
             'vehicle_plate' => ['nullable', 'string', 'max:30'],
@@ -54,7 +54,7 @@ class PickupController extends Controller
             'vendor_id.required' => 'Pihak vendor pengangkut wajib dipilih.',
             'pickup_date.required' => 'Tanggal pengangkutan wajib diisi.',
             'volume_kg.required' => 'Bobot muatan residu wajib diisi.',
-            'volume_kg.min' => 'Bobot muatan minimal 0.1 kg.',
+            'volume_kg.min' => 'Bobot muatan minimal 0.01 kg.',
             'cost_per_kg.required' => 'Biaya per kg wajib diisi.',
         ])->validate();
 
@@ -138,7 +138,7 @@ class PickupController extends Controller
             'campus_id' => ['required', 'exists:campuses,id'],
             'vendor_id' => ['required', 'exists:vendors,id'],
             'pickup_date' => ['required', 'date'],
-            'volume_kg' => ['required', 'numeric', 'min:0.1', 'max:50000'],
+            'volume_kg' => ['required', 'numeric', 'min:0.01', 'max:50000'],
             'cost_per_kg' => ['required', 'numeric', 'min:0'],
             'driver_name' => ['nullable', 'string', 'max:100'],
             'vehicle_plate' => ['nullable', 'string', 'max:30'],
@@ -148,7 +148,7 @@ class PickupController extends Controller
             'vendor_id.required' => 'Pihak vendor pengangkut wajib dipilih.',
             'pickup_date.required' => 'Tanggal pengangkutan wajib diisi.',
             'volume_kg.required' => 'Bobot muatan residu wajib diisi.',
-            'volume_kg.min' => 'Bobot muatan minimal 0.1 kg.',
+            'volume_kg.min' => 'Bobot muatan minimal 0.01 kg.',
             'cost_per_kg.required' => 'Biaya per kg wajib diisi.',
         ])->validate();
 

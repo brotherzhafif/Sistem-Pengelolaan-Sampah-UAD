@@ -217,9 +217,23 @@ class Index extends Component
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'formCampusId',
+                'vendor_id' => 'formVendorId',
+                'pickup_date' => 'formDate',
+                'volume_kg' => 'formVolumeKg',
+                'cost_per_kg' => 'formCostPerKg',
+                'driver_name' => 'formDriverName',
+                'vehicle_plate' => 'formVehiclePlate',
+                'notes' => 'formNotes',
+            ];
             foreach ($e->errors() as $key => $messages) {
+                $targetKey = $keyMap[$key] ?? $key;
                 foreach ($messages as $msg) {
-                    $this->addError($key, $msg);
+                    $this->addError($targetKey, $msg);
+                    if ($targetKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
                 }
             }
         }
@@ -321,9 +335,23 @@ class Index extends Component
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'editCampusId',
+                'vendor_id' => 'editVendorId',
+                'pickup_date' => 'editDate',
+                'volume_kg' => 'editVolumeKg',
+                'cost_per_kg' => 'editCostPerKg',
+                'driver_name' => 'editDriverName',
+                'vehicle_plate' => 'editVehiclePlate',
+                'notes' => 'editNotes',
+            ];
             foreach ($e->errors() as $key => $messages) {
+                $targetKey = $keyMap[$key] ?? $key;
                 foreach ($messages as $msg) {
-                    $this->addError($key, $msg);
+                    $this->addError($targetKey, $msg);
+                    if ($targetKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
                 }
             }
         }

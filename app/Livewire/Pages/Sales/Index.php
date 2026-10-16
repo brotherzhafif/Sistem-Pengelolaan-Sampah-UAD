@@ -206,9 +206,23 @@ class Index extends Component
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'formCampusId',
+                'buyer_id' => 'formBuyerId',
+                'sale_date' => 'formDate',
+                'notes' => 'formNotes',
+                'items' => 'saleItems',
+            ];
             foreach ($e->errors() as $key => $messages) {
+                $mappedKey = str_starts_with($key, 'items.') 
+                    ? str_replace('items.', 'saleItems.', $key) 
+                    : ($keyMap[$key] ?? $key);
+
                 foreach ($messages as $msg) {
-                    $this->addError($key, $msg);
+                    $this->addError($mappedKey, $msg);
+                    if ($mappedKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
                 }
             }
         }
@@ -348,9 +362,23 @@ class Index extends Component
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'editCampusId',
+                'buyer_id' => 'editBuyerId',
+                'sale_date' => 'editDate',
+                'notes' => 'editNotes',
+                'items' => 'editItems',
+            ];
             foreach ($e->errors() as $key => $messages) {
+                $mappedKey = str_starts_with($key, 'items.') 
+                    ? str_replace('items.', 'editItems.', $key) 
+                    : ($keyMap[$key] ?? $key);
+
                 foreach ($messages as $msg) {
-                    $this->addError($key, $msg);
+                    $this->addError($mappedKey, $msg);
+                    if ($mappedKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
                 }
             }
         }

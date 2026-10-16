@@ -248,7 +248,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="savePickup" novalidate class="p-6 space-y-5">
+                        <form wire:submit="savePickup" class="p-6 space-y-5">
                             <!-- Info Lokasi & Vendor -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
@@ -288,12 +288,14 @@
 
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Volume Muatan (kg) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="any" min="0" max="{{ $this->availableResidualStock }}" 
+                                    <input type="number" 
+                                           step="any" 
+                                           min="0" 
                                            wire:model.live.debounce.300ms="formVolumeKg" 
                                            x-on:input="
                                                let maxVal = {{ (float) $this->availableResidualStock }};
                                                let val = parseFloat($el.value);
-                                               if (!isNaN(val) && val > maxVal) {
+                                               if (!isNaN(val) && maxVal > 0 && val > maxVal) {
                                                    $el.value = maxVal;
                                                    $wire.set('formVolumeKg', maxVal);
                                                    $wire.calculateTotalCost();
@@ -359,9 +361,10 @@
                                     Batal
                                 </button>
                                 <button type="submit" 
-                                        @if(!$this->canSubmit) disabled @endif
-                                        class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-slate-400">
-                                    Simpan & Catat Debet Kas
+                                        wire:loading.attr="disabled"
+                                        class="px-4 py-2 rounded-lg bg-amber-600 hover:bg-amber-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="savePickup">Simpan & Catat Debet Kas</span>
+                                    <span wire:loading wire:target="savePickup">Menyimpan...</span>
                                 </button>
                             </div>
                         </form>
@@ -389,7 +392,7 @@
                         </div>
 
                         <!-- Form Modal Edit -->
-                        <form wire:submit="updatePickup" novalidate class="p-6 space-y-4">
+                        <form wire:submit="updatePickup" class="p-6 space-y-4">
                             @if (!empty($editBindingInfo['is_bound']))
                                 <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
                                     <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -398,7 +401,7 @@
                                     <div class="text-xs">
                                         <span class="font-bold">Transaksi pengangkutan ini terikat dengan Jurnal Buku Kas Keuangan.</span>
                                         <p class="mt-0.5 text-amber-800 leading-relaxed">
-                                            Unit kampus dikunci. Perubahan volume muatan atau tarif akan otomatis memutakhirkan nominal biaya debet di buku kas.
+                                             Unit kampus dikunci. Perubahan volume muatan atau tarif akan otomatis memutakhirkan nominal biaya debet di buku kas.
                                         </p>
                                     </div>
                                 </div>
@@ -506,9 +509,11 @@
                                     Batal
                                 </button>
                                 <button type="submit" 
-                                        class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer"
+                                        wire:loading.attr="disabled"
+                                        class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50"
                                         style="background-color: #059669; color: #ffffff;">
-                                    Simpan Perubahan
+                                    <span wire:loading.remove wire:target="updatePickup">Simpan Perubahan</span>
+                                    <span wire:loading wire:target="updatePickup">Menyimpan...</span>
                                 </button>
                             </div>
                         </form>

@@ -99,18 +99,37 @@ class Index extends Component
 
     public function saveExpense(ExpenseController $controller): void
     {
-        $result = $controller->store([
-            'campus_id' => $this->formCampusId,
-            'expense_category_id' => $this->formCategoryId,
-            'expense_date' => $this->formDate,
-            'amount' => $this->formAmount,
-            'description' => $this->formDescription,
-        ]);
+        try {
+            $result = $controller->store([
+                'campus_id' => $this->formCampusId,
+                'expense_category_id' => $this->formCategoryId,
+                'expense_date' => $this->formDate,
+                'amount' => $this->formAmount,
+                'description' => $this->formDescription,
+            ]);
 
-        $this->closeCreateModal();
-        $this->dispatch('close-modal');
-        $this->dispatch('toast', message: $result['message'], type: 'success');
-        session()->flash('status', $result['message']);
+            $this->closeCreateModal();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('status', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'formCampusId',
+                'expense_category_id' => 'formCategoryId',
+                'expense_date' => 'formDate',
+                'amount' => 'formAmount',
+                'description' => 'formDescription',
+            ];
+            foreach ($e->errors() as $key => $messages) {
+                $targetKey = $keyMap[$key] ?? $key;
+                foreach ($messages as $msg) {
+                    $this->addError($targetKey, $msg);
+                    if ($targetKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
+                }
+            }
+        }
     }
 
     public function viewExpense(int $id): void
@@ -162,9 +181,20 @@ class Index extends Component
             $this->dispatch('toast', message: $result['message'], type: 'success');
             session()->flash('status', $result['message']);
         } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'editCampusId',
+                'expense_category_id' => 'editCategoryId',
+                'expense_date' => 'editDate',
+                'amount' => 'editAmount',
+                'description' => 'editDescription',
+            ];
             foreach ($e->errors() as $key => $messages) {
+                $targetKey = $keyMap[$key] ?? $key;
                 foreach ($messages as $msg) {
-                    $this->addError($key, $msg);
+                    $this->addError($targetKey, $msg);
+                    if ($targetKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
                 }
             }
         }

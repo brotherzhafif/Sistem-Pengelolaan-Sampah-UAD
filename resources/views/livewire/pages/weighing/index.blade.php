@@ -254,7 +254,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="saveWeighing" novalidate class="p-6 space-y-6">
+                        <form wire:submit="saveWeighing" class="p-6 space-y-6">
                             <!-- Sesi Info Grid -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
@@ -362,8 +362,11 @@
                                 <button type="button" @click="showModal = false; $wire.closeCreateModal()" class="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="submit" class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer">
-                                    Simpan Data Penimbangan
+                                <button type="submit" 
+                                        wire:loading.attr="disabled"
+                                        class="px-5 py-2.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="saveWeighing">Simpan Data Penimbangan</span>
+                                    <span wire:loading wire:target="saveWeighing">Menyimpan...</span>
                                 </button>
                             </div>
                         </form>
@@ -388,7 +391,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="updateWeighing" novalidate class="p-6 space-y-6">
+                        <form wire:submit="updateWeighing" class="p-6 space-y-6">
                             @if (!empty($editBindingInfo['is_bound']))
                                 <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
                                     <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -513,8 +516,12 @@
                                 <button type="button" @click="showEditModal = false; $wire.closeEditModal()" class="px-4 py-2.5 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 border border-slate-300 rounded-xl transition cursor-pointer">
                                     Batal
                                 </button>
-                                <button type="submit" class="px-5 py-2.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer" style="background-color: #059669; color: #ffffff;">
-                                    Simpan Perubahan
+                                <button type="submit" 
+                                        wire:loading.attr="disabled"
+                                        class="px-5 py-2.5 text-xs font-bold bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl shadow-sm shadow-emerald-600/20 transition active:scale-95 cursor-pointer disabled:opacity-50" 
+                                        style="background-color: #059669; color: #ffffff;">
+                                    <span wire:loading.remove wire:target="updateWeighing">Simpan Perubahan</span>
+                                    <span wire:loading wire:target="updateWeighing">Menyimpan...</span>
                                 </button>
                             </div>
                         </form>
