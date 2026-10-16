@@ -249,7 +249,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="saveSale" class="p-6 space-y-6">
+                        <form wire:submit="saveSale" novalidate class="p-6 space-y-6">
                             <!-- Info Transaksi Grid -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
@@ -359,7 +359,7 @@
                                                     @enderror
                                                 </div>
                                                 <div class="col-span-2">
-                                                    <input type="number" step="100" min="0" 
+                                                    <input type="number" step="any" min="0" 
                                                            wire:model="saleItems.{{ $index }}.price_per_kg" 
                                                            wire:input="updateSubtotal({{ $index }})"
                                                            class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
@@ -418,7 +418,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="updateSale" class="p-6 space-y-6">
+                        <form wire:submit="updateSale" novalidate class="p-6 space-y-6">
                             <!-- Info Transaksi Grid -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
@@ -521,7 +521,7 @@
                                                     @enderror
                                                 </div>
                                                 <div class="col-span-2">
-                                                    <input type="number" step="100" min="0" 
+                                                    <input type="number" step="any" min="0" 
                                                            wire:model="editItems.{{ $index }}.price_per_kg" 
                                                            wire:input="updateEditSubtotal({{ $index }})"
                                                            class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">

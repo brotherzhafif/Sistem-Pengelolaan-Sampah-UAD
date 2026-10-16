@@ -270,7 +270,7 @@ class="space-y-6">
                             </button>
                         </div>
 
-                        <form wire:submit="saveExpense" class="p-6 space-y-4">
+                        <form wire:submit="saveExpense" novalidate class="p-6 space-y-4">
                             <!-- Unit Kampus -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Unit Kampus <span class="text-rose-500">*</span></label>
@@ -309,7 +309,7 @@ class="space-y-6">
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Nominal Biaya (Rp) <span class="text-rose-500">*</span></label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">Rp</span>
-                                    <input type="number" step="100" min="100" wire:model="formAmount" placeholder="Contoh: 150000" class="w-full text-xs font-mono font-bold border-slate-200 rounded-lg pl-9 pr-3 py-2 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-rose-500 focus:border-rose-500">
+                                    <input type="number" step="any" min="0" wire:model="formAmount" placeholder="Contoh: 150000" class="w-full text-xs font-mono font-bold border-slate-200 rounded-lg pl-9 pr-3 py-2 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-rose-500 focus:border-rose-500">
                                 </div>
                                 <span class="text-[10px] text-slate-400 mt-1 block">Nominal ini otomatis dicatat sebagai Debet (D) di Buku Kas.</span>
                                 @error('formAmount') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
@@ -358,7 +358,7 @@ class="space-y-6">
                             </button>
                         </div>
 
-                        <form wire:submit="updateExpense" class="p-6 space-y-4">
+                        <form wire:submit="updateExpense" novalidate class="p-6 space-y-4">
                             <!-- Unit Kampus -->
                             <div>
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Unit Kampus <span class="text-rose-500">*</span></label>
@@ -409,7 +409,7 @@ class="space-y-6">
                                 <label class="block text-xs font-bold text-slate-700 mb-1">Nominal Biaya (Rp) <span class="text-rose-500">*</span></label>
                                 <div class="relative">
                                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">Rp</span>
-                                    <input type="number" step="100" min="100" wire:model="editAmount" placeholder="Contoh: 150000" class="w-full text-xs font-mono font-bold border-slate-200 rounded-lg pl-9 pr-3 py-2 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                    <input type="number" step="any" min="0" wire:model="editAmount" placeholder="Contoh: 150000" class="w-full text-xs font-mono font-bold border-slate-200 rounded-lg pl-9 pr-3 py-2 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
                                 </div>
                                 <span class="text-[10px] text-slate-400 mt-1 block">Otomatis disinkronkan ke Jurnal Debet (D) di Buku Kas saat disimpan.</span>
                                 @error('editAmount') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror

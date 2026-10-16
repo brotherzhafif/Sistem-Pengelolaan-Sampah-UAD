@@ -277,7 +277,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Harga Default / Kg (Rp)</label>
-                                    <input wire:model="typePrice" type="number" step="100" min="0" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                    <input wire:model="typePrice" type="number" step="any" min="0" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
                                 </div>
                                 <div class="flex items-center gap-2 pt-1">
                                     <input wire:model="typeIsSellable" type="checkbox" id="is_sellable" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
@@ -395,7 +395,7 @@
                                 </div>
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Angkut / Kg (Rp)</label>
-                                    <input wire:model="vendorCost" type="number" step="10" min="0" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                    <input wire:model="vendorCost" type="number" step="any" min="0" required class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
                                     <span class="text-[10px] text-slate-400">Tarif ini dipakai otomatis menghitung debet biaya angkut residu.</span>
                                 </div>
                                 <div class="flex gap-2 pt-2">

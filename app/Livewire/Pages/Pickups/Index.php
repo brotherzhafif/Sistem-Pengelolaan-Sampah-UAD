@@ -165,12 +165,7 @@ class Index extends Component
 
     public function updatedFormCostPerKg(): void
     {
-        $cost = floatval($this->formCostPerKg ?: 0);
-        if ($cost <= 0) {
-            $this->addError('formCostPerKg', 'Tarif vendor per kg wajib diisi dan lebih dari 0.');
-        } else {
-            $this->resetErrorBag('formCostPerKg');
-        }
+        $this->resetErrorBag('formCostPerKg');
         $this->calculateTotalCost();
     }
 
@@ -269,8 +264,9 @@ class Index extends Component
     {
         if ($value) {
             $vendor = Vendor::find((int) $value);
-            if ($vendor && (!is_numeric($this->editCostPerKg) || floatval($this->editCostPerKg) <= 0)) {
+            if ($vendor) {
                 $this->editCostPerKg = (string) (float) $vendor->cost_per_kg;
+                $this->resetErrorBag('editCostPerKg');
             }
         }
         $this->calculateEditTotal();
@@ -283,6 +279,7 @@ class Index extends Component
 
     public function updatedEditCostPerKg(): void
     {
+        $this->resetErrorBag('editCostPerKg');
         $this->calculateEditTotal();
     }
 

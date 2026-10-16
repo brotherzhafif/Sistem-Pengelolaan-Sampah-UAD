@@ -254,7 +254,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="saveWeighing" class="p-6 space-y-6">
+                        <form wire:submit="saveWeighing" novalidate class="p-6 space-y-6">
                             <!-- Sesi Info Grid -->
                             <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
@@ -388,7 +388,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="updateWeighing" class="p-6 space-y-6">
+                        <form wire:submit="updateWeighing" novalidate class="p-6 space-y-6">
                             @if (!empty($editBindingInfo['is_bound']))
                                 <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
                                     <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

@@ -248,7 +248,7 @@
                             </button>
                         </div>
 
-                        <form wire:submit="savePickup" class="p-6 space-y-5">
+                        <form wire:submit="savePickup" novalidate class="p-6 space-y-5">
                             <!-- Info Lokasi & Vendor -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
@@ -288,7 +288,7 @@
 
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Volume Muatan (kg) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="0.1" min="0.1" max="{{ $this->availableResidualStock }}" 
+                                    <input type="number" step="any" min="0" max="{{ $this->availableResidualStock }}" 
                                            wire:model.live.debounce.300ms="formVolumeKg" 
                                            x-on:input="
                                                let maxVal = {{ (float) $this->availableResidualStock }};
@@ -304,16 +304,18 @@
                                     <div class="text-[10px] text-slate-500 font-medium mt-0.5">
                                         Sisa Residu di TPS: <strong class="text-amber-700 font-mono">{{ number_format($this->availableResidualStock, 1, ',', '.') }} kg</strong>
                                     </div>
-                                    <div class="text-[10px] text-rose-600 font-bold mt-0.5">
-                                        Maks. input: {{ number_format($this->availableResidualStock, 1, ',', '.') }} kg (Sisa residu belum diangkut)
-                                    </div>
                                     @error('formVolumeKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="50" min="1" wire:model.live.debounce.300ms="formCostPerKg" placeholder="Contoh: 150" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                    <div class="text-[10px] text-slate-400 mt-0.5">Otomatis terisi dari data vendor</div>
+                                    <input type="number" 
+                                           step="any" 
+                                           min="0" 
+                                           wire:model.live.debounce.250ms="formCostPerKg" 
+                                           placeholder="Contoh: 100" 
+                                           class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    <div class="text-[10px] text-slate-400 mt-0.5">Otomatis terisi dari data vendor (dapat disesuaikan)</div>
                                     @error('formCostPerKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
                             </div>
@@ -387,7 +389,7 @@
                         </div>
 
                         <!-- Form Modal Edit -->
-                        <form wire:submit="updatePickup" class="p-6 space-y-4">
+                        <form wire:submit="updatePickup" novalidate class="p-6 space-y-4">
                             @if (!empty($editBindingInfo['is_bound']))
                                 <div class="p-3.5 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-start gap-3">
                                     <svg class="w-5 h-5 text-amber-600 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -445,7 +447,7 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Bobot Muatan Residu (kg) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="0.1" min="0.1" wire:model.live.debounce.300ms="editVolumeKg" placeholder="Contoh: 125.5" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                    <input type="number" step="any" min="0" wire:model.live.debounce.300ms="editVolumeKg" placeholder="Contoh: 125.5" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
                                     <div class="text-[10px] text-slate-500 mt-1 flex items-center justify-between">
                                         <span>Maks: <strong class="text-slate-800 font-mono">{{ number_format($editOldVolumeKg + $editAvailableResidual, 1, ',', '.') }} kg</strong></span>
                                         <span>(Sisa TPS: {{ number_format($editAvailableResidual, 1, ',', '.') }} kg)</span>
@@ -455,7 +457,12 @@
 
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Tarif Vendor / kg (Rp) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="50" min="0" wire:model.live.debounce.300ms="editCostPerKg" placeholder="Contoh: 150" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
+                                    <input type="number" 
+                                           step="any" 
+                                           min="0" 
+                                           wire:model.live.debounce.250ms="editCostPerKg" 
+                                           placeholder="Contoh: 100" 
+                                           class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
                                     @error('editCostPerKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
                             </div>
