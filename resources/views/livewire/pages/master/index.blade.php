@@ -96,7 +96,6 @@
                     <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
                         <div class="p-4 border-b border-slate-200 flex justify-between items-center shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Unit Kampus UAD ({{ $campuses->count() }})</span>
-                            <span class="text-[11px] text-slate-500 font-medium">PK Utama Sistem Relasional</span>
                         </div>
                         <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
                             <table class="w-full text-left text-xs">
