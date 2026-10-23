@@ -1,8 +1,11 @@
 <div x-data="{ 
     balanceModal: @entangle('showBalanceModal'), 
-    detailModal: {{ !empty($viewKeuanganId) ? 'true' : 'false' }} 
+    detailModal: {{ !empty($viewKeuanganId) ? 'true' : 'false' }},
+    showEditModal: @entangle('showEditModal'),
+    deleteModal: @entangle('showDeleteModal') 
 }" 
-@close-modal.window="balanceModal = false; detailModal = false"
+@close-modal.window="balanceModal = false; detailModal = false; showEditModal = false; deleteModal = false"
+@open-edit-finance-modal.window="showEditModal = true"
 class="space-y-6">
 
     <!-- Top Header -->
@@ -236,6 +239,7 @@ class="space-y-6">
                                             {{ $entry->creator?->name ?? 'Sistem' }}
                                         </td>
                                         <td class="py-2.5 px-3 text-center">
+                                            <div class="flex items-center justify-center gap-1">
                                             <button @click="detailModal = true; $wire.viewTransaction({{ $entry->id }})" 
                                                     type="button" 
                                                     title="Lihat Rincian Jurnal"
@@ -244,7 +248,26 @@ class="space-y-6">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                                                 </svg>
-                                            </button>
+                                                </button>
+                                                @if ($canManageBalance)
+                                                    <button @click="showEditModal = true; $wire.openEditModal({{ $entry->id }})" 
+                                                            type="button" 
+                                                            title="Edit Transaksi Kas"
+                                                            class="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition cursor-pointer">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                                        </svg>
+                                                    </button>
+                                                    <button @click="deleteModal = true; $wire.confirmDelete({{ $entry->id }})" 
+                                                            type="button" 
+                                                            title="Hapus Transaksi Kas"
+                                                            class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer">
+                                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                        </svg>
+                                                    </button>
+                                                @endif
+                                            </div>
                                         </td>
                                     </tr>
                                 @empty
@@ -501,6 +524,179 @@ class="space-y-6">
                                 </button>
                             </div>
                         </div>
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Edit Transaksi Kas (Teleported to Body for 100% Full Viewport Backdrop) -->
+            <template x-teleport="body">
+                <div x-show="showEditModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md overflow-hidden">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between">
+                            <div>
+                                <h3 class="text-base font-bold text-slate-900">
+                                    Edit Transaksi Kas
+                                    @if ($editTransactionId)
+                                        <span class="text-xs font-mono font-normal text-slate-500">#TRX-{{ str_pad($editTransactionId, 5, '0', STR_PAD_LEFT) }}</span>
+                                    @endif
+                                </h3>
+                                <p class="text-xs text-slate-500">Perbarui mutasi kas dan sinkronkan Buku Besar</p>
+                            </div>
+                            <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+
+                        @if ($editBindingInfo && !empty($editBindingInfo['is_bound']))
+                            <div class="p-6 space-y-4">
+                                <div class="p-4 bg-amber-50 border border-amber-200 rounded-xl">
+                                    <div class="flex items-center gap-2 text-amber-800 font-bold text-xs mb-1">
+                                        <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/>
+                                        </svg>
+                                        <span>Transaksi Terikat Modul {{ $editBindingInfo['features'][0] ?? 'Lain' }}</span>
+                                    </div>
+                                    <p class="text-xs text-amber-700 leading-relaxed">
+                                        Transaksi kas ini otomatis tercatat dari modul <strong>{{ $editBindingInfo['features'][0] ?? 'terkait' }}</strong>. Untuk menjaga konsistensi data operasional dan stok, silakan ubah data melalui modul asalnya.
+                                    </p>
+                                </div>
+
+                                <div class="flex items-center justify-end gap-2 pt-2 border-t border-slate-100">
+                                    <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                                        Tutup
+                                    </button>
+                                    @if (!empty($editBindingInfo['primary_url']))
+                                        <a href="{{ $editBindingInfo['primary_url'] }}" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer">
+                                            {{ $editBindingInfo['primary_label'] ?? 'Buka Modul Terkait' }}
+                                        </a>
+                                    @endif
+                                </div>
+                            </div>
+                        @else
+                            <form wire:submit="updateTransaction" class="p-6 space-y-4">
+                                <!-- Unit Kampus -->
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Unit Kampus <span class="text-rose-500">*</span></label>
+                                    @if ($isSuperAdmin)
+                                        <select wire:model="editCampusId" class="w-full text-xs border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                            @foreach ($campuses as $campus)
+                                                <option value="{{ $campus->id }}">{{ $campus->name }}</option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <div class="text-xs font-semibold text-slate-800 bg-slate-100 border border-slate-200 px-3 py-2 rounded-lg">
+                                            {{ auth()->user()->campus?->name ?? 'Kampus Umum' }}
+                                        </div>
+                                    @endif
+                                    @error('editCampusId') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Tanggal Transaksi -->
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Tanggal Transaksi <span class="text-rose-500">*</span></label>
+                                    <input type="date" wire:model="editDate" class="w-full text-xs border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                    @error('editDate') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Nominal Kas (Rp) -->
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Nominal (Rp) <span class="text-rose-500">*</span></label>
+                                    <div class="relative">
+                                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">Rp</span>
+                                        <input type="number" step="100" min="0" wire:model="editAmount" placeholder="Contoh: 500000" class="w-full text-xs font-mono font-bold border-slate-200 rounded-lg pl-9 pr-3 py-2 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                    </div>
+                                    @error('editAmount') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+
+                                <!-- Keterangan -->
+                                <div>
+                                    <label class="block text-xs font-bold text-slate-700 mb-1">Keterangan Transaksi</label>
+                                    <input type="text" wire:model="editDescription" placeholder="Uraian mutasi kas" class="w-full text-xs border-slate-200 rounded-lg px-3 py-2 bg-slate-50 text-slate-800 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                    @error('editDescription') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
+                                </div>
+
+                                <div class="pt-2 flex items-center justify-end gap-2 border-t border-slate-100">
+                                    <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
+                                        Batal
+                                    </button>
+                                    <button type="submit" wire:loading.attr="disabled" class="px-4 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50">
+                                        <span wire:loading.remove wire:target="updateTransaction">Simpan Perubahan</span>
+                                        <span wire:loading wire:target="updateTransaction">Menyimpan...</span>
+                                    </button>
+                                </div>
+                            </form>
+                        @endif
+                    </div>
+                </div>
+            </template>
+
+            <!-- Modal Konfirmasi Hapus Transaksi Kas (Teleported to Body for 100% Full Viewport Backdrop) -->
+            <template x-teleport="body">
+                <div x-show="deleteModal"
+                     x-cloak
+                     style="display: none;"
+                     class="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fadeIn">
+                    <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
+                        @if ($deleteBindingInfo && !empty($deleteBindingInfo['is_bound']))
+                            <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                </svg>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900">Data Tidak Dapat Dihapus</h3>
+                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                                Transaksi kas ini tidak dapat dihapus langsung dari Buku Kas karena masih terikat dengan data pada fitur lain:
+                            </p>
+                            <div class="mt-3.5 p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-left">
+                                <p class="text-[11px] font-semibold text-amber-900 mb-2">Terikat dengan fitur:</p>
+                                <div class="flex flex-wrap gap-1.5">
+                                    @foreach ($deleteBindingInfo['features'] ?? ['Modul Terkait'] as $feature)
+                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300/60">
+                                            {{ $feature }}
+                                        </span>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="flex items-center justify-center gap-3 mt-6">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
+                                    Tutup
+                                </button>
+                                @if (!empty($deleteBindingInfo['primary_url']))
+                                    <a href="{{ $deleteBindingInfo['primary_url'] }}" 
+                                       class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition active:scale-95 text-center flex items-center justify-center cursor-pointer"
+                                       style="background-color: #059669; color: #ffffff;">
+                                        <span>{{ $deleteBindingInfo['primary_label'] ?? 'Buka Modul' }}</span>
+                                    </a>
+                                @endif
+                            </div>
+                        @else
+                            <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </div>
+                            <h3 class="text-base font-bold text-slate-900">Hapus Transaksi Kas</h3>
+                            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
+                                Apakah Anda yakin ingin menghapus transaksi kas ini? Saldo Buku Besar akan otomatis dihitung ulang.
+                            </p>
+                            @if ($deleteTransactionDesc)
+                                <div class="mt-3 p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-700">
+                                    {{ $deleteTransactionDesc }}
+                                </div>
+                            @endif
+                            <div class="flex items-center justify-center gap-3 mt-6">
+                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-700 transition cursor-pointer">
+                                    Batal
+                                </button>
+                                <button type="button" wire:click="executeDelete" wire:loading.attr="disabled" class="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm transition active:scale-95 cursor-pointer disabled:opacity-50">
+                                    <span wire:loading.remove wire:target="executeDelete">Ya, Hapus Data</span>
+                                    <span wire:loading wire:target="executeDelete">Menghapus...</span>
+                                </button>
+                            </div>
+                        @endif
                     </div>
                 </div>
             </template>

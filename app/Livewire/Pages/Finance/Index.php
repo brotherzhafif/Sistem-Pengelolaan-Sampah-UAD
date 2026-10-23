@@ -35,6 +35,23 @@ class Index extends Component
     // Modal Detail Transaksi Jurnal
     public ?int $viewKeuanganId = null;
 
+    // Modal Edit Transaksi Kas
+    public bool $showEditModal = false;
+    public ?int $editTransactionId = null;
+    public $editCampusId = null;
+    public string $editDate = '';
+    public string $editAmount = '';
+    public string $editDescription = '';
+    public string $editSource = '';
+    public string $editType = '';
+    public ?array $editBindingInfo = null;
+
+    // Modal Konfirmasi Hapus
+    public bool $showDeleteModal = false;
+    public ?int $deleteTransactionId = null;
+    public string $deleteTransactionDesc = '';
+    public ?array $deleteBindingInfo = null;
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -117,6 +134,103 @@ class Index extends Component
     public function closeViewModal(): void
     {
         $this->viewKeuanganId = null;
+    }
+
+    public function openEditModal(int $id): void
+    {
+        $this->resetValidation();
+        $tx = Keuangan::findOrFail($id);
+        $this->editTransactionId = $tx->id;
+        $this->editCampusId = $tx->campus_id;
+        $this->editDate = $tx->transaction_date ? $tx->transaction_date->format('Y-m-d') : Carbon::today()->format('Y-m-d');
+        $this->editAmount = (string) (float) $tx->amount;
+        $this->editDescription = (string) ($tx->description ?? '');
+        $this->editSource = (string) $tx->source;
+        $this->editType = (string) $tx->type;
+        $this->editBindingInfo = $tx->getBindingInfo();
+        $this->showEditModal = true;
+        $this->dispatch('open-edit-finance-modal');
+    }
+
+    public function closeEditModal(): void
+    {
+        $this->showEditModal = false;
+        $this->editTransactionId = null;
+        $this->editBindingInfo = null;
+        $this->resetValidation();
+        $this->dispatch('close-modal');
+    }
+
+    public function updateTransaction(FinanceController $controller): void
+    {
+        if (!$this->editTransactionId) {
+            return;
+        }
+
+        try {
+            $result = $controller->update($this->editTransactionId, [
+                'campus_id' => $this->editCampusId,
+                'transaction_date' => $this->editDate,
+                'amount' => $this->editAmount,
+                'description' => $this->editDescription,
+            ]);
+
+            $this->closeEditModal();
+            $this->dispatch('close-modal');
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('message', $result['message']);
+        } catch (\Illuminate\Validation\ValidationException $e) {
+            $keyMap = [
+                'campus_id' => 'editCampusId',
+                'transaction_date' => 'editDate',
+                'amount' => 'editAmount',
+                'description' => 'editDescription',
+            ];
+            foreach ($e->errors() as $key => $messages) {
+                $targetKey = $keyMap[$key] ?? $key;
+                foreach ($messages as $msg) {
+                    $this->addError($targetKey, $msg);
+                    if ($targetKey !== $key) {
+                        $this->addError($key, $msg);
+                    }
+                }
+            }
+        }
+    }
+
+    public function confirmDelete(int $id): void
+    {
+        $tx = Keuangan::find($id);
+        $this->deleteTransactionId = $id;
+        $this->deleteTransactionDesc = $tx ? ($tx->description ?: 'Transaksi #' . $tx->id . ' (Rp ' . number_format($tx->amount, 0, ',', '.') . ')') : '';
+        $this->deleteBindingInfo = $tx ? $tx->getBindingInfo() : null;
+        $this->showDeleteModal = true;
+    }
+
+    public function cancelDelete(): void
+    {
+        $this->deleteTransactionId = null;
+        $this->deleteTransactionDesc = '';
+        $this->deleteBindingInfo = null;
+        $this->showDeleteModal = false;
+    }
+
+    public function executeDelete(FinanceController $controller): void
+    {
+        if (!$this->deleteTransactionId) {
+            return;
+        }
+
+        $result = $controller->destroy($this->deleteTransactionId);
+        $this->cancelDelete();
+        $this->dispatch('close-modal');
+
+        if ($result['success']) {
+            $this->dispatch('toast', message: $result['message'], type: 'success');
+            session()->flash('message', $result['message']);
+        } else {
+            $this->dispatch('toast', message: $result['message'], type: 'error');
+        }
     }
 
     public function render()

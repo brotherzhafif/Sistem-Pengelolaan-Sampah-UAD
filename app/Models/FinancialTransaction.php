@@ -222,5 +222,47 @@ class FinancialTransaction extends Model
     public function getSumberAttribute() { return $this->source; }
     public function getNominalAttribute() { return $this->amount; }
     public function getKeteranganAttribute() { return $this->description; }
+
+    /**
+     * Memeriksa keterikatan data transaksi kas dengan modul transaksi asal.
+     */
+    public function getBindingInfo(): array
+    {
+        $features = [];
+        $primaryUrl = null;
+        $primaryLabel = null;
+
+        $normSource = match(strtolower((string) $this->source)) {
+            'penjualan', 'sales' => 'sales',
+            'pengangkutan', 'pickup' => 'pickup',
+            'operasional', 'operational' => 'operational',
+            default => (string) $this->source,
+        };
+
+        if ($this->ref_id) {
+            if ($normSource === 'sales') {
+                $features[] = 'Penjualan Sampah';
+                $primaryUrl = route('sales', ['view' => $this->ref_id]);
+                $primaryLabel = 'Buka Modul Penjualan';
+            } elseif ($normSource === 'pickup') {
+                $features[] = 'Pengangkutan Residu';
+                $primaryUrl = route('pickups', ['view' => $this->ref_id]);
+                $primaryLabel = 'Buka Modul Pengangkutan';
+            } elseif ($normSource === 'operational') {
+                $features[] = 'Pengeluaran Operasional';
+                $primaryUrl = route('expenses', ['view' => $this->ref_id]);
+                $primaryLabel = 'Buka Modul Pengeluaran';
+            }
+        }
+
+        return [
+            'is_bound' => !empty($features),
+            'features' => $features,
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
+            'reasons' => $features,
+            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
+        ];
+    }
 }
 
