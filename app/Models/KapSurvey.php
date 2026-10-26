@@ -2,6 +2,7 @@
 
 namespace App\Models;
 
+use Carbon\Carbon;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
@@ -34,6 +35,9 @@ class KapSurvey extends Model
         'category',
         'feedback',
         'survey_date',
+        'device_id',
+        'ip_address',
+        'user_agent',
     ];
 
     protected $casts = [
@@ -59,6 +63,21 @@ class KapSurvey extends Model
     public function campus(): BelongsTo
     {
         return $this->belongsTo(Campus::class);
+    }
+
+    /**
+     * Memeriksa apakah perangkat dengan device_id tertentu sudah pernah mengirim survei pada hari ini.
+     * Mencegah spam berulang dari perangkat yang sama (Layer 1 Anti-Spam).
+     */
+    public static function hasDeviceSubmittedToday(?string $deviceId): bool
+    {
+        if (empty($deviceId)) {
+            return false;
+        }
+
+        return static::where('survey_date', Carbon::today()->toDateString())
+            ->where('device_id', $deviceId)
+            ->exists();
     }
 
     /**

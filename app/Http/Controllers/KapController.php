@@ -47,6 +47,7 @@ class KapController extends Controller
             'respondent_name' => ['nullable', 'string', 'max:100'],
             'respondent_identifier' => ['nullable', 'string', 'max:50'],
             'residence_type' => ['nullable', 'string', 'max:50'],
+            'device_id' => ['nullable', 'string', 'max:64'],
             'knowledge' => ['required', 'array'],
             'attitude' => ['required', 'array'],
             'practice' => ['required', 'array'],
@@ -59,6 +60,14 @@ class KapController extends Controller
             'campus_id.required' => 'Pilih unit kampus tempat Anda beraktivitas.',
             'faculty_unit.required' => 'Pilih fakultas atau unit kerja Anda.',
         ])->validate();
+
+        $deviceId = !empty($data['device_id']) ? strip_tags(trim($data['device_id'])) : null;
+        if ($deviceId && KapSurvey::hasDeviceSubmittedToday($deviceId)) {
+            return [
+                'success' => false,
+                'message' => 'Perangkat ini sudah digunakan untuk mengisi survei hari ini. Batas pengisian adalah 1 kali per perangkat per hari.',
+            ];
+        }
 
         $scores = KapSurvey::calculateScores(
             $data['knowledge'] ?? [],
@@ -94,6 +103,9 @@ class KapController extends Controller
             'category' => $scores['category'],
             'feedback' => !empty($data['feedback']) ? strip_tags(trim($data['feedback'])) : null,
             'survey_date' => Carbon::today()->format('Y-m-d'),
+            'device_id' => $deviceId,
+            'ip_address' => !empty($data['ip_address']) ? $data['ip_address'] : request()->ip(),
+            'user_agent' => !empty($data['user_agent']) ? substr($data['user_agent'], 0, 500) : substr(request()->userAgent() ?? '', 0, 500),
         ]);
 
         return [

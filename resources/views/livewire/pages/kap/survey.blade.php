@@ -53,8 +53,18 @@
         }
         this[listName] = [...arr];
         $wire.set(listName, this[listName], false);
+    },
+    initDevice() {
+        let storageKey = 'uad_survey_device_id';
+        let deviceId = localStorage.getItem(storageKey);
+        if (!deviceId) {
+            deviceId = 'dev_' + (crypto.randomUUID ? crypto.randomUUID() : (Math.random().toString(36).substring(2) + Date.now().toString(36)));
+            localStorage.setItem(storageKey, deviceId);
+        }
+        document.cookie = storageKey + '=' + deviceId + ';path=/;max-age=' + (365*24*60*60) + ';SameSite=Lax';
+        $wire.checkDeviceSubmission(deviceId);
     }
-}" class="max-w-3xl mx-auto space-y-6">
+}" x-init="initDevice()" class="max-w-3xl mx-auto space-y-6">
 
     <!-- Header Survei UAD (Clean Modern Header) -->
     <div class="text-center bg-gradient-to-br from-slate-900 to-slate-800 text-white rounded-2xl p-6 sm:p-8 shadow-xl border border-slate-700/50 relative overflow-hidden">
@@ -82,6 +92,23 @@
             </span>
         </div>
     </div>
+
+        <!-- Banner Peringatan Device Sudah Mengisi (Layer 1 Anti-Spam) -->
+    @if($deviceAlreadySubmitted && !$isSubmitted)
+        <div class="bg-amber-50 border border-amber-200 rounded-2xl p-4 sm:p-5 flex items-start gap-3.5 shadow-sm">
+            <div class="w-9 h-9 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+            </div>
+            <div class="space-y-1">
+                <h4 class="text-xs sm:text-sm font-bold text-amber-900">Perangkat Ini Telah Mengisi Survei Hari Ini</h4>
+                <p class="text-[11px] sm:text-xs text-amber-700 leading-relaxed">
+                    Perangkat Anda sudah tercatat mengirimkan respon survei pada hari ini. Untuk menjaga validitas penelitian dan mencegah spam/duplikasi data, pengisian dibatasi 1 kali per perangkat per hari. Anda dapat kembali berpartisipasi pada hari berikutnya. Terima kasih atas partisipasi Anda!
+                </p>
+            </div>
+        </div>
+    @endif
 
     <!-- Stepper Navigation & Progress Bar -->
     @if(!$isSubmitted)
@@ -676,6 +703,55 @@
             </div>
         </div>
 
+        <!-- Anti-Spam Security & CAPTCHA Card (Layer 1 & Layer 2) -->
+        <div class="p-4 sm:p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-3.5 text-left">
+            <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-2.5">
+                    <div class="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 flex items-center justify-center shrink-0">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h4 class="text-xs font-bold text-slate-900">Verifikasi Keamanan (Anti-Spam)</h4>
+                        <p class="text-[11px] text-slate-500">Hitung soal di bawah untuk membuktikan Anda responden manusia.</p>
+                    </div>
+                </div>
+                <button type="button" 
+                        wire:click="refreshCaptcha" 
+                        title="Ganti Soal Matematika" 
+                        class="px-2.5 py-1.5 rounded-lg border border-slate-200 bg-white hover:bg-slate-100 text-[11px] font-semibold text-slate-600 flex items-center gap-1 transition cursor-pointer shrink-0">
+                    <svg class="w-3.5 h-3.5 text-slate-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    </svg>
+                    <span>Ganti Soal</span>
+                </button>
+            </div>
+
+            <div class="flex flex-col sm:flex-row sm:items-center gap-3 pt-1">
+                <div class="px-4 py-2.5 rounded-xl bg-white border border-slate-200 font-mono text-sm font-bold text-slate-800 tracking-wider shadow-2xs select-none text-center sm:text-left">
+                    {{ $captchaNum1 }} + {{ $captchaNum2 }} = ?
+                </div>
+                <div class="flex-1">
+                    <input wire:model="captchaInput" 
+                           type="number" 
+                           placeholder="Ketik hasil penjumlahan di sini..." 
+                           required 
+                           class="w-full text-xs font-semibold border border-slate-200 rounded-xl px-3.5 py-2.5 bg-white focus:outline-none focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500">
+                </div>
+            </div>
+            
+            <x-input-error :messages="$errors->get('captchaInput')" class="mt-1" />
+            <x-input-error :messages="$errors->get('device')" class="mt-1" />
+
+            <div class="text-[10px] text-slate-400 flex items-center gap-1.5 pt-0.5">
+                <svg class="w-3.5 h-3.5 text-slate-400 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span>Dilindungi oleh sistem ID Unik Perangkat (1 pengisian/perangkat/hari) & verifikasi CAPTCHA.</span>
+            </div>
+        </div>
+
         <div class="pt-4 border-t border-slate-100 flex items-center justify-between">
             <button type="button" wire:click="prevStep" class="px-5 py-2.5 rounded-xl border border-slate-200 text-xs font-semibold text-slate-700 hover:bg-slate-50 transition cursor-pointer">
                 &larr; Cek Jawaban Sebelumnya
@@ -683,8 +759,15 @@
             <button type="button" 
                     wire:click="submitSurvey"
                     wire:loading.attr="disabled"
-                    class="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer disabled:opacity-50">
-                <span wire:loading.remove>Kirim Survei Sekarang ✓</span>
+                    @if($deviceAlreadySubmitted) disabled @endif
+                    class="px-8 py-3 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-black shadow-md shadow-emerald-600/20 transition flex items-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed">
+                <span wire:loading.remove>
+                    @if($deviceAlreadySubmitted)
+                        Perangkat Telah Mengisi Hari Ini
+                    @else
+                        Kirim Survei Sekarang ✓
+                    @endif
+                </span>
                 <span wire:loading>Memproses Jawaban...</span>
             </button>
         </div>

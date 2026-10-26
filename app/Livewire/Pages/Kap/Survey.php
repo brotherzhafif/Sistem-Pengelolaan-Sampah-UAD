@@ -16,6 +16,14 @@ class Survey extends Component
     public bool $isSubmitted = false;
     public ?KapSurvey $submittedSurvey = null;
 
+    // Anti-Spam: Layer 1 (Unique Device Lock) & Layer 2 (Interactive CAPTCHA)
+    public ?string $deviceId = null;
+    public bool $deviceAlreadySubmitted = false;
+    public ?int $captchaNum1 = null;
+    public ?int $captchaNum2 = null;
+    public ?int $captchaAnswer = null;
+    public string $captchaInput = '';
+
     // Step 1: Demografi (D1 - D6)
     public ?int $campus_id = null;
     public string $respondent_role = 'mahasiswa'; // mahasiswa, dosen, tendik, outsourcing
@@ -82,6 +90,38 @@ class Survey extends Component
     {
         $defaultCampus = Campus::where('code', 'KAMPUS-4')->first() ?? Campus::first();
         $this->campus_id = $defaultCampus?->id;
+        $this->generateCaptcha();
+    }
+
+    /**
+     * Generate soal matematika sederhana untuk CAPTCHA (Layer 2).
+     */
+    public function generateCaptcha(): void
+    {
+        $this->captchaNum1 = rand(3, 15);
+        $this->captchaNum2 = rand(2, 9);
+        $this->captchaAnswer = $this->captchaNum1 + $this->captchaNum2;
+        $this->captchaInput = '';
+    }
+
+    /**
+     * Memperbarui soal CAPTCHA saat pengguna meminta ganti soal.
+     */
+    public function refreshCaptcha(): void
+    {
+        $this->generateCaptcha();
+        $this->resetErrorBag('captchaInput');
+    }
+
+    /**
+     * Menerima ID Unik Perangkat dari client-side browser (Layer 1).
+     */
+    public function checkDeviceSubmission(?string $deviceId): void
+    {
+        $this->deviceId = $deviceId ? strip_tags(trim($deviceId)) : null;
+        if ($this->deviceId && KapSurvey::hasDeviceSubmittedToday($this->deviceId)) {
+            $this->deviceAlreadySubmitted = true;
+        }
     }
 
     public function validateStep1(): void
@@ -136,6 +176,22 @@ class Survey extends Component
     {
         $this->validateStep1();
 
+        // 1. Verifikasi Device Lock (Layer 1 Anti-Spam)
+        if ($this->deviceAlreadySubmitted || ($this->deviceId && KapSurvey::hasDeviceSubmittedToday($this->deviceId))) {
+            $this->deviceAlreadySubmitted = true;
+            $this->addError('device', 'Perangkat ini sudah digunakan untuk mengisi survei hari ini. Batas pengisian adalah 1 kali per perangkat per hari.');
+            $this->dispatch('toast', message: 'Perangkat ini sudah digunakan mengisi survei hari ini.', type: 'error');
+            return;
+        }
+
+        // 2. Verifikasi CAPTCHA Interaktif (Layer 2 Anti-Spam)
+        $cleanInput = trim($this->captchaInput);
+        if ($cleanInput === '' || (int) $cleanInput !== $this->captchaAnswer) {
+            $this->addError('captchaInput', 'Jawaban verifikasi keamanan (CAPTCHA) belum tepat. Silakan hitung kembali.');
+            $this->generateCaptcha();
+            return;
+        }
+
         $result = app(KapController::class)->submitSurvey([
             'campus_id' => $this->campus_id,
             'respondent_name' => $this->respondent_name,
@@ -146,6 +202,7 @@ class Survey extends Component
             'has_attended_training' => $this->has_attended_training,
             'is_willing_volunteer' => $this->is_willing_volunteer,
             'residence_type' => $this->residence_type,
+            'device_id' => $this->deviceId,
             'knowledge' => $this->knowledge,
             'attitude' => $this->attitude,
             'practice' => $this->practice,
@@ -156,6 +213,13 @@ class Survey extends Component
             'feedback' => $this->feedback,
         ]);
 
+        if (empty($result['success'])) {
+            $this->addError('device', $result['message']);
+            $this->dispatch('toast', message: $result['message'], type: 'error');
+            return;
+        }
+
+        $this->deviceAlreadySubmitted = true;
         $this->submittedSurvey = $result['survey'];
         $this->isSubmitted = true;
         $this->currentStep = 8;
