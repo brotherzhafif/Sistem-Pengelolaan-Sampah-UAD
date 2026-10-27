@@ -323,22 +323,16 @@ class SaleController extends Controller
             ];
         }
 
-        // Validasi Keterikatan: Cek apakah transaksi penjualan terikat dengan Buku Kas
-        $bindingInfo = $sale->getBindingInfo();
-        if ($bindingInfo['is_bound']) {
-            return [
-                'success' => false,
-                'message' => "Tidak dapat menghapus transaksi penjualan (#{$sale->id}): " . $bindingInfo['reason'],
-            ];
-        }
+        $totalWeight = (float) $sale->items->sum('weight_kg');
 
         ActivityLog::record(
             module: 'sales',
             action: 'delete',
-            description: "Menghapus transaksi penjualan sampah (#{$sale->id}) senilai Rp " . number_format((float) $sale->total_amount, 0, ',', '.'),
+            description: "Menghapus transaksi penjualan sampah (#{$sale->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg senilai Rp " . number_format((float) $sale->total_amount, 0, ',', '.'),
             properties: [
                 'sale_id' => $sale->id,
                 'campus_id' => $sale->campus_id,
+                'total_weight' => $totalWeight,
                 'total_amount' => (float) $sale->total_amount,
             ],
             campusId: $sale->campus_id
@@ -351,7 +345,7 @@ class SaleController extends Controller
 
         return [
             'success' => true,
-            'message' => 'Transaksi penjualan berhasil dihapus dan jurnal keuangan disesuaikan.',
+            'message' => 'Transaksi penjualan berhasil dihapus. Catatan kas keuangan telah diselaraskan dan stok sampah sebesar ' . number_format($totalWeight, 1, ',', '.') . ' kg kembali tersedia.',
         ];
     }
 }

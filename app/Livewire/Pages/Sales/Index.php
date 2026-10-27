@@ -47,6 +47,10 @@ class Index extends Component
     // Modal Confirmation Deletion & View Detail state
     public ?int $confirmDeleteSaleId = null;
     public ?array $deleteBindingInfo = null;
+    public float $deleteSaleWeight = 0.0;
+    public float $deleteSaleAmount = 0.0;
+    public string $deleteSaleDate = '';
+    public string $deleteSaleBuyer = '';
     public ?int $viewSaleId = null;
 
     public function viewSale(int $id): void
@@ -387,8 +391,14 @@ class Index extends Component
     public function confirmDelete(int $id): void
     {
         $this->confirmDeleteSaleId = $id;
-        $sale = Sale::find($id);
-        $this->deleteBindingInfo = $sale ? $sale->getBindingInfo() : null;
+        $sale = Sale::with(['items', 'buyer'])->find($id);
+        if ($sale) {
+            $this->deleteSaleWeight = (float) $sale->items->sum('weight_kg');
+            $this->deleteSaleAmount = (float) $sale->total_amount;
+            $this->deleteSaleDate = $sale->sale_date ? $sale->sale_date->translatedFormat('d M Y') : '';
+            $this->deleteSaleBuyer = $sale->buyer?->name ?? 'Pengepul';
+            $this->deleteBindingInfo = $sale->getBindingInfo();
+        }
     }
 
     public function cancelDelete(): void

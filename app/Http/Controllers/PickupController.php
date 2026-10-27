@@ -269,23 +269,16 @@ class PickupController extends Controller
             ];
         }
 
-        // Validasi Keterikatan: Cek apakah data pengangkutan terikat dengan Buku Kas
-        $bindingInfo = $pickup->getBindingInfo();
-        if ($bindingInfo['is_bound']) {
-            return [
-                'success' => false,
-                'message' => "Tidak dapat menghapus data pengangkutan (#{$pickup->id}): " . $bindingInfo['reason'],
-            ];
-        }
+        $volumeKg = (float) $pickup->volume_kg;
 
         ActivityLog::record(
             module: 'pickups',
             action: 'delete',
-            description: "Menghapus data pengangkutan residu (#{$pickup->id}) seberat " . number_format((float) $pickup->volume_kg, 1, ',', '.') . " kg",
+            description: "Menghapus data pengangkutan residu (#{$pickup->id}) seberat " . number_format($volumeKg, 1, ',', '.') . " kg senilai Rp " . number_format((float) $pickup->total_cost, 0, ',', '.'),
             properties: [
                 'pickup_id' => $pickup->id,
                 'campus_id' => $pickup->campus_id,
-                'volume_kg' => (float) $pickup->volume_kg,
+                'volume_kg' => $volumeKg,
                 'total_cost' => (float) $pickup->total_cost,
             ],
             campusId: $pickup->campus_id
@@ -295,7 +288,7 @@ class PickupController extends Controller
 
         return [
             'success' => true,
-            'message' => 'Data pengangkutan residu berhasil dihapus dan jurnal keuangan disesuaikan.',
+            'message' => 'Data pengangkutan residu berhasil dihapus. Catatan kas keuangan diselaraskan dan stok residu sebesar ' . number_format($volumeKg, 1, ',', '.') . ' kg kembali tersedia.',
         ];
     }
 }

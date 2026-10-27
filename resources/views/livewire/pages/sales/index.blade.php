@@ -579,58 +579,37 @@
                      style="display: none;"
                      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
-                        @if ($deleteBindingInfo && $deleteBindingInfo['is_bound'])
-                            <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto mb-4">
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-900">Hapus Transaksi Penjualan?</h3>
+                        <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
+                            Apakah Anda yakin ingin menghapus penjualan <span class="font-bold text-slate-800">#{{ $confirmDeleteSaleId }}</span> ke <span class="font-bold text-slate-800">{{ $deleteSaleBuyer }}</span> senilai <span class="font-bold text-emerald-700 font-mono">Rp {{ number_format($deleteSaleAmount, 0, ',', '.') }}</span>?
+                        </p>
+                        
+                        <div class="mt-3.5 p-3.5 bg-amber-50/90 border border-amber-200 rounded-xl text-left space-y-1.5">
+                            <div class="flex items-center gap-1.5 text-amber-900 text-xs font-bold">
+                                <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
+                                <span>Konsekuensi Penghapusan:</span>
                             </div>
-                            <h3 class="text-base font-bold text-slate-900">Data Tidak Dapat Dihapus</h3>
-                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                                Transaksi penjualan ini tidak dapat dihapus karena masih terikat dengan data pada fitur lain:
-                            </p>
-                            <div class="mt-3.5 p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-left">
-                                <p class="text-[11px] font-semibold text-amber-900 mb-2">Terikat dengan fitur:</p>
-                                <div class="flex flex-wrap gap-1.5">
-                                    @foreach ($deleteBindingInfo['features'] ?? $deleteBindingInfo['reasons'] ?? ['Buku Kas Keuangan'] as $feature)
-                                        <span class="inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-semibold bg-amber-100 text-amber-900 border border-amber-300/60">
-                                            {{ $feature }}
-                                        </span>
-                                    @endforeach
-                                </div>
-                            </div>
-                            <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
-                                    Tutup
-                                </button>
-                                @php
-                                    $targetUrl = $deleteBindingInfo['primary_url'] ?? route('finance', ['view' => $deleteBindingInfo['financial_transaction']?->id]);
-                                @endphp
-                                <a href="{{ $targetUrl }}" 
-                                   class="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-sm shadow-emerald-600/20 transition active:scale-95 text-center flex items-center justify-center cursor-pointer"
-                                   style="background-color: #059669; color: #ffffff;">
-                                    <span>Lihat Jurnal Kas</span>
-                                </a>
-                            </div>
-                        @else
-                            <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                </svg>
-                            </div>
-                            <h3 class="text-base font-bold text-slate-900">Hapus Transaksi Penjualan?</h3>
-                            <p class="text-xs text-slate-500 mt-1.5 leading-relaxed">
-                                Tindakan ini akan membatalkan penjualan, mengembalikan kuota stok sampah di TPS, dan menghapus catatan penjualan ini secara permanen.
-                            </p>
-                            <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
-                                    Batal
-                                </button>
-                                <button type="button" wire:click="deleteSale" class="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer" style="background-color: #e11d48; color: #ffffff;">
-                                    Ya, Hapus Transaksi
-                                </button>
-                            </div>
-                        @endif
+                            <ul class="text-[11px] text-amber-800 space-y-1 list-disc list-inside">
+                                <li>Catatan kas masuk pada <span class="font-semibold">Buku Kas & Buku Besar</span> akan otomatis ikut terhapus.</li>
+                                <li>Stok sampah sebesar <span class="font-bold font-mono text-emerald-800">{{ number_format($deleteSaleWeight, 1, ',', '.') }} kg</span> akan otomatis <span class="font-semibold text-emerald-800">kembali bertambah</span> di sistem penimbangan.</li>
+                            </ul>
+                        </div>
+
+                        <div class="flex items-center justify-center gap-3 mt-6">
+                            <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
+                                Batal
+                            </button>
+                            <button type="button" wire:click="deleteSale" class="w-full py-2.5 px-4 rounded-xl bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold shadow-sm shadow-rose-600/20 transition active:scale-95 cursor-pointer" style="background-color: #e11d48; color: #ffffff;">
+                                Ya, Hapus Penjualan
+                            </button>
+                        </div>
                     </div>
                 </div>
             </template>

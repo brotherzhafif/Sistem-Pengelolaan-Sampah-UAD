@@ -55,6 +55,10 @@ class Index extends Component
     // Modal Confirmation Deletion & View Detail state
     public ?int $confirmDeletePickupId = null;
     public ?array $deleteBindingInfo = null;
+    public float $deletePickupVolume = 0.0;
+    public float $deletePickupCost = 0.0;
+    public string $deletePickupVendor = '';
+    public string $deletePickupDate = '';
     public ?int $viewPickupId = null;
 
     public function viewPickup(int $id): void
@@ -360,8 +364,14 @@ class Index extends Component
     public function confirmDelete(int $id): void
     {
         $this->confirmDeletePickupId = $id;
-        $pickup = Pickup::find($id);
-        $this->deleteBindingInfo = $pickup ? $pickup->getBindingInfo() : null;
+        $pickup = Pickup::with(['vendor'])->find($id);
+        if ($pickup) {
+            $this->deletePickupVolume = (float) $pickup->volume_kg;
+            $this->deletePickupCost = (float) $pickup->total_cost;
+            $this->deletePickupVendor = $pickup->vendor?->name ?? 'Vendor';
+            $this->deletePickupDate = $pickup->pickup_date ? $pickup->pickup_date->translatedFormat('d M Y') : '';
+            $this->deleteBindingInfo = $pickup->getBindingInfo();
+        }
     }
 
     public function cancelDelete(): void

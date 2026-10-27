@@ -92,59 +92,95 @@ class WeighingSession extends Model
     }
 
     /**
-     * Mengecek apakah data penimbangan ini terikat dengan transaksi penjualan atau pengangkutan.
-     * Mengembalikan status keterikatan, daftar transaksi terkait (id, tanggal, link), dan alasan.
+     * Menghitung rincian penyesuaian penghapusan data penimbangan:
+     * - Berapa bobot yang dapat dihapus/dipotong (belum terjual/diangkut)
+     * - Berapa bobot yang harus dipertahankan (karena sudah tercatat pada transaksi penjualan/pengangkutan)
+     */
+    public function getDeductionSummary(): array
+    {
+        $campusId = $this->campus_id;
+        $items = $this->items()->with('wasteType')->get();
+        
+        $totalSessionWeight = 0.0;
+        $totalDeductible = 0.0;
+        $totalRetained = 0.0;
+        $itemsBreakdown = [];
+        $features = [];
+
+        // Hitung stok tersedia untuk residu di kampus ini
+        $residualWeighed = (float) WeighingItem::join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
+            ->where('weighing_sessions.campus_id', $campusId)
+            ->whereHas('wasteType', fn($q) => $q->where('is_sellable', false))
+            ->sum('weighing_items.weight_kg');
+        $residualPickedUp = (float) Pickup::where('campus_id', $campusId)->sum('volume_kg');
+        $availableResidual = max(0.0, $residualWeighed - $residualPickedUp);
+
+        foreach ($items as $item) {
+            $weight = (float) $item->weight_kg;
+            $totalSessionWeight += $weight;
+            $isSellable = (bool) ($item->wasteType?->is_sellable ?? false);
+
+            if ($isSellable) {
+                $available = WasteType::getAvailableStock($item->waste_type_id, $campusId);
+            } else {
+                $available = $availableResidual;
+            }
+
+            // Jumlah yang bisa dipotong (yang belum terjual / terangkut)
+            $deductible = min($weight, max(0.0, $available));
+            // Jumlah yang harus dipertahankan (sudah tercatat transaksi)
+            $retained = max(0.0, $weight - $deductible);
+
+            if ($retained > 0.0001) {
+                if ($isSellable) {
+                    $features['Penjualan Sampah'] = true;
+                } else {
+                    $features['Pengangkutan Residu'] = true;
+                }
+            }
+
+            $totalDeductible += $deductible;
+            $totalRetained += $retained;
+
+            $itemsBreakdown[] = [
+                'item_id' => $item->id,
+                'waste_type_id' => $item->waste_type_id,
+                'waste_type_name' => $item->wasteType?->name ?? 'Sampah',
+                'current_weight' => $weight,
+                'deductible_weight' => $deductible,
+                'retained_weight' => $retained,
+                'is_sellable' => $isSellable,
+            ];
+        }
+
+        $featuresList = array_keys($features);
+
+        return [
+            'total_session_weight' => $totalSessionWeight,
+            'total_deductible' => $totalDeductible,
+            'total_retained' => $totalRetained,
+            'can_fully_delete' => $totalRetained <= 0.0001,
+            'can_partially_deduct' => $totalRetained > 0.0001 && $totalDeductible > 0.0001,
+            'is_fully_locked' => $totalDeductible <= 0.0001 && $totalSessionWeight > 0.0001,
+            'features' => $featuresList,
+            'items_breakdown' => $itemsBreakdown,
+            'primary_url' => in_array('Penjualan Sampah', $featuresList) ? route('sales') : (in_array('Pengangkutan Residu', $featuresList) ? route('pickups') : null),
+            'primary_label' => in_array('Penjualan Sampah', $featuresList) ? 'Lihat Penjualan' : (in_array('Pengangkutan Residu', $featuresList) ? 'Lihat Pengangkutan' : null),
+        ];
+    }
+
+    /**
+     * Informasi keterikatan penimbangan dengan transaksi penjualan/pengangkutan.
      */
     public function getBindingInfo(): array
     {
-        $features = [];
-        $primaryUrl = null;
-        $primaryLabel = null;
+        $summary = $this->getDeductionSummary();
 
-        // Cek keterikatan dengan penjualan sampah bernilai
-        $sellableTypeIds = $this->items
-            ->filter(fn($i) => (float) $i->weight_kg > 0 && !empty($i->wasteType?->is_sellable))
-            ->pluck('waste_type_id');
-
-        if ($sellableTypeIds->isNotEmpty()) {
-            $hasSales = Sale::where('campus_id', $this->campus_id)
-                ->where('sale_date', '>=', $this->weigh_date)
-                ->whereHas('items', fn($q) => $q->whereIn('waste_type_id', $sellableTypeIds))
-                ->exists();
-
-            if ($hasSales) {
-                $features[] = 'Penjualan Sampah';
-                $primaryUrl = route('sales');
-                $primaryLabel = 'Lihat Penjualan';
-            }
-        }
-
-        // Cek keterikatan dengan pengangkutan residu
-        $hasResidual = $this->items->contains(fn($i) => (float) $i->weight_kg > 0 && !empty($i->wasteType) && !$i->wasteType->is_sellable);
-        if ($hasResidual) {
-            $hasPickups = Pickup::where('campus_id', $this->campus_id)
-                ->where('pickup_date', '>=', $this->weigh_date)
-                ->exists();
-
-            if ($hasPickups) {
-                $features[] = 'Pengangkutan Residu';
-                if (!$primaryUrl) {
-                    $primaryUrl = route('pickups');
-                    $primaryLabel = 'Lihat Pengangkutan';
-                }
-            }
-        }
-
-        return [
-            'is_bound' => !empty($features),
-            'features' => $features,
-            'primary_url' => $primaryUrl,
-            'primary_label' => $primaryLabel,
-            'reasons' => $features,
-            'sales' => collect(),
-            'pickups' => collect(),
-            'bindings' => $primaryUrl ? [['url' => $primaryUrl, 'label' => $primaryLabel]] : [],
-        ];
+        return array_merge($summary, [
+            'is_bound' => !$summary['can_fully_delete'],
+            'reasons' => $summary['features'],
+            'bindings' => $summary['primary_url'] ? [['url' => $summary['primary_url'], 'label' => $summary['primary_label']]] : [],
+        ]);
     }
 }
 
