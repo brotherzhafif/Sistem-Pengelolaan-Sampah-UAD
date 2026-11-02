@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\ActivityLog;
+use App\Models\WasteStockSummary;
 use App\Models\WasteType;
 use App\Models\WeighingItem;
 use App\Models\WeighingSession;
@@ -70,27 +71,43 @@ class WeighingController extends Controller
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
         $campusToSave = $isSuperAdmin ? (int) $data['campus_id'] : (int) $user->campus_id;
 
-        $session = WeighingSession::create([
-            'campus_id' => $campusToSave,
-            'waste_source_id' => !empty($data['waste_source_id']) ? (int) $data['waste_source_id'] : null,
-            'weigh_date' => $data['weigh_date'],
-            'created_by' => auth()->id(),
-            'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
-        ]);
+        $session = null;
+        $totalSessionWeight = 0.0;
 
-        foreach ($items as $item) {
-            $weight = !empty($item['weight_kg']) ? floatval($item['weight_kg']) : 0;
-            $volume = !empty($item['volume_m3']) ? floatval($item['volume_m3']) : null;
+        \Illuminate\Support\Facades\DB::transaction(function () use ($data, $items, $campusToSave, &$session, &$totalSessionWeight) {
+            $session = WeighingSession::create([
+                'campus_id' => $campusToSave,
+                'waste_source_id' => !empty($data['waste_source_id']) ? (int) $data['waste_source_id'] : null,
+                'weigh_date' => $data['weigh_date'],
+                'created_by' => auth()->id(),
+                'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
+            ]);
 
-            if ($weight > 0) {
-                WeighingItem::create([
-                    'weighing_session_id' => $session->id,
-                    'waste_type_id' => (int) $item['waste_type_id'],
-                    'weight_kg' => $weight,
-                    'volume_m3' => $volume,
-                ]);
+            foreach ($items as $item) {
+                $weight = !empty($item['weight_kg']) ? floatval($item['weight_kg']) : 0;
+                $volume = !empty($item['volume_m3']) ? floatval($item['volume_m3']) : null;
+
+                if ($weight > 0) {
+                    $totalSessionWeight += $weight;
+                    WeighingItem::create([
+                        'weighing_session_id' => $session->id,
+                        'waste_type_id' => (int) $item['waste_type_id'],
+                        'weight_kg' => $weight,
+                        'volume_m3' => $volume,
+                    ]);
+                }
             }
-        }
+
+            // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+            WasteStockSummary::applyMutation(
+                campusId: $campusToSave,
+                referenceType: 'weighing',
+                referenceId: $session->id,
+                action: 'create',
+                weighedDelta: $totalSessionWeight,
+                notes: "Pencatatan penimbangan sampah harian #{$session->id}"
+            );
+        });
 
         ActivityLog::record(
             module: 'weighing',
@@ -207,7 +224,11 @@ class WeighingController extends Controller
             }
         }
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $data, $items, $targetCampusId) {
+        $oldSessionWeight = (float) $session->items->sum('weight_kg');
+        $oldCampusId = $session->campus_id;
+        $newSessionWeight = 0.0;
+
+        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $data, $items, $targetCampusId, $oldCampusId, $oldSessionWeight, &$newSessionWeight) {
             $session->update([
                 'campus_id' => $targetCampusId,
                 'waste_source_id' => !empty($data['waste_source_id']) ? (int) $data['waste_source_id'] : null,
@@ -223,6 +244,7 @@ class WeighingController extends Controller
                 $volume = !empty($item['volume_m3']) ? floatval($item['volume_m3']) : null;
 
                 if ($weight > 0) {
+                    $newSessionWeight += $weight;
                     WeighingItem::create([
                         'weighing_session_id' => $session->id,
                         'waste_type_id' => (int) $item['waste_type_id'],
@@ -230,6 +252,36 @@ class WeighingController extends Controller
                         'volume_m3' => $volume,
                     ]);
                 }
+            }
+
+            // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+            if ($oldCampusId === $targetCampusId) {
+                $deltaWeighed = $newSessionWeight - $oldSessionWeight;
+                WasteStockSummary::applyMutation(
+                    campusId: $targetCampusId,
+                    referenceType: 'weighing',
+                    referenceId: $session->id,
+                    action: 'update',
+                    weighedDelta: $deltaWeighed,
+                    notes: "Pembaruan bobot penimbangan #{$session->id}"
+                );
+            } else {
+                WasteStockSummary::applyMutation(
+                    campusId: $oldCampusId,
+                    referenceType: 'weighing',
+                    referenceId: $session->id,
+                    action: 'update',
+                    weighedDelta: -$oldSessionWeight,
+                    notes: "Pemindahan penimbangan #{$session->id} ke unit kampus lain"
+                );
+                WasteStockSummary::applyMutation(
+                    campusId: $targetCampusId,
+                    referenceType: 'weighing',
+                    referenceId: $session->id,
+                    action: 'update',
+                    weighedDelta: $newSessionWeight,
+                    notes: "Penerimaan penimbangan #{$session->id} dari unit kampus lain"
+                );
             }
         });
 
@@ -301,9 +353,19 @@ class WeighingController extends Controller
                 campusId: $session->campus_id
             );
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($session) {
+            \Illuminate\Support\Facades\DB::transaction(function () use ($session, $totalWeight) {
                 $session->items()->delete();
                 $session->delete();
+
+                // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+                WasteStockSummary::applyMutation(
+                    campusId: $session->campus_id,
+                    referenceType: 'weighing',
+                    referenceId: $session->id,
+                    action: 'delete',
+                    weighedDelta: -$totalWeight,
+                    notes: "Penghapusan seluruh sesi penimbangan #{$session->id}"
+                );
             });
 
             return [
@@ -329,7 +391,7 @@ class WeighingController extends Controller
             campusId: $session->campus_id
         );
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $deductionInfo) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $deductionInfo, $deductedKg) {
             foreach ($deductionInfo['items_breakdown'] as $b) {
                 $item = \App\Models\WeighingItem::find($b['item_id']);
                 if (!$item) continue;
@@ -345,6 +407,16 @@ class WeighingController extends Controller
             if ($session->items()->count() === 0) {
                 $session->delete();
             }
+
+            // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+            WasteStockSummary::applyMutation(
+                campusId: $session->campus_id,
+                referenceType: 'weighing',
+                referenceId: $session->id,
+                action: 'delete',
+                weighedDelta: -$deductedKg,
+                notes: "Pemotongan sisa bobot penimbangan #{$session->id} yang belum terjual/diangkut"
+            );
         });
 
         return [

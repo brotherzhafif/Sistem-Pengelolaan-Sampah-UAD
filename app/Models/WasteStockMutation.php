@@ -44,3 +44,4 @@ class WasteStockMutation extends Model
         return $this->belongsTo(User::class, 'performed_by');
     }
 }
+

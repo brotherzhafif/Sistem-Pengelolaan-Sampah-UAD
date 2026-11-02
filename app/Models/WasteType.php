@@ -87,12 +87,9 @@ class WasteType extends Model
 
         $soldByType = $soldQuery->pluck('total_sold_kg', 'waste_type_id')->toArray();
 
-        // 3. Agregasi total pengangkutan residu (Pickups)
-        $pickupQuery = Pickup::query();
-        if ($campusId) {
-            $pickupQuery->where('campus_id', $campusId);
-        }
-        $totalPickedUp = (float) $pickupQuery->sum('volume_kg');
+        // 3. Agregasi total pengangkutan residu (Pickups) dari Rekap Stok Real-Time (O(1))
+        $stockMetrics = WasteStockSummary::getMetrics($campusId);
+        $totalPickedUp = (float) ($stockMetrics['total_picked_up_kg'] ?? 0.0);
 
         // 4. Gabungkan dengan data waste_types
         $allWasteTypes = static::where('is_active', true)->orderBy('category')->orderBy('name')->get();

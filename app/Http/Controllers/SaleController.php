@@ -11,6 +11,7 @@ use App\Models\GeneralLedger;
 use App\Models\Keuangan;
 use App\Models\Sale;
 use App\Models\SaleItem;
+use App\Models\WasteStockSummary;
 use App\Models\WasteType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -93,25 +94,39 @@ class SaleController extends Controller
         }
 
         $totalAmount = array_sum(array_column($itemsToSell, 'subtotal'));
+        $totalWeightSold = array_sum(array_column($itemsToSell, 'weight_kg'));
+        $sale = null;
 
-        $sale = Sale::create([
-            'campus_id' => $targetCampusId,
-            'buyer_id' => (int) $data['buyer_id'],
-            'sale_date' => $data['sale_date'],
-            'total_amount' => $totalAmount,
-            'created_by' => auth()->id(),
-            'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
-        ]);
-
-        foreach ($itemsToSell as $item) {
-            SaleItem::create([
-                'sale_id' => $sale->id,
-                'waste_type_id' => $item['waste_type_id'],
-                'weight_kg' => $item['weight_kg'],
-                'price_per_kg' => $item['price_per_kg'],
-                'subtotal' => $item['subtotal'],
+        DB::transaction(function () use ($targetCampusId, $data, $totalAmount, $itemsToSell, $totalWeightSold, &$sale) {
+            $sale = Sale::create([
+                'campus_id' => $targetCampusId,
+                'buyer_id' => (int) $data['buyer_id'],
+                'sale_date' => $data['sale_date'],
+                'total_amount' => $totalAmount,
+                'created_by' => auth()->id(),
+                'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
             ]);
-        }
+
+            foreach ($itemsToSell as $item) {
+                SaleItem::create([
+                    'sale_id' => $sale->id,
+                    'waste_type_id' => $item['waste_type_id'],
+                    'weight_kg' => $item['weight_kg'],
+                    'price_per_kg' => $item['price_per_kg'],
+                    'subtotal' => $item['subtotal'],
+                ]);
+            }
+
+            // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+            WasteStockSummary::applyMutation(
+                campusId: $targetCampusId,
+                referenceType: 'sales',
+                referenceId: $sale->id,
+                action: 'create',
+                soldDelta: $totalWeightSold,
+                notes: "Penjualan sampah anorganik terpilah #{$sale->id}"
+            );
+        });
 
         ActivityLog::record(
             module: 'sales',
@@ -226,10 +241,14 @@ class SaleController extends Controller
         }
 
         $totalAmount = array_sum(array_column($itemsToSell, 'subtotal'));
+        $oldWeightSold = (float) $sale->items->sum('weight_kg');
+        $newWeightSold = array_sum(array_column($itemsToSell, 'weight_kg'));
+        $deltaSold = $newWeightSold - $oldWeightSold;
+
         $oldDate = $sale->sale_date?->format('Y-m-d');
         $newDate = $data['sale_date'];
 
-        DB::transaction(function () use ($sale, $data, $targetCampusId, $totalAmount, $itemsToSell, $oldDate, $newDate) {
+        DB::transaction(function () use ($sale, $data, $targetCampusId, $totalAmount, $itemsToSell, $oldDate, $newDate, $deltaSold) {
             $sale->update([
                 'campus_id' => $targetCampusId,
                 'buyer_id' => (int) $data['buyer_id'],
@@ -249,6 +268,16 @@ class SaleController extends Controller
                     'subtotal' => $item['subtotal'],
                 ]);
             }
+
+            // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+            WasteStockSummary::applyMutation(
+                campusId: $targetCampusId,
+                referenceType: 'sales',
+                referenceId: $sale->id,
+                action: 'update',
+                soldDelta: $deltaSold,
+                notes: "Pembaruan bobot penjualan sampah #{$sale->id}"
+            );
 
             // Sinkronisasi Transaksi Keuangan Buku Kas (Kredit)
             $ft = FinancialTransaction::where('source', 'sales')->where('ref_id', $sale->id)->first();
@@ -338,9 +367,19 @@ class SaleController extends Controller
             campusId: $sale->campus_id
         );
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($sale) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($sale, $totalWeight) {
             $sale->items()->delete();
             $sale->delete(); // Observer otomatis hapus jurnal keuangan & sinkronkan buku besar
+
+            // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+            WasteStockSummary::applyMutation(
+                campusId: $sale->campus_id,
+                referenceType: 'sales',
+                referenceId: $sale->id,
+                action: 'delete',
+                soldDelta: -$totalWeight,
+                notes: "Penghapusan transaksi penjualan #{$sale->id} (stok dikembalikan)"
+            );
         });
 
         return [

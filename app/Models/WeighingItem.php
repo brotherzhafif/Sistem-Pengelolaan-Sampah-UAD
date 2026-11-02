@@ -51,12 +51,15 @@ class WeighingItem extends Model
      */
     public static function getTotalAccumulation(?int $campusId): array
     {
+        $metrics = WasteStockSummary::getMetrics($campusId);
+        $totalKg = (float) ($metrics['total_weighed_kg'] ?? 0.0);
+
         $query = static::query()
             ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
             ->when($campusId, fn($q) => $q->where('weighing_sessions.campus_id', $campusId));
 
         return [
-            'totalKg' => (float) (clone $query)->sum('weighing_items.weight_kg'),
+            'totalKg' => $totalKg,
             'totalVolumeM3' => (float) (clone $query)->sum('weighing_items.volume_m3'),
         ];
     }

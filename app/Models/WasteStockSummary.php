@@ -225,3 +225,4 @@ class WasteStockSummary extends Model
         }
     }
 }
+

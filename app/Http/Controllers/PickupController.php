@@ -9,6 +9,7 @@ use App\Models\FinancialTransaction;
 use App\Models\GeneralLedger;
 use App\Models\Keuangan;
 use App\Models\Pickup;
+use App\Models\WasteStockSummary;
 use App\Models\WasteType;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -75,19 +76,32 @@ class PickupController extends Controller
         }
 
         $totalCost = round($volume * $costPerKg, 2);
+        $pickup = null;
 
-        $pickup = Pickup::create([
-            'campus_id' => $campusId,
-            'vendor_id' => $vendorId,
-            'pickup_date' => $data['pickup_date'],
-            'volume_kg' => $volume,
-            'cost_per_kg' => $costPerKg,
-            'total_cost' => $totalCost,
-            'driver_name' => !empty($data['driver_name']) ? strip_tags(trim($data['driver_name'])) : null,
-            'vehicle_plate' => !empty($data['vehicle_plate']) ? strip_tags(trim(strtoupper($data['vehicle_plate']))) : null,
-            'created_by' => auth()->id(),
-            'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
-        ]);
+        DB::transaction(function () use ($campusId, $vendorId, $data, $volume, $costPerKg, $totalCost, &$pickup) {
+            $pickup = Pickup::create([
+                'campus_id' => $campusId,
+                'vendor_id' => $vendorId,
+                'pickup_date' => $data['pickup_date'],
+                'volume_kg' => $volume,
+                'cost_per_kg' => $costPerKg,
+                'total_cost' => $totalCost,
+                'driver_name' => !empty($data['driver_name']) ? strip_tags(trim($data['driver_name'])) : null,
+                'vehicle_plate' => !empty($data['vehicle_plate']) ? strip_tags(trim(strtoupper($data['vehicle_plate']))) : null,
+                'created_by' => auth()->id(),
+                'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
+            ]);
+
+            // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+            WasteStockSummary::applyMutation(
+                campusId: $campusId,
+                referenceType: 'pickup',
+                referenceId: $pickup->id,
+                action: 'create',
+                pickedUpDelta: $volume,
+                notes: "Pengangkutan residu ke TPA/Vendor #{$pickup->id}"
+            );
+        });
 
         ActivityLog::record(
             module: 'pickups',
@@ -182,8 +196,10 @@ class PickupController extends Controller
 
         $oldDate = $pickup->pickup_date?->format('Y-m-d');
         $newDate = $data['pickup_date'];
+        $oldVolume = (float) $pickup->volume_kg;
+        $deltaPickedUp = $newVolume - $oldVolume;
 
-        DB::transaction(function () use ($pickup, $data, $targetCampusId, $newVolume, $newCostPerKg, $newTotalCost, $oldDate, $newDate) {
+        DB::transaction(function () use ($pickup, $data, $targetCampusId, $newVolume, $newCostPerKg, $newTotalCost, $oldDate, $newDate, $deltaPickedUp) {
             $pickup->update([
                 'campus_id' => $targetCampusId,
                 'vendor_id' => (int) $data['vendor_id'],
@@ -195,6 +211,16 @@ class PickupController extends Controller
                 'vehicle_plate' => !empty($data['vehicle_plate']) ? strip_tags(trim(strtoupper($data['vehicle_plate']))) : null,
                 'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
             ]);
+
+            // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
+            WasteStockSummary::applyMutation(
+                campusId: $targetCampusId,
+                referenceType: 'pickup',
+                referenceId: $pickup->id,
+                action: 'update',
+                pickedUpDelta: $deltaPickedUp,
+                notes: "Pembaruan volume pengangkutan residu #{$pickup->id}"
+            );
 
             // Sinkronisasi Transaksi Keuangan Buku Kas
             $ft = FinancialTransaction::where('source', 'pickup')->where('ref_id', $pickup->id)->first();
@@ -270,21 +296,35 @@ class PickupController extends Controller
         }
 
         $volumeKg = (float) $pickup->volume_kg;
+        $campusId = (int) $pickup->campus_id;
+        $pickupId = (int) $pickup->id;
+        $totalCost = (float) $pickup->total_cost;
+
+        DB::transaction(function () use ($pickup, $campusId, $pickupId, $volumeKg) {
+            $pickup->delete(); // Observer otomatis hapus jurnal debet keuangan & re-sync buku besar
+
+            WasteStockSummary::applyMutation(
+                campusId: $campusId,
+                referenceType: 'pickup',
+                referenceId: $pickupId,
+                action: 'delete',
+                pickedUpDelta: -$volumeKg,
+                notes: "Penghapusan data pengangkutan residu #{$pickupId} (stok residu dikembalikan)"
+            );
+        });
 
         ActivityLog::record(
             module: 'pickups',
             action: 'delete',
-            description: "Menghapus data pengangkutan residu (#{$pickup->id}) seberat " . number_format($volumeKg, 1, ',', '.') . " kg senilai Rp " . number_format((float) $pickup->total_cost, 0, ',', '.'),
+            description: "Menghapus data pengangkutan residu (#{$pickupId}) seberat " . number_format($volumeKg, 1, ',', '.') . " kg senilai Rp " . number_format($totalCost, 0, ',', '.'),
             properties: [
-                'pickup_id' => $pickup->id,
-                'campus_id' => $pickup->campus_id,
+                'pickup_id' => $pickupId,
+                'campus_id' => $campusId,
                 'volume_kg' => $volumeKg,
-                'total_cost' => (float) $pickup->total_cost,
+                'total_cost' => $totalCost,
             ],
-            campusId: $pickup->campus_id
+            campusId: $campusId
         );
-
-        $pickup->delete(); // Observer otomatis hapus jurnal debet keuangan & re-sync buku besar
 
         return [
             'success' => true,

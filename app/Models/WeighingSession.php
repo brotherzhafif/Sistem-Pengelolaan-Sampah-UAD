@@ -112,7 +112,8 @@ class WeighingSession extends Model
             ->where('weighing_sessions.campus_id', $campusId)
             ->whereHas('wasteType', fn($q) => $q->where('is_sellable', false))
             ->sum('weighing_items.weight_kg');
-        $residualPickedUp = (float) Pickup::where('campus_id', $campusId)->sum('volume_kg');
+        $stockMetrics = WasteStockSummary::getMetrics($campusId);
+        $residualPickedUp = (float) ($stockMetrics['total_picked_up_kg'] ?? 0.0);
         $availableResidual = max(0.0, $residualWeighed - $residualPickedUp);
 
         foreach ($items as $item) {
