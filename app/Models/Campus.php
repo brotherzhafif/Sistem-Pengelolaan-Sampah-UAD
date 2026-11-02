@@ -78,6 +78,22 @@ class Campus extends Model
     }
 
     /**
+     * Get real-time waste stock summary for this campus.
+     */
+    public function wasteStockSummary(): \Illuminate\Database\Eloquent\Relations\HasOne
+    {
+        return $this->hasOne(WasteStockSummary::class);
+    }
+
+    /**
+     * Get waste stock mutations history for this campus.
+     */
+    public function wasteStockMutations(): HasMany
+    {
+        return $this->hasMany(WasteStockMutation::class);
+    }
+
+    /**
      * Mengambil daftar kampus yang aktif.
      */
     public static function getActiveCampuses()
