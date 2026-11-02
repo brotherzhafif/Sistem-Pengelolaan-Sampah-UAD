@@ -55,6 +55,8 @@ class WipeTransactionsCommand extends Command
             'keuangan',
             'buku_besar',
             'kap_surveys',
+            'waste_stock_mutations',
+            'waste_stock_summaries',
         ];
 
         foreach ($tables as $table) {
