@@ -392,19 +392,6 @@ class WeighingController extends Controller
         if ($deductionInfo['can_fully_delete']) {
             $totalWeight = $deductionInfo['total_session_weight'];
 
-            ActivityLog::record(
-                module: 'weighing',
-                action: 'delete',
-                description: "Menghapus seluruh sesi penimbangan sampah (#{$session->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg",
-                properties: [
-                    'session_id' => $session->id,
-                    'campus_id' => $session->campus_id,
-                    'weigh_date' => $session->weigh_date,
-                    'total_weight' => $totalWeight,
-                ],
-                campusId: $session->campus_id
-            );
-
             \Illuminate\Support\Facades\DB::transaction(function () use ($session, $totalWeight) {
                 $itemsDelta = [];
                 foreach ($session->items as $it) {
@@ -430,6 +417,19 @@ class WeighingController extends Controller
                 );
             });
 
+            ActivityLog::record(
+                module: 'weighing',
+                action: 'delete',
+                description: "Menghapus seluruh sesi penimbangan sampah (#{$session->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg",
+                properties: [
+                    'session_id' => $session->id,
+                    'campus_id' => $session->campus_id,
+                    'weigh_date' => $session->weigh_date,
+                    'total_weight' => $totalWeight,
+                ],
+                campusId: $session->campus_id
+            );
+
             return [
                 'success' => true,
                 'message' => 'Data sesi penimbangan berhasil dihapus seluruhnya (' . number_format($totalWeight, 1, ',', '.') . ' kg).',
@@ -439,19 +439,6 @@ class WeighingController extends Controller
         // 3. Kasus B: Sebagian sudah terjual/diangkut -> Potong bagian yang belum terjual/diangkut
         $deductedKg = $deductionInfo['total_deductible'];
         $retainedKg = $deductionInfo['total_retained'];
-
-        ActivityLog::record(
-            module: 'weighing',
-            action: 'update',
-            description: "Menyesuaikan penimbangan sampah (#{$session->id}): Memotong " . number_format($deductedKg, 1, ',', '.') . " kg (belum terjual/diangkut) dan menyisakan " . number_format($retainedKg, 1, ',', '.') . " kg (sudah terikat transaksi)",
-            properties: [
-                'session_id' => $session->id,
-                'campus_id' => $session->campus_id,
-                'deducted_kg' => $deductedKg,
-                'retained_kg' => $retainedKg,
-            ],
-            campusId: $session->campus_id
-        );
 
         \Illuminate\Support\Facades\DB::transaction(function () use ($session, $deductionInfo, $deductedKg) {
             foreach ($deductionInfo['items_breakdown'] as $b) {
@@ -493,6 +480,19 @@ class WeighingController extends Controller
                 notes: "Pemotongan sisa bobot penimbangan #{$session->id} yang belum terjual/diangkut"
             );
         });
+
+        ActivityLog::record(
+            module: 'weighing',
+            action: 'update',
+            description: "Menyesuaikan penimbangan sampah (#{$session->id}): Memotong " . number_format($deductedKg, 1, ',', '.') . " kg (belum terjual/diangkut) dan menyisakan " . number_format($retainedKg, 1, ',', '.') . " kg (sudah terikat transaksi)",
+            properties: [
+                'session_id' => $session->id,
+                'campus_id' => $session->campus_id,
+                'deducted_kg' => $deductedKg,
+                'retained_kg' => $retainedKg,
+            ],
+            campusId: $session->campus_id
+        );
 
         return [
             'success' => true,

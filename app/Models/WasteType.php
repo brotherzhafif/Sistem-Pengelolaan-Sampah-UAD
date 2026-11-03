@@ -77,7 +77,6 @@ class WasteType extends Model
                 'total_sold_kg' => $sold,
                 'available_stock_kg' => $available,
                 'potential_revenue' => $itemPotentialRevenue,
-                'total_volume_m3' => 0.0,
             ];
         }
 

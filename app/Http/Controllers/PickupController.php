@@ -197,7 +197,6 @@ class PickupController extends Controller
 
         $oldDate = $pickup->pickup_date?->format('Y-m-d');
         $newDate = $data['pickup_date'];
-        $oldVolume = (float) $pickup->volume_kg;
         $deltaPickedUp = $newVolume - $oldVolume;
         $oldCost = (float) $pickup->total_cost;
         $deltaCost = $newTotalCost - $oldCost;

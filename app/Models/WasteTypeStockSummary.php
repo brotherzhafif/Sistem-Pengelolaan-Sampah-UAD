@@ -66,41 +66,39 @@ class WasteTypeStockSummary extends Model
         float $weighedDelta = 0.0,
         float $soldDelta = 0.0
     ): self {
-        return DB::transaction(function () use ($campusId, $wasteTypeId, $weighedDelta, $soldDelta) {
-            $record = static::where('campus_id', $campusId)
-                ->where('waste_type_id', $wasteTypeId)
-                ->lockForUpdate()
-                ->first();
+        $record = static::where('campus_id', $campusId)
+            ->where('waste_type_id', $wasteTypeId)
+            ->lockForUpdate()
+            ->first();
 
-            if (!$record) {
-                $record = static::create([
-                    'campus_id' => $campusId,
-                    'waste_type_id' => $wasteTypeId,
-                    'total_weighed_kg' => 0.00,
-                    'total_sold_kg' => 0.00,
-                    'available_stock_kg' => 0.00,
-                    'potential_revenue' => 0.00,
-                ]);
-            }
-
-            $newWeighed = max(0.0, (float) $record->total_weighed_kg + $weighedDelta);
-            $newSold = max(0.0, (float) $record->total_sold_kg + $soldDelta);
-            $available = max(0.0, $newWeighed - $newSold);
-
-            $wasteType = WasteType::find($wasteTypeId);
-            $potential = 0.00;
-            if ($wasteType && $wasteType->is_sellable) {
-                $potential = round($available * (float) $wasteType->default_price_per_kg, 2);
-            }
-
-            $record->update([
-                'total_weighed_kg' => $newWeighed,
-                'total_sold_kg' => $newSold,
-                'available_stock_kg' => $available,
-                'potential_revenue' => $potential,
+        if (!$record) {
+            $record = static::create([
+                'campus_id' => $campusId,
+                'waste_type_id' => $wasteTypeId,
+                'total_weighed_kg' => 0.00,
+                'total_sold_kg' => 0.00,
+                'available_stock_kg' => 0.00,
+                'potential_revenue' => 0.00,
             ]);
+        }
 
-            return $record;
-        });
+        $newWeighed = max(0.0, (float) $record->total_weighed_kg + $weighedDelta);
+        $newSold = max(0.0, (float) $record->total_sold_kg + $soldDelta);
+        $available = max(0.0, $newWeighed - $newSold);
+
+        $wasteType = WasteType::find($wasteTypeId);
+        $potential = 0.00;
+        if ($wasteType && $wasteType->is_sellable) {
+            $potential = round($available * (float) $wasteType->default_price_per_kg, 2);
+        }
+
+        $record->update([
+            'total_weighed_kg' => $newWeighed,
+            'total_sold_kg' => $newSold,
+            'available_stock_kg' => $available,
+            'potential_revenue' => $potential,
+        ]);
+
+        return $record;
     }
 }

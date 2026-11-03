@@ -387,19 +387,6 @@ class SaleController extends Controller
         $totalWeight = (float) $sale->items->sum('weight_kg');
         $totalAmount = (float) $sale->total_amount;
 
-        ActivityLog::record(
-            module: 'sales',
-            action: 'delete',
-            description: "Menghapus transaksi penjualan sampah (#{$sale->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg senilai Rp " . number_format($totalAmount, 0, ',', '.'),
-            properties: [
-                'sale_id' => $sale->id,
-                'campus_id' => $sale->campus_id,
-                'total_weight' => $totalWeight,
-                'total_amount' => $totalAmount,
-            ],
-            campusId: $sale->campus_id
-        );
-
         \Illuminate\Support\Facades\DB::transaction(function () use ($sale, $totalWeight, $totalAmount) {
             $itemsDelta = [];
             foreach ($sale->items as $it) {
@@ -425,6 +412,19 @@ class SaleController extends Controller
                 notes: "Penghapusan transaksi penjualan #{$sale->id} (stok dikembalikan)"
             );
         });
+
+        ActivityLog::record(
+            module: 'sales',
+            action: 'delete',
+            description: "Menghapus transaksi penjualan sampah (#{$sale->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg senilai Rp " . number_format($totalAmount, 0, ',', '.'),
+            properties: [
+                'sale_id' => $sale->id,
+                'campus_id' => $sale->campus_id,
+                'total_weight' => $totalWeight,
+                'total_amount' => $totalAmount,
+            ],
+            campusId: $sale->campus_id
+        );
 
         return [
             'success' => true,
