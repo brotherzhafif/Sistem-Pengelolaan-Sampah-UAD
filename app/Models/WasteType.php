@@ -49,75 +49,23 @@ class WasteType extends Model
     }
 
     /**
-     * Mengambil ringkasan stok sampah terpilah dan residu per kampus atau keseluruhan.
+     * Mengambil ringkasan stok sampah terpilah dan residu per kampus atau keseluruhan (O(1)).
      */
     public static function getStockSummary(int|string|null $campusId = null): array
     {
         $campusId = !empty($campusId) ? (int) $campusId : null;
+        $metrics = WasteStockSummary::getMetrics($campusId);
 
-        // 1. Agregasi total timbangan per waste_type
-        $weighQuery = WeighingItem::query()
-            ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
-            ->select(
-                'weighing_items.waste_type_id',
-                DB::raw('SUM(weighing_items.weight_kg) as total_weighed_kg'),
-                DB::raw('SUM(COALESCE(weighing_items.volume_m3, 0)) as total_volume_m3')
-            )
-            ->groupBy('weighing_items.waste_type_id');
-
-        if ($campusId) {
-            $weighQuery->where('weighing_sessions.campus_id', $campusId);
-        }
-
-        $weighedByType = $weighQuery->pluck('total_weighed_kg', 'waste_type_id')->toArray();
-        $volumesByType = $weighQuery->pluck('total_volume_m3', 'waste_type_id')->toArray();
-
-        // 2. Agregasi total penjualan per waste_type
-        $soldQuery = SaleItem::query()
-            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->select(
-                'sale_items.waste_type_id',
-                DB::raw('SUM(sale_items.weight_kg) as total_sold_kg')
-            )
-            ->groupBy('sale_items.waste_type_id');
-
-        if ($campusId) {
-            $soldQuery->where('sales.campus_id', $campusId);
-        }
-
-        $soldByType = $soldQuery->pluck('total_sold_kg', 'waste_type_id')->toArray();
-
-        // 3. Agregasi total pengangkutan residu (Pickups) dari Rekap Stok Real-Time (O(1))
-        $stockMetrics = WasteStockSummary::getMetrics($campusId);
-        $totalPickedUp = (float) ($stockMetrics['total_picked_up_kg'] ?? 0.0);
-
-        // 4. Gabungkan dengan data waste_types
         $allWasteTypes = static::where('is_active', true)->orderBy('category')->orderBy('name')->get();
+        $typeSummaries = WasteTypeStockSummary::when($campusId, fn($q) => $q->where('campus_id', $campusId))->get();
 
         $itemsBreakdown = [];
-        $totalWeighed = 0.0;
-        $totalSold = 0.0;
-        $sellableStock = 0.0;
-        $potentialRevenue = 0.0;
-        $grossResidualStock = 0.0;
-
         foreach ($allWasteTypes as $type) {
-            $weighed = (float) ($weighedByType[$type->id] ?? 0.0);
-            $sold = (float) ($soldByType[$type->id] ?? 0.0);
-            $available = max(0.0, $weighed - $sold);
-            $volume = (float) ($volumesByType[$type->id] ?? 0.0);
-
-            $totalWeighed += $weighed;
-            $totalSold += $sold;
-
-            $itemPotentialRevenue = 0.0;
-            if ($type->is_sellable) {
-                $sellableStock += $available;
-                $itemPotentialRevenue = $available * (float) $type->default_price_per_kg;
-                $potentialRevenue += $itemPotentialRevenue;
-            } else {
-                $grossResidualStock += $available;
-            }
+            $typeRows = $typeSummaries->where('waste_type_id', $type->id);
+            $weighed = (float) $typeRows->sum('total_weighed_kg');
+            $sold = (float) $typeRows->sum('total_sold_kg');
+            $available = (float) $typeRows->sum('available_stock_kg');
+            $itemPotentialRevenue = (float) $typeRows->sum('potential_revenue');
 
             $itemsBreakdown[] = [
                 'waste_type_id' => $type->id,
@@ -129,19 +77,20 @@ class WasteType extends Model
                 'total_sold_kg' => $sold,
                 'available_stock_kg' => $available,
                 'potential_revenue' => $itemPotentialRevenue,
-                'total_volume_m3' => $volume,
+                'total_volume_m3' => 0.0,
             ];
         }
 
-        $netResidualStock = max(0.0, $grossResidualStock - $totalPickedUp);
-
         return [
-            'total_weighed_kg' => $totalWeighed,
-            'total_sold_kg' => $totalSold,
-            'total_picked_up_kg' => $totalPickedUp,
-            'sellable_stock_kg' => $sellableStock,
-            'potential_revenue' => $potentialRevenue,
-            'residual_stock_kg' => $netResidualStock,
+            'total_weighed_kg' => $metrics['total_weighed_kg'],
+            'total_sold_kg' => $metrics['total_sold_kg'],
+            'total_picked_up_kg' => $metrics['total_picked_up_kg'],
+            'sellable_stock_kg' => $metrics['sellable_stock_kg'],
+            'potential_revenue' => $metrics['potential_revenue'],
+            'residual_stock_kg' => $metrics['residual_stock_kg'],
+            'total_sales_revenue' => $metrics['total_sales_revenue'],
+            'total_pickup_cost' => $metrics['total_pickup_cost'],
+            'current_stock_kg' => $metrics['current_stock_kg'],
             'items_breakdown' => collect($itemsBreakdown),
         ];
     }
@@ -160,32 +109,12 @@ class WasteType extends Model
     }
 
     /**
-     * Mengambil sisa stok tersedia untuk jenis sampah tertentu di kampus tertentu.
+     * Mengambil sisa stok tersedia untuk jenis sampah tertentu di kampus tertentu (O(1)).
      */
     public static function getAvailableStock(int $wasteTypeId, int|string|null $campusId = null): float
     {
         $campusId = !empty($campusId) ? (int) $campusId : null;
-        $weighedQuery = WeighingItem::query()
-            ->join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
-            ->where('weighing_items.waste_type_id', $wasteTypeId);
-
-        if ($campusId) {
-            $weighedQuery->where('weighing_sessions.campus_id', $campusId);
-        }
-
-        $totalWeighed = (float) $weighedQuery->sum('weighing_items.weight_kg');
-
-        $soldQuery = SaleItem::query()
-            ->join('sales', 'sale_items.sale_id', '=', 'sales.id')
-            ->where('sale_items.waste_type_id', $wasteTypeId);
-
-        if ($campusId) {
-            $soldQuery->where('sales.campus_id', $campusId);
-        }
-
-        $totalSold = (float) $soldQuery->sum('sale_items.weight_kg');
-
-        return max(0.0, $totalWeighed - $totalSold);
+        return WasteTypeStockSummary::getAvailableStock($wasteTypeId, $campusId);
     }
 
     /**

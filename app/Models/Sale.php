@@ -118,6 +118,11 @@ class Sale extends Model
      */
     public static function getTotalRevenue(?int $campusId, ?string $dateFrom, ?string $dateTo): float
     {
+        if (empty($dateFrom) && empty($dateTo)) {
+            $metrics = WasteStockSummary::getMetrics($campusId);
+            return (float) ($metrics['total_sales_revenue'] ?? 0.0);
+        }
+
         return (float) static::forCampus($campusId)
             ->when($dateFrom, fn($q) => $q->whereDate('sale_date', '>=', $dateFrom))
             ->when($dateTo, fn($q) => $q->whereDate('sale_date', '<=', $dateTo))
@@ -129,6 +134,11 @@ class Sale extends Model
      */
     public static function getTotalSoldWeight(?int $campusId, ?string $dateFrom, ?string $dateTo): float
     {
+        if (empty($dateFrom) && empty($dateTo)) {
+            $metrics = WasteStockSummary::getMetrics($campusId);
+            return (float) ($metrics['total_sold_kg'] ?? 0.0);
+        }
+
         return (float) SaleItem::join('sales', 'sale_items.sale_id', '=', 'sales.id')
             ->when($campusId, fn($q) => $q->where('sales.campus_id', $campusId))
             ->when($dateFrom, fn($q) => $q->whereDate('sales.sale_date', '>=', $dateFrom))

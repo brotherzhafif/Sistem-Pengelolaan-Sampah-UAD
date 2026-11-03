@@ -107,6 +107,7 @@ class SaleController extends Controller
                 'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
             ]);
 
+            $itemsDelta = [];
             foreach ($itemsToSell as $item) {
                 SaleItem::create([
                     'sale_id' => $sale->id,
@@ -115,6 +116,12 @@ class SaleController extends Controller
                     'price_per_kg' => $item['price_per_kg'],
                     'subtotal' => $item['subtotal'],
                 ]);
+
+                $itemsDelta[] = [
+                    'waste_type_id' => $item['waste_type_id'],
+                    'weighed_delta' => 0.0,
+                    'sold_delta' => (float) $item['weight_kg'],
+                ];
             }
 
             // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
@@ -124,6 +131,8 @@ class SaleController extends Controller
                 referenceId: $sale->id,
                 action: 'create',
                 soldDelta: $totalWeightSold,
+                salesRevenueDelta: $totalAmount,
+                items: $itemsDelta,
                 notes: "Penjualan sampah anorganik terpilah #{$sale->id}"
             );
         });
@@ -241,14 +250,35 @@ class SaleController extends Controller
         }
 
         $totalAmount = array_sum(array_column($itemsToSell, 'subtotal'));
+        $oldTotalAmount = (float) $sale->total_amount;
+        $deltaAmount = $totalAmount - $oldTotalAmount;
+
         $oldWeightSold = (float) $sale->items->sum('weight_kg');
+        $oldItemsByType = $sale->items->pluck('weight_kg', 'waste_type_id')->map(fn($w) => (float)$w)->toArray();
         $newWeightSold = array_sum(array_column($itemsToSell, 'weight_kg'));
         $deltaSold = $newWeightSold - $oldWeightSold;
+
+        $newItemsByType = [];
+        foreach ($itemsToSell as $it) {
+            $newItemsByType[(int) $it['waste_type_id']] = ($newItemsByType[(int) $it['waste_type_id']] ?? 0.0) + (float) $it['weight_kg'];
+        }
+        $allTypeIds = array_unique(array_merge(array_keys($oldItemsByType), array_keys($newItemsByType)));
+        $itemsDelta = [];
+        foreach ($allTypeIds as $tId) {
+            $diff = ($newItemsByType[$tId] ?? 0.0) - ($oldItemsByType[$tId] ?? 0.0);
+            if (abs($diff) > 0.0001) {
+                $itemsDelta[] = [
+                    'waste_type_id' => $tId,
+                    'weighed_delta' => 0.0,
+                    'sold_delta' => $diff,
+                ];
+            }
+        }
 
         $oldDate = $sale->sale_date?->format('Y-m-d');
         $newDate = $data['sale_date'];
 
-        DB::transaction(function () use ($sale, $data, $targetCampusId, $totalAmount, $itemsToSell, $oldDate, $newDate, $deltaSold) {
+        DB::transaction(function () use ($sale, $data, $targetCampusId, $totalAmount, $itemsToSell, $oldDate, $newDate, $deltaSold, $deltaAmount, $itemsDelta) {
             $sale->update([
                 'campus_id' => $targetCampusId,
                 'buyer_id' => (int) $data['buyer_id'],
@@ -276,6 +306,8 @@ class SaleController extends Controller
                 referenceId: $sale->id,
                 action: 'update',
                 soldDelta: $deltaSold,
+                salesRevenueDelta: $deltaAmount,
+                items: $itemsDelta,
                 notes: "Pembaruan bobot penjualan sampah #{$sale->id}"
             );
 
@@ -353,21 +385,31 @@ class SaleController extends Controller
         }
 
         $totalWeight = (float) $sale->items->sum('weight_kg');
+        $totalAmount = (float) $sale->total_amount;
 
         ActivityLog::record(
             module: 'sales',
             action: 'delete',
-            description: "Menghapus transaksi penjualan sampah (#{$sale->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg senilai Rp " . number_format((float) $sale->total_amount, 0, ',', '.'),
+            description: "Menghapus transaksi penjualan sampah (#{$sale->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg senilai Rp " . number_format($totalAmount, 0, ',', '.'),
             properties: [
                 'sale_id' => $sale->id,
                 'campus_id' => $sale->campus_id,
                 'total_weight' => $totalWeight,
-                'total_amount' => (float) $sale->total_amount,
+                'total_amount' => $totalAmount,
             ],
             campusId: $sale->campus_id
         );
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($sale, $totalWeight) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($sale, $totalWeight, $totalAmount) {
+            $itemsDelta = [];
+            foreach ($sale->items as $it) {
+                $itemsDelta[] = [
+                    'waste_type_id' => (int) $it->waste_type_id,
+                    'weighed_delta' => 0.0,
+                    'sold_delta' => -(float) $it->weight_kg,
+                ];
+            }
+
             $sale->items()->delete();
             $sale->delete(); // Observer otomatis hapus jurnal keuangan & sinkronkan buku besar
 
@@ -378,6 +420,8 @@ class SaleController extends Controller
                 referenceId: $sale->id,
                 action: 'delete',
                 soldDelta: -$totalWeight,
+                salesRevenueDelta: -$totalAmount,
+                items: $itemsDelta,
                 notes: "Penghapusan transaksi penjualan #{$sale->id} (stok dikembalikan)"
             );
         });

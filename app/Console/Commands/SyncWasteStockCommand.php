@@ -63,18 +63,34 @@ class SyncWasteStockCommand extends Command
             return;
         }
 
-        $headers = ['ID', 'Unit Kampus', 'Total Masuk (Kg)', 'Total Terjual (Kg)', 'Total Residu Diangkut (Kg)', 'Sisa Stok (Kg)', 'Terakhir Diperbarui'];
+        $headers = [
+            'ID',
+            'Unit Kampus',
+            'Total Masuk (Kg)',
+            'Terjual (Kg)',
+            'Pendapatan Jual (Rp)',
+            'Residu Diangkut (Kg)',
+            'Biaya Angkut (Rp)',
+            'Stok Siap Jual (Kg)',
+            'Potensi Jual (Rp)',
+            'Sisa Residu (Kg)',
+            'Total Sisa (Kg)'
+        ];
         $rows = [];
 
         foreach ($summaries as $s) {
             $rows[] = [
                 $s->id,
                 $s->campus?->name ?? "Kampus #{$s->campus_id}",
-                number_format((float) $s->total_weighed_kg, 2, ',', '.'),
-                number_format((float) $s->total_sold_kg, 2, ',', '.'),
-                number_format((float) $s->total_picked_up_kg, 2, ',', '.'),
-                number_format((float) $s->current_stock_kg, 2, ',', '.'),
-                $s->updated_at?->format('d/m/Y H:i:s') ?? '-',
+                number_format((float) $s->total_weighed_kg, 1, ',', '.'),
+                number_format((float) $s->total_sold_kg, 1, ',', '.'),
+                'Rp ' . number_format((float) $s->total_sales_revenue, 0, ',', '.'),
+                number_format((float) $s->total_picked_up_kg, 1, ',', '.'),
+                'Rp ' . number_format((float) $s->total_pickup_cost, 0, ',', '.'),
+                number_format((float) $s->sellable_stock_kg, 1, ',', '.'),
+                'Rp ' . number_format((float) $s->potential_revenue, 0, ',', '.'),
+                number_format((float) $s->residual_stock_kg, 1, ',', '.'),
+                number_format((float) $s->current_stock_kg, 1, ',', '.'),
             ];
         }
 

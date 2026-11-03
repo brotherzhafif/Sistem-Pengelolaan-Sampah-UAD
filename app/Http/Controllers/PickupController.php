@@ -99,6 +99,7 @@ class PickupController extends Controller
                 referenceId: $pickup->id,
                 action: 'create',
                 pickedUpDelta: $volume,
+                pickupCostDelta: $totalCost,
                 notes: "Pengangkutan residu ke TPA/Vendor #{$pickup->id}"
             );
         });
@@ -198,8 +199,10 @@ class PickupController extends Controller
         $newDate = $data['pickup_date'];
         $oldVolume = (float) $pickup->volume_kg;
         $deltaPickedUp = $newVolume - $oldVolume;
+        $oldCost = (float) $pickup->total_cost;
+        $deltaCost = $newTotalCost - $oldCost;
 
-        DB::transaction(function () use ($pickup, $data, $targetCampusId, $newVolume, $newCostPerKg, $newTotalCost, $oldDate, $newDate, $deltaPickedUp) {
+        DB::transaction(function () use ($pickup, $data, $targetCampusId, $newVolume, $newCostPerKg, $newTotalCost, $oldDate, $newDate, $deltaPickedUp, $deltaCost) {
             $pickup->update([
                 'campus_id' => $targetCampusId,
                 'vendor_id' => (int) $data['vendor_id'],
@@ -219,6 +222,7 @@ class PickupController extends Controller
                 referenceId: $pickup->id,
                 action: 'update',
                 pickedUpDelta: $deltaPickedUp,
+                pickupCostDelta: $deltaCost,
                 notes: "Pembaruan volume pengangkutan residu #{$pickup->id}"
             );
 
@@ -300,7 +304,7 @@ class PickupController extends Controller
         $pickupId = (int) $pickup->id;
         $totalCost = (float) $pickup->total_cost;
 
-        DB::transaction(function () use ($pickup, $campusId, $pickupId, $volumeKg) {
+        DB::transaction(function () use ($pickup, $campusId, $pickupId, $volumeKg, $totalCost) {
             $pickup->delete(); // Observer otomatis hapus jurnal debet keuangan & re-sync buku besar
 
             WasteStockSummary::applyMutation(
@@ -309,6 +313,7 @@ class PickupController extends Controller
                 referenceId: $pickupId,
                 action: 'delete',
                 pickedUpDelta: -$volumeKg,
+                pickupCostDelta: -$totalCost,
                 notes: "Penghapusan data pengangkutan residu #{$pickupId} (stok residu dikembalikan)"
             );
         });

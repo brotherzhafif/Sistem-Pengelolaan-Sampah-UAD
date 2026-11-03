@@ -56,6 +56,7 @@ class WipeTransactionsCommand extends Command
             'buku_besar',
             'kap_surveys',
             'waste_stock_mutations',
+            'waste_type_stock_summaries',
             'waste_stock_summaries',
         ];
 

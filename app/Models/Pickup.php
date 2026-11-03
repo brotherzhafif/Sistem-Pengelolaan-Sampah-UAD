@@ -113,6 +113,11 @@ class Pickup extends Model
      */
     public static function getTotalCost(?int $campusId, ?string $dateFrom, ?string $dateTo): float
     {
+        if (empty($dateFrom) && empty($dateTo)) {
+            $metrics = WasteStockSummary::getMetrics($campusId);
+            return (float) ($metrics['total_pickup_cost'] ?? 0.0);
+        }
+
         return (float) static::forCampus($campusId)
             ->when($dateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $dateFrom))
             ->when($dateTo, fn($q) => $q->whereDate('pickup_date', '<=', $dateTo))
@@ -124,6 +129,11 @@ class Pickup extends Model
      */
     public static function getTotalVolume(?int $campusId, ?string $dateFrom, ?string $dateTo): float
     {
+        if (empty($dateFrom) && empty($dateTo)) {
+            $metrics = WasteStockSummary::getMetrics($campusId);
+            return (float) ($metrics['total_picked_up_kg'] ?? 0.0);
+        }
+
         return (float) static::forCampus($campusId)
             ->when($dateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $dateFrom))
             ->when($dateTo, fn($q) => $q->whereDate('pickup_date', '<=', $dateTo))

@@ -98,6 +98,18 @@ class WeighingController extends Controller
                 }
             }
 
+            $itemsDelta = [];
+            foreach ($items as $it) {
+                $w = !empty($it['weight_kg']) ? floatval($it['weight_kg']) : 0;
+                if ($w > 0) {
+                    $itemsDelta[] = [
+                        'waste_type_id' => (int) $it['waste_type_id'],
+                        'weighed_delta' => $w,
+                        'sold_delta' => 0.0,
+                    ];
+                }
+            }
+
             // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
             WasteStockSummary::applyMutation(
                 campusId: $campusToSave,
@@ -105,6 +117,7 @@ class WeighingController extends Controller
                 referenceId: $session->id,
                 action: 'create',
                 weighedDelta: $totalSessionWeight,
+                items: $itemsDelta,
                 notes: "Pencatatan penimbangan sampah harian #{$session->id}"
             );
         });
@@ -225,10 +238,11 @@ class WeighingController extends Controller
         }
 
         $oldSessionWeight = (float) $session->items->sum('weight_kg');
+        $oldItemsByType = $session->items->pluck('weight_kg', 'waste_type_id')->map(fn($w) => (float)$w)->toArray();
         $oldCampusId = $session->campus_id;
         $newSessionWeight = 0.0;
 
-        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $data, $items, $targetCampusId, $oldCampusId, $oldSessionWeight, &$newSessionWeight) {
+        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $data, $items, $targetCampusId, $oldCampusId, $oldSessionWeight, $oldItemsByType, &$newSessionWeight) {
             $session->update([
                 'campus_id' => $targetCampusId,
                 'waste_source_id' => !empty($data['waste_source_id']) ? (int) $data['waste_source_id'] : null,
@@ -239,18 +253,36 @@ class WeighingController extends Controller
             // Re-sync items
             $session->items()->delete();
 
+            $newItemsByType = [];
             foreach ($items as $item) {
                 $weight = !empty($item['weight_kg']) ? floatval($item['weight_kg']) : 0;
                 $volume = !empty($item['volume_m3']) ? floatval($item['volume_m3']) : null;
 
                 if ($weight > 0) {
                     $newSessionWeight += $weight;
+                    $wTypeId = (int) $item['waste_type_id'];
+                    $newItemsByType[$wTypeId] = ($newItemsByType[$wTypeId] ?? 0.0) + $weight;
+
                     WeighingItem::create([
                         'weighing_session_id' => $session->id,
-                        'waste_type_id' => (int) $item['waste_type_id'],
+                        'waste_type_id' => $wTypeId,
                         'weight_kg' => $weight,
                         'volume_m3' => $volume,
                     ]);
+                }
+            }
+
+            // Hitung delta per waste_type
+            $allTypeIds = array_unique(array_merge(array_keys($oldItemsByType), array_keys($newItemsByType)));
+            $itemsDelta = [];
+            foreach ($allTypeIds as $tId) {
+                $diff = ($newItemsByType[$tId] ?? 0.0) - ($oldItemsByType[$tId] ?? 0.0);
+                if (abs($diff) > 0.0001) {
+                    $itemsDelta[] = [
+                        'waste_type_id' => $tId,
+                        'weighed_delta' => $diff,
+                        'sold_delta' => 0.0,
+                    ];
                 }
             }
 
@@ -263,15 +295,34 @@ class WeighingController extends Controller
                     referenceId: $session->id,
                     action: 'update',
                     weighedDelta: $deltaWeighed,
+                    items: $itemsDelta,
                     notes: "Pembaruan bobot penimbangan #{$session->id}"
                 );
             } else {
+                $oldItemsRemoval = [];
+                foreach ($oldItemsByType as $tId => $w) {
+                    $oldItemsRemoval[] = [
+                        'waste_type_id' => $tId,
+                        'weighed_delta' => -$w,
+                        'sold_delta' => 0.0,
+                    ];
+                }
+                $newItemsAddition = [];
+                foreach ($newItemsByType as $tId => $w) {
+                    $newItemsAddition[] = [
+                        'waste_type_id' => $tId,
+                        'weighed_delta' => $w,
+                        'sold_delta' => 0.0,
+                    ];
+                }
+
                 WasteStockSummary::applyMutation(
                     campusId: $oldCampusId,
                     referenceType: 'weighing',
                     referenceId: $session->id,
                     action: 'update',
                     weighedDelta: -$oldSessionWeight,
+                    items: $oldItemsRemoval,
                     notes: "Pemindahan penimbangan #{$session->id} ke unit kampus lain"
                 );
                 WasteStockSummary::applyMutation(
@@ -280,6 +331,7 @@ class WeighingController extends Controller
                     referenceId: $session->id,
                     action: 'update',
                     weighedDelta: $newSessionWeight,
+                    items: $newItemsAddition,
                     notes: "Penerimaan penimbangan #{$session->id} dari unit kampus lain"
                 );
             }
@@ -354,6 +406,15 @@ class WeighingController extends Controller
             );
 
             \Illuminate\Support\Facades\DB::transaction(function () use ($session, $totalWeight) {
+                $itemsDelta = [];
+                foreach ($session->items as $it) {
+                    $itemsDelta[] = [
+                        'waste_type_id' => (int) $it->waste_type_id,
+                        'weighed_delta' => -(float) $it->weight_kg,
+                        'sold_delta' => 0.0,
+                    ];
+                }
+
                 $session->items()->delete();
                 $session->delete();
 
@@ -364,6 +425,7 @@ class WeighingController extends Controller
                     referenceId: $session->id,
                     action: 'delete',
                     weighedDelta: -$totalWeight,
+                    items: $itemsDelta,
                     notes: "Penghapusan seluruh sesi penimbangan #{$session->id}"
                 );
             });
@@ -408,6 +470,18 @@ class WeighingController extends Controller
                 $session->delete();
             }
 
+            $itemsDelta = [];
+            foreach ($deductionInfo['items_breakdown'] as $b) {
+                $deduct = (float) $b['deductible_weight'];
+                if ($deduct > 0.0001) {
+                    $itemsDelta[] = [
+                        'waste_type_id' => (int) $b['waste_type_id'],
+                        'weighed_delta' => -$deduct,
+                        'sold_delta' => 0.0,
+                    ];
+                }
+            }
+
             // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
             WasteStockSummary::applyMutation(
                 campusId: $session->campus_id,
@@ -415,6 +489,7 @@ class WeighingController extends Controller
                 referenceId: $session->id,
                 action: 'delete',
                 weighedDelta: -$deductedKg,
+                items: $itemsDelta,
                 notes: "Pemotongan sisa bobot penimbangan #{$session->id} yang belum terjual/diangkut"
             );
         });
