@@ -18,6 +18,8 @@ class Index extends Component
     public string $sortBy = 'stock';
     public string $sortDirection = 'desc';
 
+    public ?int $selectedWasteTypeId = null;
+
     public function mount(): void
     {
         $user = auth()->user();
@@ -48,6 +50,16 @@ class Index extends Component
         $this->filterSellable = 'all';
         $this->sortBy = 'stock';
         $this->sortDirection = 'desc';
+    }
+
+    public function viewStockDetail(int $wasteTypeId): void
+    {
+        $this->selectedWasteTypeId = $wasteTypeId;
+    }
+
+    public function closeDetailModal(): void
+    {
+        $this->selectedWasteTypeId = null;
     }
 
     public function render()
@@ -99,11 +111,41 @@ class Index extends Component
             default => $items->sortBy('available_stock_kg', descending: true),
         };
 
+        // Detail data if requested
+        $detailData = null;
+        if ($this->selectedWasteTypeId) {
+            $detailData = $items->firstWhere('waste_type_id', $this->selectedWasteTypeId);
+            if (!$detailData) {
+                $type = WasteType::find($this->selectedWasteTypeId);
+                if ($type) {
+                    $weighed = $type->weighingItems()
+                        ->when($campusQueryId, fn ($q) => $q->whereHas('weighingSession', fn ($sq) => $sq->where('campus_id', $campusQueryId)))
+                        ->sum('weight_kg');
+                    $sold = $type->saleItems()
+                        ->when($campusQueryId, fn ($q) => $q->whereHas('sale', fn ($sq) => $sq->where('campus_id', $campusQueryId)))
+                        ->sum('weight_kg');
+                    $stock = WasteType::getAvailableStock($type->id, $campusQueryId);
+                    $detailData = [
+                        'waste_type_id' => $type->id,
+                        'waste_name' => $type->name,
+                        'waste_category' => $type->category,
+                        'is_sellable' => $type->is_sellable,
+                        'default_price_per_kg' => (float) $type->default_price_per_kg,
+                        'total_weighed_kg' => (float) $weighed,
+                        'total_sold_kg' => (float) $sold,
+                        'available_stock_kg' => (float) $stock,
+                        'potential_revenue' => (float) ($stock * $type->default_price_per_kg),
+                    ];
+                }
+            }
+        }
+
         return view('livewire.pages.stock.index', [
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::getActiveCampuses(),
             'stockSummary' => $stockSummary,
             'items' => $items,
+            'detailData' => $detailData,
         ]);
     }
 }
