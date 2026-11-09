@@ -92,9 +92,8 @@ class WeighingSession extends Model
     }
 
     /**
-     * Menghitung rincian penyesuaian penghapusan data penimbangan:
-     * - Berapa bobot yang dapat dihapus/dipotong (belum terjual/diangkut)
-     * - Berapa bobot yang harus dipertahankan (karena sudah tercatat pada transaksi penjualan/pengangkutan)
+     * Menghitung status keterikatan data penimbangan dengan transaksi penjualan/pengangkutan:
+     * Jika ada sebagian atau seluruh bobot yang sudah terjual/diangkut, maka sesi tidak boleh dihapus.
      */
     public function getDeductionSummary(): array
     {
@@ -102,9 +101,7 @@ class WeighingSession extends Model
         $items = $this->items()->with('wasteType')->get();
         
         $totalSessionWeight = 0.0;
-        $totalDeductible = 0.0;
         $totalRetained = 0.0;
-        $itemsBreakdown = [];
         $features = [];
 
         // Hitung stok tersedia untuk residu di kampus ini
@@ -127,9 +124,9 @@ class WeighingSession extends Model
                 $available = $availableResidual;
             }
 
-            // Jumlah yang bisa dipotong (yang belum terjual / terangkut)
+            // Jumlah yang bisa dipotong/dihapus jika ada sisa stok
             $deductible = min($weight, max(0.0, $available));
-            // Jumlah yang harus dipertahankan (sudah tercatat transaksi)
+            // Jumlah yang sudah terikat/terpakai transaksi penjualan/pengangkutan
             $retained = max(0.0, $weight - $deductible);
 
             if ($retained > 0.0001) {
@@ -140,31 +137,18 @@ class WeighingSession extends Model
                 }
             }
 
-            $totalDeductible += $deductible;
             $totalRetained += $retained;
-
-            $itemsBreakdown[] = [
-                'item_id' => $item->id,
-                'waste_type_id' => $item->waste_type_id,
-                'waste_type_name' => $item->wasteType?->name ?? 'Sampah',
-                'current_weight' => $weight,
-                'deductible_weight' => $deductible,
-                'retained_weight' => $retained,
-                'is_sellable' => $isSellable,
-            ];
         }
 
         $featuresList = array_keys($features);
+        $canFullyDelete = $totalRetained <= 0.0001;
 
         return [
             'total_session_weight' => $totalSessionWeight,
-            'total_deductible' => $totalDeductible,
             'total_retained' => $totalRetained,
-            'can_fully_delete' => $totalRetained <= 0.0001,
-            'can_partially_deduct' => $totalRetained > 0.0001 && $totalDeductible > 0.0001,
-            'is_fully_locked' => $totalDeductible <= 0.0001 && $totalSessionWeight > 0.0001,
+            'can_fully_delete' => $canFullyDelete,
+            'is_fully_locked' => !$canFullyDelete,
             'features' => $featuresList,
-            'items_breakdown' => $itemsBreakdown,
             'primary_url' => in_array('Penjualan Sampah', $featuresList) ? route('sales') : (in_array('Pengangkutan Residu', $featuresList) ? route('pickups') : null),
             'primary_label' => in_array('Penjualan Sampah', $featuresList) ? 'Lihat Penjualan' : (in_array('Pengangkutan Residu', $featuresList) ? 'Lihat Pengangkutan' : null),
         ];

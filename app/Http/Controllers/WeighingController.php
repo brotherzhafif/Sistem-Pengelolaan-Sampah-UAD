@@ -379,95 +379,30 @@ class WeighingController extends Controller
 
         $deductionInfo = $session->getDeductionSummary();
 
-        // 1. Kasus C: Seluruh sampah telah habis terjual / diangkut (0 kg sisa)
-        if ($deductionInfo['is_fully_locked']) {
+        // 1. Jika terikat dengan transaksi penjualan / pengangkutan, tolak penghapusan (Strict Delete)
+        if (!$deductionInfo['can_fully_delete']) {
             $featuresStr = !empty($deductionInfo['features']) ? implode(' & ', $deductionInfo['features']) : 'Penjualan / Pengangkutan';
             return [
                 'success' => false,
-                'message' => "Tidak dapat menghapus penimbangan (#{$session->id}): Seluruh sampah (" . number_format($deductionInfo['total_session_weight'], 1, ',', '.') . " kg) telah habis tercatat pada {$featuresStr}. Silakan hapus transaksi terkait terlebih dahulu jika data penimbangan ini keliru.",
+                'message' => "Tidak dapat menghapus penimbangan (#{$session->id}): Sebagian atau seluruh sampah pada sesi ini telah tercatat pada transaksi {$featuresStr}. Silakan hapus/batalkan transaksi terkait terlebih dahulu jika data penimbangan ini keliru.",
             ];
         }
 
-        // 2. Kasus A: Belum ada yang terjual/diangkut sama sekali -> Hapus bersih 100%
-        if ($deductionInfo['can_fully_delete']) {
-            $totalWeight = $deductionInfo['total_session_weight'];
+        // 2. Belum ada yang terjual/diangkut sama sekali -> Hapus bersih 100%
+        $totalWeight = $deductionInfo['total_session_weight'];
 
-            \Illuminate\Support\Facades\DB::transaction(function () use ($session, $totalWeight) {
-                $itemsDelta = [];
-                foreach ($session->items as $it) {
-                    $itemsDelta[] = [
-                        'waste_type_id' => (int) $it->waste_type_id,
-                        'weighed_delta' => -(float) $it->weight_kg,
-                        'sold_delta' => 0.0,
-                    ];
-                }
-
-                $session->items()->delete();
-                $session->delete();
-
-                // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
-                WasteStockSummary::applyMutation(
-                    campusId: $session->campus_id,
-                    referenceType: 'weighing',
-                    referenceId: $session->id,
-                    action: 'delete',
-                    weighedDelta: -$totalWeight,
-                    items: $itemsDelta,
-                    notes: "Penghapusan seluruh sesi penimbangan #{$session->id}"
-                );
-            });
-
-            ActivityLog::record(
-                module: 'weighing',
-                action: 'delete',
-                description: "Menghapus seluruh sesi penimbangan sampah (#{$session->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg",
-                properties: [
-                    'session_id' => $session->id,
-                    'campus_id' => $session->campus_id,
-                    'weigh_date' => $session->weigh_date,
-                    'total_weight' => $totalWeight,
-                ],
-                campusId: $session->campus_id
-            );
-
-            return [
-                'success' => true,
-                'message' => 'Data sesi penimbangan berhasil dihapus seluruhnya (' . number_format($totalWeight, 1, ',', '.') . ' kg).',
-            ];
-        }
-
-        // 3. Kasus B: Sebagian sudah terjual/diangkut -> Potong bagian yang belum terjual/diangkut
-        $deductedKg = $deductionInfo['total_deductible'];
-        $retainedKg = $deductionInfo['total_retained'];
-
-        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $deductionInfo, $deductedKg) {
-            foreach ($deductionInfo['items_breakdown'] as $b) {
-                $item = \App\Models\WeighingItem::find($b['item_id']);
-                if (!$item) continue;
-
-                if ($b['retained_weight'] <= 0.0001) {
-                    $item->delete();
-                } else {
-                    $item->update(['weight_kg' => $b['retained_weight']]);
-                }
-            }
-
-            // Jika semua item terhapus, hapus juga sesinya
-            if ($session->items()->count() === 0) {
-                $session->delete();
-            }
-
+        \Illuminate\Support\Facades\DB::transaction(function () use ($session, $totalWeight) {
             $itemsDelta = [];
-            foreach ($deductionInfo['items_breakdown'] as $b) {
-                $deduct = (float) $b['deductible_weight'];
-                if ($deduct > 0.0001) {
-                    $itemsDelta[] = [
-                        'waste_type_id' => (int) $b['waste_type_id'],
-                        'weighed_delta' => -$deduct,
-                        'sold_delta' => 0.0,
-                    ];
-                }
+            foreach ($session->items as $it) {
+                $itemsDelta[] = [
+                    'waste_type_id' => (int) $it->waste_type_id,
+                    'weighed_delta' => -(float) $it->weight_kg,
+                    'sold_delta' => 0.0,
+                ];
             }
+
+            $session->items()->delete();
+            $session->delete();
 
             // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
             WasteStockSummary::applyMutation(
@@ -475,28 +410,28 @@ class WeighingController extends Controller
                 referenceType: 'weighing',
                 referenceId: $session->id,
                 action: 'delete',
-                weighedDelta: -$deductedKg,
+                weighedDelta: -$totalWeight,
                 items: $itemsDelta,
-                notes: "Pemotongan sisa bobot penimbangan #{$session->id} yang belum terjual/diangkut"
+                notes: "Penghapusan seluruh sesi penimbangan #{$session->id}"
             );
         });
 
         ActivityLog::record(
             module: 'weighing',
-            action: 'update',
-            description: "Menyesuaikan penimbangan sampah (#{$session->id}): Memotong " . number_format($deductedKg, 1, ',', '.') . " kg (belum terjual/diangkut) dan menyisakan " . number_format($retainedKg, 1, ',', '.') . " kg (sudah terikat transaksi)",
+            action: 'delete',
+            description: "Menghapus seluruh sesi penimbangan sampah (#{$session->id}) seberat " . number_format($totalWeight, 1, ',', '.') . " kg",
             properties: [
                 'session_id' => $session->id,
                 'campus_id' => $session->campus_id,
-                'deducted_kg' => $deductedKg,
-                'retained_kg' => $retainedKg,
+                'weigh_date' => $session->weigh_date,
+                'total_weight' => $totalWeight,
             ],
             campusId: $session->campus_id
         );
 
         return [
             'success' => true,
-            'message' => "Data penimbangan berhasil disesuaikan: Berat dipotong sebesar " . number_format($deductedKg, 1, ',', '.') . " kg (yang belum terjual/diangkut) dan menyisakan " . number_format($retainedKg, 1, ',', '.') . " kg karena telah tercatat pada transaksi penjualan/pengangkutan.",
+            'message' => 'Data sesi penimbangan berhasil dihapus seluruhnya (' . number_format($totalWeight, 1, ',', '.') . ' kg).',
         ];
     }
 }

@@ -329,11 +329,9 @@
                                             <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
                                                 <div class="col-span-4">
                                                     <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
-                                                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">
-                                                        Stok: <strong class="text-emerald-700 font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</strong>
-                                                    </div>
-                                                    <div class="text-[10px] text-rose-600 font-bold mt-0.5">
-                                                        Maks. input: {{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg
+                                                    <div class="inline-flex items-center gap-1 px-1.5 py-0.5 mt-1 rounded bg-emerald-50 text-[10px] font-semibold text-emerald-800 border border-emerald-200/60">
+                                                        <span>Stok:</span>
+                                                        <span class="font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</span>
                                                     </div>
                                                 </div>
                                                 <div class="col-span-3">
@@ -347,13 +345,14 @@
                                                                    $el.value = maxVal;
                                                                    $wire.set('saleItems.{{ $index }}.weight_kg', maxVal);
                                                                    $wire.updateSubtotal({{ $index }});
+                                                                   window.dispatchEvent(new CustomEvent('toast', {
+                                                                       detail: { message: 'Bobot ' + @js($item['waste_name']) + ' disesuaikan ke maksimal stok (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning' }
+                                                                   }));
                                                                }
                                                            "
                                                            placeholder="0.0" 
                                                            class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
-                                                    <div class="text-[10px] text-rose-500 font-medium text-right mt-0.5">
-                                                        Maks: {{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg
-                                                    </div>
+
                                                     @error("saleItems.{$index}.weight_kg")
                                                         <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
                                                     @enderror
@@ -506,15 +505,27 @@
                                             <div class="grid grid-cols-12 gap-2 px-3 py-2.5 items-center hover:bg-slate-50/50 transition">
                                                 <div class="col-span-4">
                                                     <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
-                                                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">
-                                                        Maks: <strong class="text-emerald-700 font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</strong>
-                                                        <span class="text-[9px] text-slate-400 block">(Sisa TPS + Terjual ini)</span>
+                                                    <div class="inline-flex items-center gap-1 px-1.5 py-0.5 mt-1 rounded bg-emerald-50 text-[10px] font-semibold text-emerald-800 border border-emerald-200/60" title="Sisa TPS + Terjual di transaksi ini">
+                                                        <span>Maks:</span>
+                                                        <span class="font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</span>
                                                     </div>
                                                 </div>
                                                 <div class="col-span-3">
                                                     <input type="number" step="0.01" min="0" max="{{ $item['available_stock_kg'] }}"
                                                            wire:model="editItems.{{ $index }}.weight_kg" 
                                                            wire:input="updateEditSubtotal({{ $index }})"
+                                                           x-on:input="
+                                                               let maxVal = {{ (float) $item['available_stock_kg'] }};
+                                                               let val = parseFloat($el.value);
+                                                               if (!isNaN(val) && val > maxVal) {
+                                                                   $el.value = maxVal;
+                                                                   $wire.set('editItems.{{ $index }}.weight_kg', maxVal);
+                                                                   $wire.updateEditSubtotal({{ $index }});
+                                                                   window.dispatchEvent(new CustomEvent('toast', {
+                                                                       detail: { message: 'Bobot ' + @js($item['waste_name']) + ' disesuaikan ke maksimal (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning' }
+                                                                   }));
+                                                               }
+                                                           "
                                                            placeholder="0.0" 
                                                            class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
                                                     @error("editItems.{$index}.weight_kg")

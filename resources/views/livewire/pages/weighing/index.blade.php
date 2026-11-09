@@ -82,6 +82,78 @@
         </div>
     </div>
 
+    <!-- Rekapitulasi Rincian Stok Per Jenis Sampah (Accordion / Card) -->
+    <div x-data="{ showTypeTable: true }" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="px-5 py-3.5 bg-slate-50/75 border-b border-slate-200/80 flex items-center justify-between cursor-pointer select-none" @click="showTypeTable = !showTypeTable">
+            <div class="flex items-center gap-2.5">
+                <div class="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
+                    </svg>
+                </div>
+                <div>
+                    <h3 class="text-xs font-bold text-slate-900">Rekapitulasi Stok Per Jenis Sampah</h3>
+                    <p class="text-[10px] text-slate-500">Total ditimbang, terjual, dan sisa stok siap jual / residu saat ini</p>
+                </div>
+            </div>
+            <button type="button" class="text-slate-400 hover:text-slate-600 transition p-1">
+                <svg class="w-4 h-4 transform transition-transform duration-200" :class="{ 'rotate-180': !showTypeTable }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+                </svg>
+            </button>
+        </div>
+
+        <div x-show="showTypeTable" x-collapse>
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs table-fixed">
+                    <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
+                        <tr>
+                            <th class="py-2.5 px-4 w-[28%]">Jenis Sampah</th>
+                            <th class="py-2.5 px-3 w-[14%]">Kategori</th>
+                            <th class="py-2.5 px-3 text-right w-[14%]">Total Timbang (kg)</th>
+                            <th class="py-2.5 px-3 text-right w-[14%]">Terjual (kg)</th>
+                            <th class="py-2.5 px-3 text-right w-[15%]">Sisa Stok (kg)</th>
+                            <th class="py-2.5 px-4 text-right w-[15%]">Potensi Nilai (Rp)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-slate-700">
+                        @forelse ($stockSummary['items_breakdown'] ?? [] as $item)
+                            <tr class="hover:bg-slate-50/60 transition">
+                                <td class="py-2 px-4 font-semibold text-slate-800 truncate" title="{{ $item['waste_name'] }}">
+                                    {{ $item['waste_name'] }}
+                                </td>
+                                <td class="py-2 px-3">
+                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold 
+                                        {{ $item['waste_category'] === 'Organik' ? 'bg-emerald-50 text-emerald-700' : '' }}
+                                        {{ $item['waste_category'] === 'Anorganik' ? 'bg-sky-50 text-sky-700' : '' }}
+                                        {{ $item['waste_category'] === 'Residu' ? 'bg-amber-50 text-amber-700' : '' }}">
+                                        {{ $item['waste_category'] }}
+                                    </span>
+                                </td>
+                                <td class="py-2 px-3 text-right font-mono text-slate-700">
+                                    {{ number_format($item['total_weighed_kg'], 1, ',', '.') }}
+                                </td>
+                                <td class="py-2 px-3 text-right font-mono text-slate-700">
+                                    {{ number_format($item['total_sold_kg'], 1, ',', '.') }}
+                                </td>
+                                <td class="py-2 px-3 text-right font-mono font-bold {{ $item['available_stock_kg'] > 0 ? 'text-emerald-700' : 'text-slate-400' }}">
+                                    {{ number_format($item['available_stock_kg'], 1, ',', '.') }}
+                                </td>
+                                <td class="py-2 px-4 text-right font-mono text-emerald-800 font-medium">
+                                    {{ $item['is_sellable'] ? 'Rp ' . number_format($item['potential_revenue'], 0, ',', '.') : '-' }}
+                                </td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td colspan="6" class="py-4 text-center text-slate-400 text-xs">Belum ada data rincian stok jenis sampah.</td>
+                            </tr>
+                        @endforelse
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
     <!-- Filter & Search Toolbar -->
     <div class="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
@@ -537,18 +609,18 @@
                      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
                         @if ($deleteBindingInfo && !empty($deleteBindingInfo['is_fully_locked']))
-                            <!-- Kasus C: Seluruh sampah sudah habis terjual / diangkut -->
+                            <!-- Kasus: Sampah sudah terikat transaksi penjualan / pengangkutan -> Tolak Hapus -->
                             <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-4">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                                 </svg>
                             </div>
-                            <h3 class="text-base font-bold text-slate-900">Seluruh Sampah Telah Terjual/Diangkut</h3>
+                            <h3 class="text-base font-bold text-slate-900">Tidak Dapat Menghapus Penimbangan</h3>
                             <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                                Seluruh bobot sampah pada sesi ini (<span class="font-bold text-slate-800 font-mono">{{ number_format($deleteBindingInfo['total_session_weight'], 1, ',', '.') }} kg</span>) sudah habis tercatat pada transaksi <span class="font-bold text-slate-800">{{ implode(' & ', $deleteBindingInfo['features'] ?? ['Penjualan']) }}</span> (sisa stok: 0 kg).
+                                Sampah pada sesi penimbangan ini (<span class="font-bold text-slate-800 font-mono">{{ number_format($deleteBindingInfo['total_session_weight'], 1, ',', '.') }} kg</span>) telah tercatat pada transaksi <span class="font-bold text-slate-800">{{ implode(' & ', $deleteBindingInfo['features'] ?? ['Penjualan / Pengangkutan']) }}</span>.
                             </p>
                             <div class="mt-3.5 p-3 bg-amber-50/80 border border-amber-200 rounded-xl text-left text-[11px] text-amber-800 leading-relaxed">
-                                Penimbangan ini tidak dapat dikurangi lagi. Jika data penimbangan ini keliru, silakan batalkan/hapus transaksi penjualannya terlebih dahulu.
+                                Data penimbangan yang sudah terikat tidak dapat dihapus. Jika data ini keliru, silakan batalkan/hapus transaksi penjualan atau pengangkutan terkait terlebih dahulu.
                             </div>
                             <div class="flex items-center justify-center gap-3 mt-6">
                                 <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
@@ -562,41 +634,8 @@
                                     </a>
                                 @endif
                             </div>
-                        @elseif ($deleteBindingInfo && !empty($deleteBindingInfo['can_partially_deduct']))
-                            <!-- Kasus B: Sebagian sudah terjual/diangkut -> Potong sisa stok yang belum terjual -->
-                            <div class="w-12 h-12 rounded-full bg-amber-50 border border-amber-200 text-amber-600 flex items-center justify-center mx-auto mb-4">
-                                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 6l3 1m0 0l-3 9a5.002 5.002 0 006.001 0M6 7l3 9M6 7l6-2m6 2l3-1m-3 1l-3 9a5.002 5.002 0 006.001 0M18 7l3 9m-3-9l-6-2m0-2v2m0 16V5m0 16H9m3 0h3" />
-                                </svg>
-                            </div>
-                            <h3 class="text-base font-bold text-slate-900">Potong Sisa Stok Penimbangan?</h3>
-                            <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                                Sebagian sampah dari penimbangan ini telah tercatat pada transaksi <span class="font-bold text-slate-800">{{ implode(' & ', $deleteBindingInfo['features'] ?? ['Penjualan']) }}</span> sebesar <span class="font-bold text-amber-800 font-mono">{{ number_format($deleteBindingInfo['total_retained'], 1, ',', '.') }} kg</span> (dari total <span class="font-bold text-slate-800 font-mono">{{ number_format($deleteBindingInfo['total_session_weight'], 1, ',', '.') }} kg</span>).
-                            </p>
-                            
-                            <div class="mt-3.5 p-3.5 bg-amber-50/90 border border-amber-200 rounded-xl text-left space-y-1.5">
-                                <div class="flex items-center gap-1.5 text-amber-900 text-xs font-bold">
-                                    <svg class="w-4 h-4 text-amber-600 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                    </svg>
-                                    <span>Penyesuaian yang akan dilakukan:</span>
-                                </div>
-                                <ul class="text-[11px] text-amber-800 space-y-1 list-disc list-inside">
-                                    <li>Memotong dan menghapus bobot sebesar <span class="font-bold font-mono text-rose-700">{{ number_format($deleteBindingInfo['total_deductible'], 1, ',', '.') }} kg</span> (stok yang belum terjual/diangkut).</li>
-                                    <li>Menyisakan bobot <span class="font-bold font-mono text-emerald-800">{{ number_format($deleteBindingInfo['total_retained'], 1, ',', '.') }} kg</span> pada penimbangan ini agar riwayat transaksi tetap valid.</li>
-                                </ul>
-                            </div>
-
-                            <div class="flex items-center justify-center gap-3 mt-6">
-                                <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition text-center cursor-pointer">
-                                    Batal
-                                </button>
-                                <button type="button" wire:click="deleteSession" class="w-full py-2.5 px-4 rounded-xl bg-amber-600 hover:bg-amber-700 text-white text-xs font-bold shadow-sm shadow-amber-600/20 transition active:scale-95 cursor-pointer" style="background-color: #d97706; color: #ffffff;">
-                                    Ya, Potong Sisa ({{ number_format($deleteBindingInfo['total_deductible'], 1, ',', '.') }} kg)
-                                </button>
-                            </div>
                         @else
-                            <!-- Kasus A: Belum ada transaksi sama sekali -> Hapus bersih 100% -->
+                            <!-- Kasus: Belum ada transaksi sama sekali -> Hapus bersih 100% -->
                             <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center mx-auto mb-4">
                                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
