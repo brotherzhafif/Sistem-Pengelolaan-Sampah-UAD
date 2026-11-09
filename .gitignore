@@ -26,3 +26,5 @@ Thumbs.db
 __pycache__/
 *.pyc
 *.sql
+.agents/
+skills-lock.json
