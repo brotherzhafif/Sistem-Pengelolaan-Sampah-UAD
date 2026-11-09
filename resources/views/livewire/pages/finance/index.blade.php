@@ -606,7 +606,7 @@ class="space-y-6">
                                     <label class="block text-xs font-bold text-slate-700 mb-1">Nominal (Rp) <span class="text-rose-500">*</span></label>
                                     <div class="relative">
                                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-xs font-bold text-slate-400">Rp</span>
-                                        <input type="number" step="100" min="0" wire:model="editAmount" placeholder="Contoh: 500000" class="w-full text-xs font-mono font-bold border-slate-200 rounded-lg pl-9 pr-3 py-2 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                        <input type="number" step="100" min="0" max="1000000000" wire:model="editAmount" placeholder="Contoh: 500000" class="w-full text-xs font-mono font-bold border-slate-200 rounded-lg pl-9 pr-3 py-2 bg-slate-50 text-slate-900 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
                                     </div>
                                     @error('editAmount') <span class="text-[11px] text-rose-500 mt-1 block">{{ $message }}</span> @enderror
                                 </div>

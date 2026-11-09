@@ -46,5 +46,8 @@
 
         <!-- Global Floating Toast / Snackbar (Bottom Right) -->
         <x-toast-notification />
+
+        <!-- Global Top-Center Floating Input Validation Alert (Top Center) -->
+        <x-top-alert />
     </body>
 </html>

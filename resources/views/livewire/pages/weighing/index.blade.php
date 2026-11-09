@@ -334,13 +334,13 @@
                                                 </div>
                                             </div>
                                             <div class="col-span-3">
-                                                <input type="number" step="0.01" min="0" 
+                                                <input type="number" step="0.01" min="0" max="10000" 
                                                        wire:model="formItems.{{ $index }}.weight_kg" 
                                                        placeholder="0.0" 
                                                        class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
                                             </div>
                                             <div class="col-span-3">
-                                                <input type="number" step="0.001" min="0" 
+                                                <input type="number" step="0.001" min="0" max="1000" 
                                                        wire:model="formItems.{{ $index }}.volume_m3" 
                                                        placeholder="opsional" 
                                                        class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
@@ -488,13 +488,13 @@
                                                 </div>
                                             </div>
                                             <div class="col-span-3">
-                                                <input type="number" step="0.01" min="0" 
+                                                <input type="number" step="0.01" min="0" max="10000" 
                                                        wire:model="editItems.{{ $index }}.weight_kg" 
                                                        placeholder="0.0" 
                                                        class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">
                                             </div>
                                             <div class="col-span-3">
-                                                <input type="number" step="0.001" min="0" 
+                                                <input type="number" step="0.001" min="0" max="1000" 
                                                        wire:model="editItems.{{ $index }}.volume_m3" 
                                                        placeholder="opsional" 
                                                        class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 py-1.5">

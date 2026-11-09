@@ -299,6 +299,9 @@
                                                    $el.value = maxVal;
                                                    $wire.set('formVolumeKg', maxVal);
                                                    $wire.calculateTotalCost();
+                                                    window.dispatchEvent(new CustomEvent('top-alert', {
+                                                        detail: { message: 'Volume angkut disesuaikan ke sisa residu (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning', title: 'Batas Maksimum Residu' }
+                                                    }));
                                                }
                                            "
                                            placeholder="0.0" 
@@ -450,7 +453,18 @@
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Bobot Muatan Residu (kg) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="any" min="0" wire:model.live.debounce.300ms="editVolumeKg" placeholder="Contoh: 125.5" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                    <input type="number" step="any" min="0" max="{{ (float) ($editOldVolumeKg + $editAvailableResidual) }}" wire:model.live.debounce.300ms="editVolumeKg" x-on:input="
+                                                let maxVal = {{ (float) ($editOldVolumeKg + $editAvailableResidual) }};
+                                                let val = parseFloat($el.value);
+                                                if (!isNaN(val) && maxVal > 0 && val > maxVal) {
+                                                    $el.value = maxVal;
+                                                    $wire.set('editVolumeKg', maxVal);
+                                                    $wire.calculateEditTotalCost();
+                                                    window.dispatchEvent(new CustomEvent('top-alert', {
+                                                        detail: { message: 'Volume angkut disesuaikan ke maksimal (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning', title: 'Batas Maksimum Residu' }
+                                                    }));
+                                                }
+                                            " placeholder="Contoh: 125.5" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
                                     <div class="text-[10px] text-slate-500 mt-1 flex items-center justify-between">
                                         <span>Maks: <strong class="text-slate-800 font-mono">{{ number_format($editOldVolumeKg + $editAvailableResidual, 1, ',', '.') }} kg</strong></span>
                                         <span>(Sisa TPS: {{ number_format($editAvailableResidual, 1, ',', '.') }} kg)</span>

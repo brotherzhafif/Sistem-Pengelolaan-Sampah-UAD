@@ -345,7 +345,7 @@
                                                                    $el.value = maxVal;
                                                                    $wire.set('saleItems.{{ $index }}.weight_kg', maxVal);
                                                                    $wire.updateSubtotal({{ $index }});
-                                                                   window.dispatchEvent(new CustomEvent('toast', {
+                                                                   window.dispatchEvent(new CustomEvent('top-alert', {
                                                                        detail: { message: 'Bobot ' + @js($item['waste_name']) + ' disesuaikan ke maksimal stok (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning' }
                                                                    }));
                                                                }
@@ -521,7 +521,7 @@
                                                                    $el.value = maxVal;
                                                                    $wire.set('editItems.{{ $index }}.weight_kg', maxVal);
                                                                    $wire.updateEditSubtotal({{ $index }});
-                                                                   window.dispatchEvent(new CustomEvent('toast', {
+                                                                   window.dispatchEvent(new CustomEvent('top-alert', {
                                                                        detail: { message: 'Bobot ' + @js($item['waste_name']) + ' disesuaikan ke maksimal (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning' }
                                                                    }));
                                                                }
