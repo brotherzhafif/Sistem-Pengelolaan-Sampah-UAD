@@ -82,78 +82,6 @@
         </div>
     </div>
 
-    <!-- Rekapitulasi Rincian Stok Per Jenis Sampah (Accordion / Card) -->
-    <div x-data="{ showTypeTable: true }" class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
-        <div class="px-5 py-3.5 bg-slate-50/75 border-b border-slate-200/80 flex items-center justify-between cursor-pointer select-none" @click="showTypeTable = !showTypeTable">
-            <div class="flex items-center gap-2.5">
-                <div class="w-6 h-6 rounded-md bg-emerald-100 text-emerald-700 flex items-center justify-center text-xs font-bold">
-                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/>
-                    </svg>
-                </div>
-                <div>
-                    <h3 class="text-xs font-bold text-slate-900">Rekapitulasi Stok Per Jenis Sampah</h3>
-                    <p class="text-[10px] text-slate-500">Total ditimbang, terjual, dan sisa stok siap jual / residu saat ini</p>
-                </div>
-            </div>
-            <button type="button" class="text-slate-400 hover:text-slate-600 transition p-1">
-                <svg class="w-4 h-4 transform transition-transform duration-200" :class="{ 'rotate-180': !showTypeTable }" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
-                </svg>
-            </button>
-        </div>
-
-        <div x-show="showTypeTable" x-collapse>
-            <div class="overflow-x-auto">
-                <table class="w-full text-left text-xs table-fixed">
-                    <thead class="bg-slate-50 text-[10px] font-bold text-slate-500 uppercase tracking-wider border-b border-slate-200">
-                        <tr>
-                            <th class="py-2.5 px-4 w-[28%]">Jenis Sampah</th>
-                            <th class="py-2.5 px-3 w-[14%]">Kategori</th>
-                            <th class="py-2.5 px-3 text-right w-[14%]">Total Timbang (kg)</th>
-                            <th class="py-2.5 px-3 text-right w-[14%]">Terjual (kg)</th>
-                            <th class="py-2.5 px-3 text-right w-[15%]">Sisa Stok (kg)</th>
-                            <th class="py-2.5 px-4 text-right w-[15%]">Potensi Nilai (Rp)</th>
-                        </tr>
-                    </thead>
-                    <tbody class="divide-y divide-slate-100 text-slate-700">
-                        @forelse ($stockSummary['items_breakdown'] ?? [] as $item)
-                            <tr class="hover:bg-slate-50/60 transition">
-                                <td class="py-2 px-4 font-semibold text-slate-800 truncate" title="{{ $item['waste_name'] }}">
-                                    {{ $item['waste_name'] }}
-                                </td>
-                                <td class="py-2 px-3">
-                                    <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold 
-                                        {{ $item['waste_category'] === 'Organik' ? 'bg-emerald-50 text-emerald-700' : '' }}
-                                        {{ $item['waste_category'] === 'Anorganik' ? 'bg-sky-50 text-sky-700' : '' }}
-                                        {{ $item['waste_category'] === 'Residu' ? 'bg-amber-50 text-amber-700' : '' }}">
-                                        {{ $item['waste_category'] }}
-                                    </span>
-                                </td>
-                                <td class="py-2 px-3 text-right font-mono text-slate-700">
-                                    {{ number_format($item['total_weighed_kg'], 1, ',', '.') }}
-                                </td>
-                                <td class="py-2 px-3 text-right font-mono text-slate-700">
-                                    {{ number_format($item['total_sold_kg'], 1, ',', '.') }}
-                                </td>
-                                <td class="py-2 px-3 text-right font-mono font-bold {{ $item['available_stock_kg'] > 0 ? 'text-emerald-700' : 'text-slate-400' }}">
-                                    {{ number_format($item['available_stock_kg'], 1, ',', '.') }}
-                                </td>
-                                <td class="py-2 px-4 text-right font-mono text-emerald-800 font-medium">
-                                    {{ $item['is_sellable'] ? 'Rp ' . number_format($item['potential_revenue'], 0, ',', '.') : '-' }}
-                                </td>
-                            </tr>
-                        @empty
-                            <tr>
-                                <td colspan="6" class="py-4 text-center text-slate-400 text-xs">Belum ada data rincian stok jenis sampah.</td>
-                            </tr>
-                        @endforelse
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-
     <!-- Filter & Search Toolbar -->
     <div class="bg-white rounded-xl border border-slate-200 p-3.5 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-3">
         <div class="flex flex-wrap items-center gap-3">
@@ -222,18 +150,18 @@
                 <thead>
                     <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                         <th class="py-3 px-3 w-[14%]">Tanggal</th>
-                        <th class="py-3 px-3 w-[28%]">Kampus & Lokasi Sumber</th>
-                        <th class="py-3 px-3 w-[20%]">Rincian Komposisi Sampah</th>
-                        <th class="py-3 px-3 text-right w-[15%]">Total Berat</th>
+                        <th class="py-3 px-3 w-[26%]">Kampus & Lokasi Sumber</th>
+                        <th class="py-3 px-2 w-[14%]">Komposisi</th>
+                        <th class="py-3 px-3 text-right w-[17%]">Total Berat</th>
                         <th class="py-3 px-3 w-[15%]">Petugas</th>
-                        <th class="py-3 px-2 text-center w-[8%]">Aksi</th>
+                        <th class="py-3 px-2 text-center w-[14%]">Aksi</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-slate-100 text-slate-700">
                     @forelse ($sessions as $session)
                         <tr class="hover:bg-slate-50/50 transition">
                             <td class="py-2.5 px-3 font-medium text-slate-900">
-                                <div>{{ $session->weigh_date->translatedFormat('d M Y') }}</div>
+                                <div class="truncate">{{ $session->weigh_date->translatedFormat('d M Y') }}</div>
                                 <div class="text-[10px] text-slate-400 font-normal">{{ $session->created_at->format('H:i') }} WIB</div>
                             </td>
                             <td class="py-2.5 px-3 truncate">
@@ -246,17 +174,17 @@
                                     <span class="truncate">{{ $session->wasteSource?->name ?? 'Titik Kampus Umum' }}</span>
                                 </div>
                             </td>
-                            <td class="py-2.5 px-3">
-                                <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                            <td class="py-2.5 px-2 truncate">
+                                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200 truncate">
                                     <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
-                                    <span>{{ $session->items->count() }} Jenis Tervalidasi</span>
-                                </div>
+                                    <span>{{ $session->items->count() }} Jenis</span>
+                                </span>
                             </td>
-                            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-sm">
+                            <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
                                 {{ number_format($session->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
                             </td>
                             <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate" title="{{ $session->creator?->name ?? 'Sistem' }}">
-                                {{ $session->creator?->name ?? 'Sistem' }}
+                                <span class="truncate block">{{ $session->creator?->name ?? 'Sistem' }}</span>
                             </td>
                             <td class="py-2.5 px-2 text-center">
                                 <div class="flex items-center justify-center gap-1">

@@ -160,44 +160,44 @@ class="space-y-6">
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600 table-fixed">
+                    <table class="w-full text-left text-xs text-slate-600 table-fixed border-collapse">
                         <thead class="bg-slate-50/75 border-b border-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                             <tr>
-                                <th class="py-3 px-3 w-[13%]">Tanggal</th>
-                                <th class="py-3 px-3 w-[17%]">Kampus</th>
-                                <th class="py-3 px-3 w-[17%]">Kategori Biaya</th>
-                                <th class="py-3 px-3 w-[25%]">Keterangan / Deskripsi</th>
-                                <th class="py-3 px-3 text-right w-[14%]">Nominal (Rp)</th>
-                                <th class="py-3 px-3 w-[8%]">Petugas</th>
-                                <th class="py-3 px-2 text-center w-[6%]">Aksi</th>
+                                <th class="py-3 px-3 w-[14%]">Tanggal</th>
+                                <th class="py-3 px-3 w-[15%]">Kampus</th>
+                                <th class="py-3 px-3 w-[15%]">Kategori Biaya</th>
+                                <th class="py-3 px-3 w-[23%]">Keterangan</th>
+                                <th class="py-3 px-3 text-right w-[13%]">Nominal</th>
+                                <th class="py-3 px-3 w-[10%]">Petugas</th>
+                                <th class="py-3 px-2 text-center w-[10%]">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                             @forelse ($expenses as $e)
                                 <tr class="hover:bg-slate-50/60 transition">
                                     <td class="py-2.5 px-3">
-                                        <div class="font-semibold text-slate-800">{{ $e->expense_date->format('d M Y') }}</div>
+                                        <div class="font-semibold text-slate-800 truncate">{{ $e->expense_date->format('d M Y') }}</div>
                                         <div class="text-[10px] text-slate-400">{{ $e->created_at->format('H:i') }} WIB</div>
                                     </td>
                                     <td class="py-2.5 px-3 truncate">
-                                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 truncate" title="{{ $e->campus->name }}">
+                                        <span class="inline-block px-2 py-0.5 rounded text-[11px] font-semibold bg-slate-100 text-slate-700 truncate max-w-full" title="{{ $e->campus->name }}">
                                             {{ $e->campus->name }}
                                         </span>
                                     </td>
-                                    <td class="py-2.5 px-3">
-                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200">
+                                    <td class="py-2.5 px-3 truncate">
+                                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-rose-50 text-rose-700 border border-rose-200 truncate max-w-full">
                                             <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
                                             <span class="truncate" title="{{ $e->category->name }}">{{ Str::words($e->category->name, 2, '') }}</span>
                                         </span>
                                     </td>
                                     <td class="py-2.5 px-3 truncate text-slate-700" title="{{ $e->description }}">
-                                        {{ $e->description }}
+                                        <span class="truncate block">{{ $e->description }}</span>
                                     </td>
-                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-rose-600 text-sm">
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-rose-600 text-sm whitespace-nowrap">
                                         Rp {{ number_format($e->amount, 0, ',', '.') }}
                                     </td>
                                     <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate" title="{{ $e->creator?->name ?? 'Sistem' }}">
-                                        {{ $e->creator?->name ?? 'Sistem' }}
+                                        <span class="truncate block">{{ $e->creator?->name ?? 'Sistem' }}</span>
                                     </td>
                                     <td class="py-2.5 px-2 text-center">
                                         <div class="flex items-center justify-center gap-1">

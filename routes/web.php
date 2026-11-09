@@ -20,6 +20,10 @@ Route::get('pickups', [App\Http\Controllers\PickupController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('pickups');
 
+Route::get('stock', [App\Http\Controllers\StockController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('stock');
+
 Route::get('expenses', [App\Http\Controllers\ExpenseController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('expenses');

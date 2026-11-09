@@ -141,20 +141,20 @@
                     <table class="w-full text-left border-collapse text-xs table-fixed">
                         <thead>
                             <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
-                                <th class="py-3 px-3 w-[13%]">Tanggal</th>
+                                <th class="py-3 px-3 w-[14%]">Tanggal</th>
                                 <th class="py-3 px-3 w-[23%]">Kampus & Pembeli</th>
-                                <th class="py-3 px-3 w-[18%]">Rincian Sampah Terjual</th>
-                                <th class="py-3 px-3 text-right w-[14%]">Total Berat</th>
-                                <th class="py-3 px-3 text-right w-[16%]">Total Nilai (Rp)</th>
+                                <th class="py-3 px-2 w-[13%]">Rincian</th>
+                                <th class="py-3 px-3 text-right w-[15%]">Total Berat</th>
+                                <th class="py-3 px-3 text-right w-[15%]">Total Nilai</th>
                                 <th class="py-3 px-3 w-[10%]">Petugas</th>
-                                <th class="py-3 px-2 text-center w-[6%]">Aksi</th>
+                                <th class="py-3 px-2 text-center w-[10%]">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 text-slate-700">
                             @forelse ($sales as $sale)
                                 <tr class="hover:bg-slate-50/50 transition">
                                     <td class="py-2.5 px-3 font-medium text-slate-900">
-                                        <div>{{ $sale->sale_date->translatedFormat('d M Y') }}</div>
+                                        <div class="truncate">{{ $sale->sale_date->translatedFormat('d M Y') }}</div>
                                         <div class="text-[10px] text-slate-400 font-normal">{{ $sale->created_at->format('H:i') }} WIB</div>
                                     </td>
                                     <td class="py-2.5 px-3 truncate">
@@ -166,20 +166,20 @@
                                             <span class="truncate">{{ $sale->buyer->name }}</span>
                                         </div>
                                     </td>
-                                    <td class="py-2.5 px-3">
-                                        <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200">
+                                    <td class="py-2.5 px-2 truncate">
+                                        <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-sky-50 text-sky-700 border border-sky-200 truncate">
                                             <span class="w-1.5 h-1.5 rounded-full bg-sky-500 shrink-0"></span>
-                                            <span>{{ $sale->items->count() }} Jenis Terpilah</span>
-                                        </div>
+                                            <span>{{ $sale->items->count() }} Jenis</span>
+                                        </span>
                                     </td>
-                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-sm">
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 text-sm whitespace-nowrap">
                                         {{ number_format($sale->total_weight, 1) }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
                                     </td>
-                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600 text-sm">
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-emerald-600 text-sm whitespace-nowrap">
                                         Rp {{ number_format($sale->total_amount, 0, ',', '.') }}
                                     </td>
                                     <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate" title="{{ $sale->creator?->name ?? 'Sistem' }}">
-                                        {{ $sale->creator?->name ?? 'Sistem' }}
+                                        <span class="truncate block">{{ $sale->creator?->name ?? 'Sistem' }}</span>
                                     </td>
                                     <td class="py-2.5 px-2 text-center">
                                         <div class="flex items-center justify-center gap-1">

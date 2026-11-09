@@ -189,65 +189,65 @@ class="space-y-6">
                     </div>
 
                     <div class="overflow-x-auto">
-                        <table class="w-full text-left text-xs text-slate-600 table-fixed">
+                        <table class="w-full text-left text-xs text-slate-600 table-fixed border-collapse">
                             <thead class="bg-slate-50/75 border-b border-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                                 <tr>
-                                    <th class="py-3 px-3 w-[14%]">Tanggal</th>
+                                    <th class="py-3 px-3 w-[13%]">Tanggal</th>
                                     <th class="py-3 px-3 w-[18%]">Kampus & Sumber</th>
-                                    <th class="py-3 px-3 w-[13%]">Jenis Mutasi</th>
-                                    <th class="py-3 px-3 w-[27%]">Uraian / Keterangan</th>
-                                    <th class="py-3 px-3 text-right w-[14%]">Nominal (Rp)</th>
-                                    <th class="py-3 px-3 w-[10%]">Petugas</th>
-                                    <th class="py-3 px-3 text-center w-[4%]">Aksi</th>
+                                    <th class="py-3 px-2 w-[13%]">Jenis Mutasi</th>
+                                    <th class="py-3 px-3 w-[23%]">Uraian / Keterangan</th>
+                                    <th class="py-3 px-3 text-right w-[14%]">Nominal</th>
+                                    <th class="py-3 px-3 w-[9%]">Petugas</th>
+                                    <th class="py-3 px-2 text-center w-[10%]">Aksi</th>
                                 </tr>
                             </thead>
                             <tbody class="divide-y divide-slate-100 font-medium">
                                 @forelse ($cashbookEntries as $entry)
                                     <tr class="hover:bg-slate-50/60 transition">
                                         <td class="py-2.5 px-3">
-                                            <div class="font-semibold text-slate-800">{{ $entry->tanggal->format('d M Y') }}</div>
+                                            <div class="font-semibold text-slate-800 truncate">{{ $entry->tanggal->format('d M Y') }}</div>
                                             <div class="text-[10px] text-slate-400">{{ $entry->created_at->format('H:i') }} WIB</div>
                                         </td>
-                                        <td class="py-2.5 px-3">
-                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 truncate max-w-full">
+                                        <td class="py-2.5 px-3 truncate">
+                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 truncate max-w-full" title="{{ $entry->campus->name }}">
                                                 {{ $entry->campus->name }}
                                             </span>
-                                            <div class="text-[10px] text-slate-500 capitalize mt-0.5 font-medium truncate">
+                                            <div class="text-[10px] text-slate-500 capitalize mt-0.5 font-medium truncate" title="{{ str_replace('_', ' ', $entry->sumber) }}">
                                                 {{ str_replace('_', ' ', $entry->sumber) }}
                                             </div>
                                         </td>
-                                        <td class="py-2.5 px-3">
+                                        <td class="py-2.5 px-2 truncate">
                                             @if ($entry->jenis === 'K')
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200 truncate">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0"></span>
                                                     <span>Kredit (Masuk)</span>
                                                 </span>
                                             @else
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200">
-                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500"></span>
+                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-50 text-rose-700 border border-rose-200 truncate">
+                                                    <span class="w-1.5 h-1.5 rounded-full bg-rose-500 shrink-0"></span>
                                                     <span>Debet (Keluar)</span>
                                                 </span>
                                             @endif
                                         </td>
                                         <td class="py-2.5 px-3 text-slate-700 truncate" title="{{ $entry->keterangan }}">
-                                            {{ $entry->keterangan ?: '-' }}
+                                            <span class="truncate block">{{ $entry->keterangan ?: '-' }}</span>
                                         </td>
-                                        <td class="py-2.5 px-3 text-right font-mono font-bold text-sm {{ $entry->jenis === 'K' ? 'text-emerald-700' : 'text-rose-600' }}">
+                                        <td class="py-2.5 px-3 text-right font-mono font-bold text-sm whitespace-nowrap {{ $entry->jenis === 'K' ? 'text-emerald-700' : 'text-rose-600' }}">
                                             {{ $entry->jenis === 'K' ? '+' : '-' }} Rp {{ number_format($entry->nominal, 0, ',', '.') }}
                                         </td>
                                         <td class="py-2.5 px-3 text-slate-500 text-[11px] truncate" title="{{ $entry->creator?->name ?? 'Sistem' }}">
-                                            {{ $entry->creator?->name ?? 'Sistem' }}
+                                            <span class="truncate block">{{ $entry->creator?->name ?? 'Sistem' }}</span>
                                         </td>
-                                        <td class="py-2.5 px-3 text-center">
+                                        <td class="py-2.5 px-2 text-center">
                                             <div class="flex items-center justify-center gap-1">
-                                            <button @click="detailModal = true; $wire.viewTransaction({{ $entry->id }})" 
-                                                    type="button" 
-                                                    title="Lihat Rincian Jurnal"
-                                                    class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
-                                                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                                                </svg>
+                                                <button @click="detailModal = true; $wire.viewTransaction({{ $entry->id }})" 
+                                                        type="button" 
+                                                        title="Lihat Rincian Jurnal"
+                                                        class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
+                                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                                                    </svg>
                                                 </button>
                                                 @if ($canManageBalance)
                                                     <button @click="showEditModal = true; $wire.openEditModal({{ $entry->id }})" 

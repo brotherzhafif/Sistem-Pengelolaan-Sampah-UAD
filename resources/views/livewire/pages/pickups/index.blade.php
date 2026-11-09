@@ -136,48 +136,48 @@
                 </div>
 
                 <div class="overflow-x-auto">
-                    <table class="w-full text-left text-xs text-slate-600 table-fixed">
+                    <table class="w-full text-left text-xs text-slate-600 table-fixed border-collapse">
                         <thead class="bg-slate-50/75 border-b border-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                             <tr>
-                                <th class="py-3 px-3 w-[13%]">Tanggal</th>
-                                <th class="py-3 px-3 w-[23%]">Kampus & Vendor</th>
-                                <th class="py-3 px-3 w-[17%]">Armada / Driver</th>
-                                <th class="py-3 px-3 text-right w-[14%]">Volume (kg)</th>
-                                <th class="py-3 px-3 text-right w-[17%]">Total Biaya (Rp)</th>
+                                <th class="py-3 px-3 w-[14%]">Tanggal</th>
+                                <th class="py-3 px-3 w-[22%]">Kampus & Vendor</th>
+                                <th class="py-3 px-3 w-[15%]">Armada / Driver</th>
+                                <th class="py-3 px-3 text-right w-[14%]">Volume</th>
+                                <th class="py-3 px-3 text-right w-[15%]">Total Biaya</th>
                                 <th class="py-3 px-3 w-[10%]">Petugas</th>
-                                <th class="py-3 px-2 text-center w-[6%]">Aksi</th>
+                                <th class="py-3 px-2 text-center w-[10%]">Aksi</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100 font-medium">
                             @forelse ($pickups as $p)
                                 <tr class="hover:bg-slate-50/60 transition">
                                     <td class="py-2.5 px-3">
-                                        <div class="font-semibold text-slate-800">{{ $p->pickup_date->format('d M Y') }}</div>
+                                        <div class="font-semibold text-slate-800 truncate">{{ $p->pickup_date->format('d M Y') }}</div>
                                         <div class="text-[10px] text-slate-400">{{ $p->created_at->format('H:i') }} WIB</div>
                                     </td>
                                     <td class="py-2.5 px-3 truncate">
-                                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 mb-0.5 truncate" title="{{ $p->campus->name }}">
+                                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 mb-0.5 truncate max-w-full" title="{{ $p->campus->name }}">
                                             {{ $p->campus->name }}
                                         </span>
-                                         <div class="font-semibold text-slate-800 truncate" title="{{ $p->vendor->name }}">{{ $p->vendor->name }}</div>
+                                        <div class="font-semibold text-slate-800 truncate" title="{{ $p->vendor->name }}">{{ $p->vendor->name }}</div>
                                     </td>
                                     <td class="py-2.5 px-3 truncate">
                                         <div class="text-slate-800 truncate" title="{{ $p->driver_name ?: '-' }}">{{ $p->driver_name ?: '-' }}</div>
                                         @if ($p->vehicle_plate)
-                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600">
+                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-mono bg-slate-100 text-slate-600 mt-0.5">
                                                 {{ $p->vehicle_plate }}
                                             </span>
                                         @endif
                                     </td>
-                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900">
-                                        {{ number_format($p->volume_kg, 1, ',', '.') }} kg
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-slate-900 whitespace-nowrap">
+                                        {{ number_format($p->volume_kg, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
                                     </td>
-                                    <td class="py-2.5 px-3 text-right">
+                                    <td class="py-2.5 px-3 text-right whitespace-nowrap">
                                         <div class="font-mono font-bold text-rose-600">Rp {{ number_format($p->total_cost, 0, ',', '.') }}</div>
                                         <div class="text-[10px] text-slate-400 font-mono">@ Rp {{ number_format($p->cost_per_kg, 0, ',', '.') }}/kg</div>
                                     </td>
                                     <td class="py-2.5 px-3 text-slate-700 truncate" title="{{ $p->creator?->name ?? 'Sistem' }}">
-                                        {{ $p->creator?->name ?? 'Sistem' }}
+                                        <span class="truncate block">{{ $p->creator?->name ?? 'Sistem' }}</span>
                                     </td>
                                     <td class="py-2.5 px-2 text-center">
                                         <div class="flex items-center justify-center gap-1">
