@@ -1,4 +1,4 @@
-﻿<div x-data="{ 
+<div x-data="{ 
     showModal: false, 
     showEditModal: @entangle('showEditModal'),
     deleteModal: false 
