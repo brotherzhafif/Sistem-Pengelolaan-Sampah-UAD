@@ -1,4 +1,4 @@
-<div x-data="{ 
+﻿<div x-data="{ 
     showModal: false, 
     showEditModal: @entangle('showEditModal'),
     deleteModal: false 
@@ -382,9 +382,9 @@
                      style="display: none;"
                      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
                     <div @click.away="showEditModal = false; $wire.closeEditModal()" 
-                         class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl overflow-hidden animate-scaleUp">
+                         class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-scaleUp">
                         <!-- Header Modal Edit -->
-                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                        <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                             <div>
                                 <h3 class="font-bold text-base text-slate-800">Edit Catatan Pengangkutan Residu</h3>
                                 <p class="text-xs text-slate-500 mt-0.5">Penyesuaian data muatan residu dan sinkronisasi buku kas otomatis</p>
@@ -518,7 +518,7 @@
                             </div>
 
                             <!-- Footer Form Modal -->
-                            <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+                            <div class="pt-3 pb-1 border-t border-slate-100 flex items-center justify-end gap-2.5 sticky bottom-0 bg-white z-10">
                                 <button @click="showEditModal = false; $wire.closeEditModal()" type="button" class="px-4 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 transition cursor-pointer">
                                     Batal
                                 </button>
