@@ -97,7 +97,7 @@ class Pickup extends Model
     /**
      * Mengambil daftar data transaksi pengangkutan terpaginasi dengan filter.
      */
-    public static function getFilteredList(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 8)
+    public static function getFilteredList(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 10)
     {
         return static::with(['campus', 'vendor', 'creator'])
             ->forCampus($campusId)

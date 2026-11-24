@@ -72,7 +72,7 @@ class WeighingSession extends Model
     /**
      * Mengambil daftar data sesi penimbangan terpaginasi.
      */
-    public static function getFilteredList(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 8)
+    public static function getFilteredList(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 10)
     {
         return static::with(['campus', 'wasteSource', 'creator', 'items.wasteType'])
             ->forCampus($campusId)

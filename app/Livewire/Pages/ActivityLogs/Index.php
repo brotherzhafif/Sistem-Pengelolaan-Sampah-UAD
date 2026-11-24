@@ -19,6 +19,12 @@ class Index extends Component
     public string $filterCampusId = '';
     public string $filterDateFrom = '';
     public string $filterDateTo = '';
+    public int $perPage = 10;
+
+    public function updatingPerPage(): void
+    {
+        $this->resetPage();
+    }
 
     protected $queryString = [
         'search' => ['except' => ''],
@@ -140,7 +146,7 @@ class Index extends Component
         $totalUpdate = (clone $baseStatQuery)->where('action', 'update')->count();
         $totalDelete = (clone $baseStatQuery)->where('action', 'delete')->count();
 
-        $logs = $query->paginate(15);
+        $logs = $query->paginate($this->perPage);
 
         return view('livewire.pages.activity-logs.index', [
             'logs' => $logs,

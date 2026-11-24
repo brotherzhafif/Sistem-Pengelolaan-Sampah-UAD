@@ -21,6 +21,12 @@ class Index extends Component
     public $filterCategoryId = null;
     public string $filterDateFrom = '';
     public string $filterDateTo = '';
+    public int $perPage = 10;
+
+    public function updatingPerPage(): void
+    {
+        $this->resetPage();
+    }
 
     // Modal state
     public bool $showCreateModal = false;
@@ -256,7 +262,7 @@ class Index extends Component
                 $this->filterCategoryId,
                 $this->filterDateFrom,
                 $this->filterDateTo,
-                8
+                $this->perPage
             ),
             'detailedExpense' => $this->viewExpenseId ? Expense::getDetailedExpense($this->viewExpenseId) : null,
             'totalAmount' => $stats['totalAmount'],

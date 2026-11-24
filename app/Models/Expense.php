@@ -96,7 +96,7 @@ class Expense extends Model
     /**
      * Mengambil daftar data pengeluaran terpaginasi dengan relasi.
      */
-    public static function getFilteredList(?int $campusId, ?int $categoryId, ?string $dateFrom, ?string $dateTo, int $perPage = 8)
+    public static function getFilteredList(?int $campusId, ?int $categoryId, ?string $dateFrom, ?string $dateTo, int $perPage = 10)
     {
         return static::with(['campus', 'category', 'creator'])
             ->forCampus($campusId)

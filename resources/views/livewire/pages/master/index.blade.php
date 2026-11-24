@@ -97,7 +97,7 @@
                         <div class="p-4 border-b border-slate-200 flex justify-between items-center shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Unit Kampus UAD ({{ $campuses->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[480px] sidebar-scroll">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
@@ -209,7 +209,7 @@
                         <div class="p-4 border-b border-slate-200 flex justify-between items-center shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Titik Sumber ({{ $sources->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[480px] sidebar-scroll">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
@@ -313,7 +313,7 @@
                         <div class="p-4 border-b border-slate-200 shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">9 Kategori Granular Sistem UAD ({{ $wasteTypes->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[480px] sidebar-scroll">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
@@ -428,7 +428,7 @@
                         <div class="p-4 border-b border-slate-200 shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Vendor Pengangkut Residu ({{ $vendors->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[480px] sidebar-scroll">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
@@ -530,7 +530,7 @@
                         <div class="p-4 border-b border-slate-200 shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Pengepul / Pembeli Bank Sampah ({{ $buyers->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[480px] sidebar-scroll">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>
@@ -626,7 +626,7 @@
                         <div class="p-4 border-b border-slate-200 shrink-0">
                             <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Kategori Pengeluaran Operasional TPS ({{ $expenseCategories->count() }})</span>
                         </div>
-                        <div class="overflow-x-auto overflow-y-auto max-h-[360px]">
+                        <div class="overflow-x-auto overflow-y-auto max-h-[480px] sidebar-scroll">
                             <table class="w-full text-left text-xs">
                                 <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
                                     <tr>

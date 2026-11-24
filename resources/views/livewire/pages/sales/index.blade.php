@@ -130,17 +130,25 @@
                     </div>
                 </div>
 
-                <div class="px-5 py-4 border-b border-slate-100 flex items-center justify-between">
+                <div class="px-5 py-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                     <div class="flex items-center gap-2">
                         <h3 class="text-sm font-bold text-slate-800">Riwayat Penjualan Sampah</h3>
                         <span class="text-xs text-slate-400">({{ $sales->total() }} Transaksi Terdata)</span>
                     </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-medium text-slate-500">Tampilkan:</label>
+                        <select wire:model.live="perPage" class="text-xs font-semibold border-slate-200 rounded-lg px-2 py-1 bg-slate-50 text-slate-700 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer">
+                            <option value="10">10 data</option>
+                            <option value="25">25 data</option>
+                            <option value="50">50 data</option>
+                        </select>
+                    </div>
                 </div>
 
-                <div class="overflow-x-auto">
+                <div class="overflow-x-auto overflow-y-auto max-h-[540px] sidebar-scroll">
                     <table class="w-full text-left border-collapse text-xs table-fixed">
-                        <thead>
-                            <tr class="bg-slate-50/75 border-b border-slate-200 text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
+                        <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-[2px] shadow-xs border-b border-slate-200">
+                            <tr class="text-slate-500 font-semibold uppercase tracking-wider text-[11px]">
                                 <th class="py-3 px-3 w-[14%]">Tanggal</th>
                                 <th class="py-3 px-3 w-[23%]">Kampus & Pembeli</th>
                                 <th class="py-3 px-2 w-[13%]">Rincian</th>

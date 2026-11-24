@@ -181,16 +181,24 @@ class="space-y-6">
                         </div>
                     </div>
 
-                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h3 class="font-bold text-sm text-slate-900">Jurnal Transaksi Kas (Buku Kas)</h3>
                             <p class="text-xs text-slate-500 mt-0.5">({{ $cashbookEntries->total() }} Mutasi Kas Terdata)</p>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-[11px] font-medium text-slate-500">Tampilkan:</label>
+                            <select wire:model.live="perPage" class="text-xs font-semibold border-slate-200 rounded-lg px-2 py-1 bg-slate-50 text-slate-700 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer">
+                                <option value="10">10 data</option>
+                                <option value="25">25 data</option>
+                                <option value="50">50 data</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto overflow-y-auto max-h-[540px] sidebar-scroll">
                         <table class="w-full text-left text-xs text-slate-600 table-fixed border-collapse">
-                            <thead class="bg-slate-50/75 border-b border-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
+                            <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-[2px] shadow-xs border-b border-slate-200 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                                 <tr>
                                     <th class="py-3 px-3 w-[13%]">Tanggal</th>
                                     <th class="py-3 px-3 w-[18%]">Kampus & Sumber</th>
@@ -317,16 +325,24 @@ class="space-y-6">
                         </div>
                     </div>
 
-                    <div class="p-4 border-b border-slate-100 flex items-center justify-between">
+                    <div class="p-4 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
                         <div>
                             <h3 class="font-bold text-sm text-slate-900">Neraca Saldo Harian (Buku Besar)</h3>
                             <p class="text-xs text-slate-500 mt-0.5">({{ $ledgerEntries->total() }} Catatan Saldo Harian Terdata)</p>
                         </div>
+                        <div class="flex items-center gap-2">
+                            <label class="text-[11px] font-medium text-slate-500">Tampilkan:</label>
+                            <select wire:model.live="perPage" class="text-xs font-semibold border-slate-200 rounded-lg px-2 py-1 bg-slate-50 text-slate-700 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer">
+                                <option value="10">10 data</option>
+                                <option value="25">25 data</option>
+                                <option value="50">50 data</option>
+                            </select>
+                        </div>
                     </div>
 
-                    <div class="overflow-x-auto">
+                    <div class="overflow-x-auto overflow-y-auto max-h-[540px] sidebar-scroll">
                         <table class="w-full text-left text-xs text-slate-600 table-fixed">
-                            <thead class="bg-slate-50/75 border-b border-slate-100 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
+                            <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-[2px] shadow-xs border-b border-slate-200 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                                 <tr>
                                     <th class="py-3 px-3 w-[15%]">Tanggal</th>
                                     <th class="py-3 px-3 w-[19%]">Kampus</th>

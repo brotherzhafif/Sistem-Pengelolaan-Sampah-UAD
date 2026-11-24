@@ -105,7 +105,7 @@ class FinancialTransaction extends Model
     /**
      * Mengambil daftar transaksi buku kas terpaginasi.
      */
-    public static function getCashbookEntries(?int $campusId, ?string $dateFrom, ?string $dateTo, ?string $type, ?string $source, int $perPage = 8)
+    public static function getCashbookEntries(?int $campusId, ?string $dateFrom, ?string $dateTo, ?string $type, ?string $source, int $perPage = 10)
     {
         $normType = $type;
         if ($type === 'K') $normType = 'credit';

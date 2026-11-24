@@ -196,9 +196,24 @@
 
             <!-- 3. Activity Logs Table Card -->
             <div class="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
-                <div class="overflow-x-auto">
+                <div class="px-5 py-3.5 border-b border-slate-100 flex flex-wrap items-center justify-between gap-3">
+                    <div class="flex items-center gap-2">
+                        <h3 class="text-xs font-bold text-slate-800 uppercase tracking-wider">Log Aktivitas Sistem</h3>
+                        <span class="text-xs text-slate-400">({{ $logs->total() }} Log Terdata)</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <label class="text-[11px] font-medium text-slate-500">Tampilkan:</label>
+                        <select wire:model.live="perPage" class="text-xs font-semibold border-slate-200 rounded-lg px-2 py-1 bg-slate-50 text-slate-700 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 cursor-pointer">
+                            <option value="10">10 data</option>
+                            <option value="25">25 data</option>
+                            <option value="50">50 data</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto overflow-y-auto max-h-[540px] sidebar-scroll">
                     <table class="w-full text-left text-xs table-auto">
-                        <thead class="bg-slate-50 text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-200">
+                        <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-[2px] shadow-xs text-slate-500 font-semibold uppercase tracking-wider text-[11px] border-b border-slate-200">
                             <tr>
                                 <th class="py-3 px-4 w-40">Waktu (WIB)</th>
                                 <th class="py-3 px-4 w-52">Pengguna & Kampus</th>

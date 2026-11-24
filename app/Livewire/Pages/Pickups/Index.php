@@ -21,6 +21,12 @@ class Index extends Component
     public $selectedCampusId = null;
     public string $filterDateFrom = '';
     public string $filterDateTo = '';
+    public int $perPage = 10;
+
+    public function updatingPerPage(): void
+    {
+        $this->resetPage();
+    }
 
     // Modal Create state
     public bool $showCreateModal = false;
@@ -410,7 +416,7 @@ class Index extends Component
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
-        $pickups = Pickup::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, 8);
+        $pickups = Pickup::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, $this->perPage);
         $stockSummary = WasteType::getStockSummary($campusQueryId);
         $totalCostFiltered = Pickup::getTotalCost($campusQueryId, $this->filterDateFrom, $this->filterDateTo);
         $totalVolumeFiltered = Pickup::getTotalVolume($campusQueryId, $this->filterDateFrom, $this->filterDateTo);

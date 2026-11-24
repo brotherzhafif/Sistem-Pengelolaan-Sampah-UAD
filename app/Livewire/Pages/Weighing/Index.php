@@ -21,6 +21,12 @@ class Index extends Component
     public $selectedCampusId = null;
     public string $filterDateFrom = '';
     public string $filterDateTo = '';
+    public int $perPage = 10;
+
+    public function updatingPerPage(): void
+    {
+        $this->resetPage();
+    }
 
     // Modal state
     public bool $showCreateModal = false;
@@ -286,7 +292,7 @@ class Index extends Component
             ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
-        $sessions = WeighingSession::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, 8);
+        $sessions = WeighingSession::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, $this->perPage);
         $stockSummary = WasteType::getStockSummary($campusQueryId);
 
         return view('livewire.pages.weighing.index', [

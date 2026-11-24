@@ -4,21 +4,31 @@ namespace App\Livewire\Pages\Stock;
 
 use App\Models\Campus;
 use App\Models\WasteType;
+use Illuminate\Pagination\LengthAwarePaginator;
 use Illuminate\Support\Collection;
 use Livewire\Attributes\Layout;
 use Livewire\Component;
+use Livewire\WithPagination;
 
 #[Layout('layouts.app')]
 class Index extends Component
 {
+    use WithPagination;
+
     public ?int $selectedCampusId = null;
     public string $search = '';
     public string $filterCategory = 'all';
     public string $filterSellable = 'all';
     public string $sortBy = 'stock';
     public string $sortDirection = 'desc';
+    public int $perPage = 10;
 
     public ?int $selectedWasteTypeId = null;
+
+    public function updatingSearch(): void { $this->resetPage(); }
+    public function updatingFilterCategory(): void { $this->resetPage(); }
+    public function updatingFilterSellable(): void { $this->resetPage(); }
+    public function updatingPerPage(): void { $this->resetPage(); }
 
     public function mount(): void
     {
@@ -140,11 +150,24 @@ class Index extends Component
             }
         }
 
+        $currentPage = $this->getPage();
+        $totalItems = $items->count();
+        $pagedItems = $items->forPage($currentPage, $this->perPage)->values();
+
+        $paginatedItems = new LengthAwarePaginator(
+            $pagedItems,
+            $totalItems,
+            $this->perPage,
+            $currentPage,
+            ['path' => request()->url(), 'query' => request()->query()]
+        );
+
         return view('livewire.pages.stock.index', [
             'isSuperAdmin' => $isSuperAdmin,
             'campuses' => Campus::getActiveCampuses(),
             'stockSummary' => $stockSummary,
-            'items' => $items,
+            'items' => $paginatedItems,
+            'totalItemsCount' => $totalItems,
             'detailData' => $detailData,
         ]);
     }

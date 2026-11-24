@@ -38,7 +38,7 @@ class GeneralLedger extends Model
     /**
      * Mengambil data mutasi saldo harian Buku Besar terpaginasi dengan filter.
      */
-    public static function getLedgerEntries(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 8)
+    public static function getLedgerEntries(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 10)
     {
         return static::with('campus')
             ->when($campusId, fn($q) => $q->where('campus_id', $campusId))

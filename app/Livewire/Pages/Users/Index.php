@@ -18,6 +18,12 @@ class Index extends Component
     public string $search = '';
     public string $filterRole = '';
     public ?int $filterCampusId = null;
+    public int $perPage = 10;
+
+    public function updatingPerPage(): void
+    {
+        $this->resetPage();
+    }
 
     // Modal Form State
     public bool $isFormModalOpen = false;
@@ -246,7 +252,7 @@ class Index extends Component
         $isSuperAdmin = $currentUser->hasRole(['super_admin', 'Super Admin']);
 
         $effectiveCampusId = $isSuperAdmin ? $this->filterCampusId : (int) $currentUser->campus_id;
-        $users = User::filtered($effectiveCampusId, $this->filterRole, $this->search)->paginate(8);
+        $users = User::filtered($effectiveCampusId, $this->filterRole, $this->search)->paginate($this->perPage);
 
         $roles = User::getOrderedRoles(false);
         $formRoles = $isSuperAdmin ? $roles : User::getOrderedRoles(true);

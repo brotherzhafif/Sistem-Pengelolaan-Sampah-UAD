@@ -24,6 +24,12 @@ class Index extends Component
     public string $filterDateTo = '';
     public string $filterJenis = ''; // '', 'K', 'D'
     public string $filterSumber = ''; // '', 'penjualan', 'pengangkutan', 'operasional', 'saldo_awal'
+    public int $perPage = 10;
+
+    public function updatingPerPage(): void
+    {
+        $this->resetPage();
+    }
 
     // Modal Saldo Awal
     public bool $showBalanceModal = false;
@@ -252,14 +258,14 @@ class Index extends Component
             $this->filterDateTo,
             $this->filterJenis,
             $this->filterSumber,
-            8
+            $this->perPage
         );
 
         $ledgerEntries = BukuBesar::getLedgerEntries(
             $campusQueryId,
             $this->filterDateFrom,
             $this->filterDateTo,
-            8
+            $this->perPage
         );
 
         $detailedTransaction = $this->viewKeuanganId
