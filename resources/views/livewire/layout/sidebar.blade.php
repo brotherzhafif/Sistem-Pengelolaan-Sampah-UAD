@@ -1,6 +1,6 @@
 <aside class="w-64 bg-slate-950 text-slate-300 flex flex-col shrink-0 h-screen sticky top-0 border-r border-slate-900 select-none z-30 overflow-hidden">
     <!-- Brand Header -->
-    <div class="px-4 py-3.5 flex items-center gap-3 border-b border-white/5">
+    <div class="px-4 py-3.5 flex items-center gap-3 border-b border-white/5 shrink-0">
         <div class="w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 flex items-center justify-center text-white shadow-sm shrink-0">
             <svg class="w-4.5 h-4.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -13,7 +13,7 @@
     </div>
 
     <!-- Active Campus Selector (Interactive Dropdown for Super Admin & Auditor) -->
-    <div class="mx-3 my-2 relative" x-data="{ open: false }">
+    <div class="mx-3 my-2 relative shrink-0" x-data="{ open: false }">
         @if ($isSuperAdmin)
             <!-- Super Admin Dropdown Trigger -->
             <button @click="open = !open" 
@@ -83,7 +83,7 @@
     </div>
 
     <!-- Navigation Menu Items (Clean SVG Icons ala Dribbble) -->
-    <div class="flex-1 px-3 py-1 space-y-2 overflow-hidden">
+    <div class="flex-1 min-h-0 px-3 py-1 space-y-2 overflow-y-auto overflow-x-hidden sidebar-scroll">
         <!-- Section: PENCATATAN -->
         <div>
             <div class="px-3 text-[10px] font-bold uppercase tracking-wider text-slate-600 mb-1">
@@ -274,7 +274,7 @@
     </div>
 
     <!-- User Profile & Logout Footer -->
-    <div class="p-3 border-t border-white/5 flex items-center justify-between shrink-0">
+    <div class="p-3 border-t border-white/5 flex items-center justify-between shrink-0 bg-slate-950">
         <a href="{{ route('profile') }}" class="flex items-center gap-2.5 min-w-0 hover:opacity-80 transition">
             <div class="w-8 h-8 rounded-full bg-gradient-to-tr from-sky-500 to-indigo-500 text-white flex items-center justify-center font-bold text-xs shrink-0">
                 {{ substr(auth()->user()->name, 0, 1) }}
