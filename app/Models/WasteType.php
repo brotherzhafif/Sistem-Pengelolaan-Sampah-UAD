@@ -72,6 +72,18 @@ class WasteType extends Model
             ->get();
     }
 
+    /**
+     * Mengambil daftar seluruh jenis sampah non-jual (Residu diurutkan dulu, lalu Organik berlebih).
+     */
+    public static function getActiveNonSellableTypes()
+    {
+        return static::where('is_sellable', false)
+            ->where('is_active', true)
+            ->get()
+            ->sortBy(fn ($t) => ($t->isOrganicCategory() ? '1_' : '0_') . $t->name)
+            ->values();
+    }
+
     public function isOrganicCategory(): bool
     {
         return !$this->is_sellable && strtolower(trim((string) $this->category)) === 'organik';
@@ -172,6 +184,23 @@ class WasteType extends Model
             ->filter(fn ($item) => empty($item['is_sellable'])
                 && strtolower(trim((string) ($item['waste_category'] ?? ''))) !== 'organik'
                 && (float) $item['available_stock_kg'] > 0)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Mengambil daftar seluruh jenis sampah non-jual yang memiliki stok tersedia (> 0 kg) untuk pengangkutan TPA
+     * (Residu/B3 diutamakan di atas, disusul kategori Organik bila terdapat sisa berlebih).
+     */
+    public static function getPickableTypesWithAvailableStock(int|string|null $campusId = null): array
+    {
+        $summary = static::getStockSummary($campusId);
+        return $summary['items_breakdown']
+            ->filter(fn ($item) => empty($item['is_sellable']) && (float) $item['available_stock_kg'] > 0)
+            ->sortBy(function ($item) {
+                $isOrg = strtolower(trim((string) ($item['waste_category'] ?? ''))) === 'organik';
+                return ($isOrg ? '1_' : '0_') . ($item['waste_name'] ?? '');
+            })
             ->values()
             ->all();
     }

@@ -142,13 +142,14 @@ class OrganicAndPickupFlowTest extends TestCase
         $this->assertTrue($delSuccess['success']);
     }
 
-    public function test_pickup_stores_itemized_residual_and_rejects_organic_category(): void
+    public function test_pickup_stores_itemized_residual_and_excess_organic_while_rejecting_sellable(): void
     {
         $this->seedWeighing();
 
         $pickupController = app(PickupController::class);
 
-        $rejectedOrganic = false;
+        // Sampah bernilai jual (Anorganik terpilah) tetap ditolak dari pengangkutan TPA
+        $rejectedSellable = false;
         try {
             $pickupController->store([
                 'campus_id' => $this->campus->id,
@@ -156,14 +157,15 @@ class OrganicAndPickupFlowTest extends TestCase
                 'pickup_date' => now()->format('Y-m-d'),
                 'cost_per_kg' => 150,
                 'items' => [
-                    ['waste_type_id' => $this->sisaMakanan->id, 'weight_kg' => 10],
+                    ['waste_type_id' => $this->kardus->id, 'weight_kg' => 10],
                 ],
             ]);
         } catch (ValidationException $e) {
-            $rejectedOrganic = true;
+            $rejectedSellable = true;
         }
-        $this->assertTrue($rejectedOrganic, 'Organic waste must be rejected from residual pickup');
+        $this->assertTrue($rejectedSellable, 'Sellable waste must be rejected from residual pickup');
 
+        // Pengangkutan residu + sisa organik berlebih diperbolehkan dan mengurangi stok masing-masing
         $created = $pickupController->store([
             'campus_id' => $this->campus->id,
             'vendor_id' => $this->vendor->id,
@@ -171,19 +173,19 @@ class OrganicAndPickupFlowTest extends TestCase
             'cost_per_kg' => 150,
             'items' => [
                 ['waste_type_id' => $this->residuCampur->id, 'weight_kg' => 15],
+                ['waste_type_id' => $this->sisaMakanan->id, 'weight_kg' => 10],
             ],
         ]);
 
         /** @var Pickup $pickup */
         $pickup = $created['pickup']->load('items');
-        $this->assertEquals(15.0, (float) $pickup->volume_kg);
-        $this->assertCount(1, $pickup->items);
-        $this->assertEquals($this->residuCampur->id, $pickup->items->first()->waste_type_id);
+        $this->assertEquals(25.0, (float) $pickup->volume_kg);
+        $this->assertCount(2, $pickup->items);
 
         $metricsAfterCreate = WasteStockSummary::getMetrics($this->campus->id);
-        $this->assertEquals(15.0, $metricsAfterCreate['total_picked_up_kg']);
+        $this->assertEquals(25.0, $metricsAfterCreate['total_picked_up_kg']);
         $this->assertEquals(5.0, $metricsAfterCreate['residual_stock_kg']);
-        $this->assertEquals(80.0, $metricsAfterCreate['organic_stock_kg']);
+        $this->assertEquals(70.0, $metricsAfterCreate['organic_stock_kg']);
 
         $pickupController->update($pickup->id, [
             'campus_id' => $this->campus->id,
@@ -198,6 +200,7 @@ class OrganicAndPickupFlowTest extends TestCase
         $metricsAfterUpdate = WasteStockSummary::getMetrics($this->campus->id);
         $this->assertEquals(18.0, $metricsAfterUpdate['total_picked_up_kg']);
         $this->assertEquals(2.0, $metricsAfterUpdate['residual_stock_kg']);
+        $this->assertEquals(80.0, $metricsAfterUpdate['organic_stock_kg']);
         $this->assertEquals(3600.0, $metricsAfterUpdate['total_pickup_cost']);
 
         $delRes = $pickupController->destroy($pickup->id);
@@ -206,6 +209,7 @@ class OrganicAndPickupFlowTest extends TestCase
         $metricsAfterDelete = WasteStockSummary::getMetrics($this->campus->id);
         $this->assertEquals(0.0, $metricsAfterDelete['total_picked_up_kg']);
         $this->assertEquals(20.0, $metricsAfterDelete['residual_stock_kg']);
+        $this->assertEquals(80.0, $metricsAfterDelete['organic_stock_kg']);
     }
 
     public function test_organic_processing_tracks_master_output_and_enforces_weighing_lock(): void

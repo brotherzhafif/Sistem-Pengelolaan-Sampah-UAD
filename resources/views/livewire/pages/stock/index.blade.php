@@ -292,7 +292,7 @@
                                         $outKg = $item['is_sellable']
                                             ? ($item['total_sold_kg'] ?? 0)
                                             : (strtolower($item['waste_category'] ?? '') === 'organik'
-                                                ? ($item['total_processed_kg'] ?? 0)
+                                                ? (($item['total_processed_kg'] ?? 0) + ($item['total_picked_up_kg'] ?? 0))
                                                 : ($item['total_picked_up_kg'] ?? 0));
                                     @endphp
                                     <td class="py-2.5 px-2 text-right font-mono text-slate-700 whitespace-nowrap">
@@ -415,6 +415,12 @@
                                     <span class="text-slate-500">Total Telah Diolah Mandiri:</span>
                                     <span class="font-mono font-bold text-teal-600">{{ number_format($detailData['total_processed_kg'] ?? 0, 1, ',', '.') }} kg</span>
                                 </div>
+                                @if (($detailData['total_picked_up_kg'] ?? 0) > 0)
+                                    <div class="flex items-center justify-between text-xs py-1">
+                                        <span class="text-slate-500">Total Diangkut ke TPA:</span>
+                                        <span class="font-mono font-bold text-amber-600">{{ number_format($detailData['total_picked_up_kg'] ?? 0, 1, ',', '.') }} kg</span>
+                                    </div>
+                                @endif
                             @else
                                 <div class="flex items-center justify-between text-xs py-1">
                                     <span class="text-slate-500">Total Telah Diangkut ke TPA:</span>

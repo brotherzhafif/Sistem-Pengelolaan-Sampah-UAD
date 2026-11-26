@@ -122,7 +122,22 @@ class WeighingSession extends Model
                 if ($isSellable) {
                     $features['Penjualan Sampah'] = true;
                 } elseif ($isOrganic) {
-                    $features['Pengolahan Organik'] = true;
+                    $hasProcessed = OrganicProcessingItem::where('waste_type_id', $item->waste_type_id)
+                        ->whereHas('processing', fn ($q) => $q->where('campus_id', $campusId))
+                        ->exists();
+                    $hasPickedUp = PickupItem::where('waste_type_id', $item->waste_type_id)
+                        ->whereHas('pickup', fn ($q) => $q->where('campus_id', $campusId))
+                        ->exists();
+
+                    if ($hasProcessed) {
+                        $features['Pengolahan Organik'] = true;
+                    }
+                    if ($hasPickedUp) {
+                        $features['Pengangkutan Residu'] = true;
+                    }
+                    if (!$hasProcessed && !$hasPickedUp) {
+                        $features['Pengolahan Organik'] = true;
+                    }
                 } else {
                     $features['Pengangkutan Residu'] = true;
                 }

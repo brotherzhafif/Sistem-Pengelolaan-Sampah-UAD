@@ -77,10 +77,9 @@ class PickupController extends Controller
             $wasteTypeId = (int) $item['waste_type_id'];
             $wasteType = WasteType::findOrFail($wasteTypeId);
 
-            if ($wasteType->is_sellable || $wasteType->isOrganicCategory()) {
-                $targetModule = $wasteType->is_sellable ? 'Penjualan Sampah' : 'Pengolahan Organik';
+            if ($wasteType->is_sellable) {
                 throw ValidationException::withMessages([
-                    "pickupItems.{$index}.weight_kg" => "Jenis sampah '{$wasteType->name}' dikelola melalui {$targetModule} dan tidak masuk pengangkutan residu ke TPA.",
+                    "pickupItems.{$index}.weight_kg" => "Jenis sampah '{$wasteType->name}' bernilai jual dan dikelola melalui Penjualan Sampah, bukan pengangkutan TPA.",
                 ]);
             }
 
@@ -231,9 +230,9 @@ class PickupController extends Controller
             $wasteTypeId = (int) $item['waste_type_id'];
             $wasteType = WasteType::findOrFail($wasteTypeId);
 
-            if ($wasteType->is_sellable || $wasteType->isOrganicCategory()) {
+            if ($wasteType->is_sellable) {
                 throw ValidationException::withMessages([
-                    "editItems.{$index}.weight_kg" => "Jenis sampah '{$wasteType->name}' tidak dapat diangkut sebagai residu ke TPA.",
+                    "editItems.{$index}.weight_kg" => "Jenis sampah '{$wasteType->name}' bernilai jual dan tidak dapat diangkut sebagai residu ke TPA.",
                 ]);
             }
 

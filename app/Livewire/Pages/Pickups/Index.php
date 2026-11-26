@@ -139,10 +139,10 @@ class Index extends Component
 
     public function loadResidualItems(): void
     {
-        $residualTypes = WasteType::getResidualTypesWithAvailableStock($this->formCampusId);
+        $pickableTypes = WasteType::getPickableTypesWithAvailableStock($this->formCampusId);
         $this->pickupItems = [];
 
-        foreach ($residualTypes as $type) {
+        foreach ($pickableTypes as $type) {
             $this->pickupItems[] = [
                 'waste_type_id' => $type['waste_type_id'],
                 'waste_name' => $type['waste_name'],
@@ -233,7 +233,7 @@ class Index extends Component
     public function getAvailableResidualStockProperty(): float
     {
         $stockSummary = WasteType::getStockSummary($this->formCampusId);
-        return (float) ($stockSummary['residual_stock_kg'] ?? 0.0);
+        return (float) ($stockSummary['residual_stock_kg'] ?? 0.0) + (float) ($stockSummary['organic_stock_kg'] ?? 0.0);
     }
 
     public function savePickup(PickupController $controller): void
@@ -296,10 +296,10 @@ class Index extends Component
         $this->editBindingInfo = $pickup->getBindingInfo();
 
         $existingByType = $pickup->items->pluck('weight_kg', 'waste_type_id')->map(fn ($w) => (float) $w)->toArray();
-        $residualTypes = WasteType::getActiveResidualTypes();
+        $nonSellableTypes = WasteType::getActiveNonSellableTypes();
 
         $this->editItems = [];
-        foreach ($residualTypes as $type) {
+        foreach ($nonSellableTypes as $type) {
             $oldWeight = $existingByType[$type->id] ?? 0.0;
             $availStock = WasteType::getAvailableStock($type->id, $pickup->campus_id);
             if ($oldWeight > 0 || $availStock > 0) {

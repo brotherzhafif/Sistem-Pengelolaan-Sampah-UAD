@@ -55,13 +55,13 @@
                     <p class="text-[11px] text-slate-400 mt-1">Residu disalurkan ke TPA/Vendor</p>
                 </div>
 
-                <!-- Sisa Stok Residu di TPS -->
+                <!-- Sisa Stok Non-Jual di TPS -->
                 <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-slate-500"></div>
                     <div class="flex items-center justify-between">
                         <div>
-                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sisa Residu di TPS</span>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Residu non-organik siap angkut TPA</p>
+                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sisa Residu &amp; Organik TPS</span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Stok non-jual siap olah atau angkut TPA</p>
                         </div>
                         <div class="w-7 h-7 rounded-md bg-slate-50 text-slate-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -70,10 +70,12 @@
                         </div>
                     </div>
                     <div class="mt-3 flex items-baseline gap-1.5">
-                        <span class="font-mono text-2xl font-bold text-slate-900">{{ number_format($stockSummary['residual_stock_kg'], 1, ',', '.') }}</span>
+                        <span class="font-mono text-2xl font-bold text-slate-900">{{ number_format(($stockSummary['residual_stock_kg'] ?? 0) + ($stockSummary['organic_stock_kg'] ?? 0), 1, ',', '.') }}</span>
                         <span class="text-xs text-slate-500 font-medium">kg</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">Organik mandiri ({{ number_format($stockSummary['organic_stock_kg'] ?? 0, 1, ',', '.') }} kg) dikelola terpisah</p>
+                    <p class="text-[11px] text-slate-400 mt-1">
+                        Residu: {{ number_format($stockSummary['residual_stock_kg'] ?? 0, 1, ',', '.') }} kg | Organik: {{ number_format($stockSummary['organic_stock_kg'] ?? 0, 1, ',', '.') }} kg
+                    </p>
                 </div>
             </div>
 
@@ -322,10 +324,10 @@
                                 </div>
                             </div>
 
-                            <!-- Catatan Pemisahan Organik -->
+                            <!-- Catatan Pemisahan & Opsi Organik -->
                             <div class="p-3 rounded-xl bg-teal-50/80 border border-teal-200/70 text-[11px] text-teal-900">
-                                <span class="font-semibold">Pemisahan Kategori Organik:</span>
-                                Sampah organik (Sisa Makanan, Sampah Taman) dikelola pada menu <a href="{{ route('processing') }}" class="font-bold underline hover:text-teal-700">Pengolahan Organik</a> menjadi pupuk atau pakan, sehingga tidak masuk antrean pengangkutan TPA.
+                                <span class="font-semibold">Info Kategori Organik:</span>
+                                Sampah organik dianjurkan dikelola pada menu <a href="{{ route('processing') }}" class="font-bold underline hover:text-teal-700">Pengolahan Organik</a>. Jika stok organik berlebih dan perlu diangkut ke TPA, Anda tetap dapat memilihnya pada daftar di bawah.
                             </div>
 
                             <!-- Rincian Sampah Residu per Jenis -->
@@ -333,7 +335,7 @@
                                 <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                                     <div>
                                         <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Detail Jenis Sampah Diangkut <span class="text-rose-500">*</span></h4>
-                                        <p class="text-[11px] text-slate-500">Masukkan bobot per jenis sampah residu yang dimuat ke armada.</p>
+                                        <p class="text-[11px] text-slate-500">Masukkan bobot per jenis sampah (residu atau sisa organik berlebih) yang dimuat ke armada.</p>
                                     </div>
                                     <div class="text-right">
                                         <span class="text-xs font-bold text-slate-700">Total Muatan: </span>
@@ -349,9 +351,9 @@
 
                                 @if (empty($pickupItems))
                                     <div class="p-5 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
-                                        <h5 class="text-xs font-bold text-slate-800">Belum Ada Stok Residu Siap Angkut</h5>
+                                        <h5 class="text-xs font-bold text-slate-800">Belum Ada Stok Residu / Non-Jual di TPS</h5>
                                         <p class="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                                            Belum terdapat stok sampah residu non-organik yang tersedia di TPS kampus ini. Pastikan penimbangan kategori Residu/B3 sudah tercatat.
+                                            Belum terdapat stok sampah residu maupun sisa organik di TPS kampus ini. Pastikan penimbangan sudah tercatat.
                                         </p>
                                     </div>
                                 @else
@@ -361,7 +363,11 @@
                                                 <div>
                                                     <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
                                                     <div class="flex items-center gap-2 mt-1">
-                                                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">{{ $item['waste_category'] }}</span>
+                                                        @if (strtolower(trim($item['waste_category'] ?? '')) === 'organik')
+                                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-emerald-50 text-emerald-700 border border-emerald-200/70">Organik (Opsional)</span>
+                                                        @else
+                                                            <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">{{ $item['waste_category'] }}</span>
+                                                        @endif
                                                         <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-[10px] font-semibold text-amber-800 border border-amber-200/60">
                                                             <span>Sisa TPS:</span>
                                                             <span class="font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</span>
