@@ -129,10 +129,16 @@ class Index extends Component
                 $type = WasteType::find($this->selectedWasteTypeId);
                 if ($type) {
                     $weighed = $type->weighingItems()
-                        ->when($campusQueryId, fn ($q) => $q->whereHas('weighingSession', fn ($sq) => $sq->where('campus_id', $campusQueryId)))
+                        ->when($campusQueryId, fn ($q) => $q->whereHas('session', fn ($sq) => $sq->where('campus_id', $campusQueryId)))
                         ->sum('weight_kg');
                     $sold = $type->saleItems()
                         ->when($campusQueryId, fn ($q) => $q->whereHas('sale', fn ($sq) => $sq->where('campus_id', $campusQueryId)))
+                        ->sum('weight_kg');
+                    $processed = $type->organicProcessingItems()
+                        ->when($campusQueryId, fn ($q) => $q->whereHas('processing', fn ($sq) => $sq->where('campus_id', $campusQueryId)))
+                        ->sum('weight_kg');
+                    $pickedUp = $type->pickupItems()
+                        ->when($campusQueryId, fn ($q) => $q->whereHas('pickup', fn ($sq) => $sq->where('campus_id', $campusQueryId)))
                         ->sum('weight_kg');
                     $stock = WasteType::getAvailableStock($type->id, $campusQueryId);
                     $detailData = [
@@ -143,6 +149,8 @@ class Index extends Component
                         'default_price_per_kg' => (float) $type->default_price_per_kg,
                         'total_weighed_kg' => (float) $weighed,
                         'total_sold_kg' => (float) $sold,
+                        'total_processed_kg' => (float) $processed,
+                        'total_picked_up_kg' => (float) $pickedUp,
                         'available_stock_kg' => (float) $stock,
                         'potential_revenue' => (float) ($stock * $type->default_price_per_kg),
                     ];

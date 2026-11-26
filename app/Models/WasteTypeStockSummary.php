@@ -18,6 +18,8 @@ class WasteTypeStockSummary extends Model
         'waste_type_id',
         'total_weighed_kg',
         'total_sold_kg',
+        'total_processed_kg',
+        'total_picked_up_kg',
         'available_stock_kg',
         'potential_revenue',
     ];
@@ -25,6 +27,8 @@ class WasteTypeStockSummary extends Model
     protected $casts = [
         'total_weighed_kg' => 'decimal:2',
         'total_sold_kg' => 'decimal:2',
+        'total_processed_kg' => 'decimal:2',
+        'total_picked_up_kg' => 'decimal:2',
         'available_stock_kg' => 'decimal:2',
         'potential_revenue' => 'decimal:2',
     ];
@@ -64,7 +68,9 @@ class WasteTypeStockSummary extends Model
         int $campusId,
         int $wasteTypeId,
         float $weighedDelta = 0.0,
-        float $soldDelta = 0.0
+        float $soldDelta = 0.0,
+        float $processedDelta = 0.0,
+        float $pickedUpDelta = 0.0
     ): self {
         $record = static::where('campus_id', $campusId)
             ->where('waste_type_id', $wasteTypeId)
@@ -77,6 +83,8 @@ class WasteTypeStockSummary extends Model
                 'waste_type_id' => $wasteTypeId,
                 'total_weighed_kg' => 0.00,
                 'total_sold_kg' => 0.00,
+                'total_processed_kg' => 0.00,
+                'total_picked_up_kg' => 0.00,
                 'available_stock_kg' => 0.00,
                 'potential_revenue' => 0.00,
             ]);
@@ -84,7 +92,9 @@ class WasteTypeStockSummary extends Model
 
         $newWeighed = max(0.0, (float) $record->total_weighed_kg + $weighedDelta);
         $newSold = max(0.0, (float) $record->total_sold_kg + $soldDelta);
-        $available = max(0.0, $newWeighed - $newSold);
+        $newProcessed = max(0.0, (float) $record->total_processed_kg + $processedDelta);
+        $newPickedUp = max(0.0, (float) $record->total_picked_up_kg + $pickedUpDelta);
+        $available = max(0.0, $newWeighed - $newSold - $newProcessed - $newPickedUp);
 
         $wasteType = WasteType::find($wasteTypeId);
         $potential = 0.00;
@@ -95,6 +105,8 @@ class WasteTypeStockSummary extends Model
         $record->update([
             'total_weighed_kg' => $newWeighed,
             'total_sold_kg' => $newSold,
+            'total_processed_kg' => $newProcessed,
+            'total_picked_up_kg' => $newPickedUp,
             'available_stock_kg' => $available,
             'potential_revenue' => $potential,
         ]);

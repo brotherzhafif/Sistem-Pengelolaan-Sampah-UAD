@@ -55,6 +55,7 @@ class Sidebar extends Component
         // Hak Akses Modul Berdasarkan Logika Peran RBAC
         $canWeighing = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor;
         $canSales = $isSuperAdmin || $isAdminKampus || $isPetugasPenjualan || $isAuditor;
+        $canProcessing = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor;
         $canPickups = $isSuperAdmin || $isAdminKampus || $isPetugasTps || $isAuditor;
         $canExpenses = $isSuperAdmin || $isAdminKampus || $isKeuangan;
         $canFinance = $isSuperAdmin || $isAdminKampus || $isKeuangan || $isAuditor;
@@ -70,6 +71,7 @@ class Sidebar extends Component
             'isSuperAdmin' => $isSuperAdmin || $isAuditor,
             'canWeighing' => $canWeighing,
             'canSales' => $canSales,
+            'canProcessing' => $canProcessing,
             'canPickups' => $canPickups,
             'canExpenses' => $canExpenses,
             'canFinance' => $canFinance,

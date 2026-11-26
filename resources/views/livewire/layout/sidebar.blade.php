@@ -121,6 +121,18 @@
                     </a>
                 @endif
 
+                <!-- Pengolahan Organik -->
+                @if ($canProcessing)
+                    <a href="{{ route('processing') }}"
+                       class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-xs font-medium transition {{ request()->routeIs('processing') ? 'bg-white/10 text-emerald-400 font-semibold' : 'text-slate-300 hover:text-white hover:bg-white/5' }}"
+                       title="Pengolahan Sampah Organik Mandiri">
+                        <svg class="w-4 h-4 shrink-0 {{ request()->routeIs('processing') ? 'text-emerald-400' : 'text-slate-400' }}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        <span>Pengolahan Organik</span>
+                    </a>
+                @endif
+
                 <!-- Pengangkutan -->
                 @if ($canPickups)
                     <a href="{{ route('pickups') }}" 

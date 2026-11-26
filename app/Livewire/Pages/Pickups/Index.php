@@ -17,7 +17,6 @@ class Index extends Component
 {
     use WithPagination;
 
-    // Filter & Scope (loose typing to prevent PHP 8 string/null TypeError with select elements)
     public $selectedCampusId = null;
     public string $filterDateFrom = '';
     public string $filterDateTo = '';
@@ -28,19 +27,35 @@ class Index extends Component
         $this->resetPage();
     }
 
+    public function updatingSelectedCampusId(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterDateFrom(): void
+    {
+        $this->resetPage();
+    }
+
+    public function updatingFilterDateTo(): void
+    {
+        $this->resetPage();
+    }
+
     // Modal Create state
     public bool $showCreateModal = false;
 
-    // Form Transaksi Pengangkutan
+    // Form Transaksi Pengangkutan (per item jenis sampah residu)
     public $formCampusId = null;
     public $formVendorId = null;
     public string $formDate = '';
-    public string $formVolumeKg = '';
+    public string $formVolumeKg = '0';
     public string $formCostPerKg = '';
     public string $formTotalCost = '0';
     public string $formDriverName = '';
     public string $formVehiclePlate = '';
     public string $formNotes = '';
+    public array $pickupItems = [];
 
     // Modal Edit state
     public bool $showEditModal = false;
@@ -48,15 +63,14 @@ class Index extends Component
     public $editCampusId = null;
     public $editVendorId = null;
     public string $editDate = '';
-    public string $editVolumeKg = '';
+    public string $editVolumeKg = '0';
     public string $editCostPerKg = '';
     public string $editTotalCost = '0';
     public string $editDriverName = '';
     public string $editVehiclePlate = '';
     public string $editNotes = '';
     public ?array $editBindingInfo = null;
-    public float $editAvailableResidual = 0.0;
-    public float $editOldVolumeKg = 0.0;
+    public array $editItems = [];
 
     // Modal Confirmation Deletion & View Detail state
     public ?int $confirmDeletePickupId = null;
@@ -106,19 +120,39 @@ class Index extends Component
         $defaultCampusId = !empty($this->selectedCampusId)
             ? (int) $this->selectedCampusId
             : ($user->campus_id ? (int) $user->campus_id : Campus::first()?->id);
-        
+
         $this->formCampusId = $defaultCampusId;
-        
+
         $firstVendor = Vendor::getActiveVendors()->first();
         $this->formVendorId = $firstVendor?->id;
         $this->formCostPerKg = $firstVendor ? (string) (float) $firstVendor->cost_per_kg : '';
-        
+
         $this->formDate = Carbon::today()->format('Y-m-d');
-        $this->formVolumeKg = '';
+        $this->formVolumeKg = '0';
         $this->formTotalCost = '0';
         $this->formDriverName = '';
         $this->formVehiclePlate = '';
         $this->formNotes = '';
+
+        $this->loadResidualItems();
+    }
+
+    public function loadResidualItems(): void
+    {
+        $residualTypes = WasteType::getResidualTypesWithAvailableStock($this->formCampusId);
+        $this->pickupItems = [];
+
+        foreach ($residualTypes as $type) {
+            $this->pickupItems[] = [
+                'waste_type_id' => $type['waste_type_id'],
+                'waste_name' => $type['waste_name'],
+                'waste_category' => $type['waste_category'],
+                'available_stock_kg' => (float) $type['available_stock_kg'],
+                'weight_kg' => '',
+            ];
+        }
+
+        $this->calculateTotalCost();
     }
 
     public function openCreateModal(): void
@@ -142,7 +176,7 @@ class Index extends Component
     {
         $this->resetErrorBag();
         $this->resetValidation();
-        $this->calculateTotalCost();
+        $this->loadResidualItems();
     }
 
     public function updatedFormVendorId($value = null): void
@@ -161,15 +195,19 @@ class Index extends Component
         }
     }
 
-    public function updatedFormVolumeKg(): void
+    public function updatePickupItemWeight(int $index): void
     {
-        $volume = floatval($this->formVolumeKg ?: 0);
-        $maxStock = $this->availableResidualStock;
-        if ($volume > $maxStock) {
-            $this->addError('formVolumeKg', 'Muatan melebihi sisa residu (' . number_format($maxStock, 1, ',', '.') . ' kg)');
-        } else {
-            $this->resetErrorBag('formVolumeKg');
+        if (isset($this->pickupItems[$index])) {
+            $weight = floatval($this->pickupItems[$index]['weight_kg'] ?? 0);
+            $maxStock = floatval($this->pickupItems[$index]['available_stock_kg'] ?? 0);
+
+            if ($weight > $maxStock) {
+                $this->addError("pickupItems.{$index}.weight_kg", 'Maksimal bobot ' . number_format($maxStock, 1, ',', '.') . ' kg');
+            } else {
+                $this->resetErrorBag("pickupItems.{$index}.weight_kg");
+            }
         }
+
         $this->calculateTotalCost();
     }
 
@@ -181,7 +219,13 @@ class Index extends Component
 
     public function calculateTotalCost(): void
     {
-        $volume = floatval($this->formVolumeKg ?: 0);
+        $volume = 0.0;
+        foreach ($this->pickupItems as $item) {
+            $volume += max(0.0, floatval($item['weight_kg'] ?? 0));
+        }
+        $volume = round($volume, 2);
+        $this->formVolumeKg = (string) $volume;
+
         $cost = floatval($this->formCostPerKg ?: 0);
         $this->formTotalCost = (string) round($volume * $cost, 2);
     }
@@ -192,19 +236,6 @@ class Index extends Component
         return (float) ($stockSummary['residual_stock_kg'] ?? 0.0);
     }
 
-    public function getCanSubmitProperty(): bool
-    {
-        $volume = floatval($this->formVolumeKg ?: 0);
-        $cost = floatval($this->formCostPerKg ?: 0);
-        $maxResidual = $this->availableResidualStock;
-
-        return !empty($this->formCampusId)
-            && !empty($this->formVendorId)
-            && $volume > 0
-            && $volume <= $maxResidual
-            && $cost > 0;
-    }
-
     public function savePickup(PickupController $controller): void
     {
         try {
@@ -212,11 +243,11 @@ class Index extends Component
                 'campus_id' => $this->formCampusId,
                 'vendor_id' => $this->formVendorId,
                 'pickup_date' => $this->formDate,
-                'volume_kg' => $this->formVolumeKg,
                 'cost_per_kg' => $this->formCostPerKg,
                 'driver_name' => $this->formDriverName,
                 'vehicle_plate' => $this->formVehiclePlate,
                 'notes' => $this->formNotes,
+                'items' => $this->pickupItems,
             ]);
 
             $this->showCreateModal = false;
@@ -231,7 +262,6 @@ class Index extends Component
                 'campus_id' => 'formCampusId',
                 'vendor_id' => 'formVendorId',
                 'pickup_date' => 'formDate',
-                'volume_kg' => 'formVolumeKg',
                 'cost_per_kg' => 'formCostPerKg',
                 'driver_name' => 'formDriverName',
                 'vehicle_plate' => 'formVehiclePlate',
@@ -254,23 +284,38 @@ class Index extends Component
         $this->resetErrorBag();
         $this->resetValidation();
 
-        $pickup = Pickup::findOrFail($id);
+        $pickup = Pickup::with('items')->findOrFail($id);
         $this->editPickupId = $pickup->id;
         $this->editCampusId = $pickup->campus_id;
         $this->editVendorId = $pickup->vendor_id;
         $this->editDate = $pickup->pickup_date ? $pickup->pickup_date->format('Y-m-d') : Carbon::today()->format('Y-m-d');
-        $this->editVolumeKg = (string) (float) $pickup->volume_kg;
         $this->editCostPerKg = (string) (float) $pickup->cost_per_kg;
-        $this->editTotalCost = (string) (float) $pickup->total_cost;
         $this->editDriverName = (string) ($pickup->driver_name ?? '');
         $this->editVehiclePlate = (string) ($pickup->vehicle_plate ?? '');
         $this->editNotes = (string) ($pickup->notes ?? '');
-
         $this->editBindingInfo = $pickup->getBindingInfo();
-        $this->editOldVolumeKg = (float) $pickup->volume_kg;
-        $stock = WasteType::getStockSummary($pickup->campus_id);
-        $this->editAvailableResidual = (float) ($stock['residual_stock_kg'] ?? 0.0);
 
+        $existingByType = $pickup->items->pluck('weight_kg', 'waste_type_id')->map(fn ($w) => (float) $w)->toArray();
+        $residualTypes = WasteType::getActiveResidualTypes();
+
+        $this->editItems = [];
+        foreach ($residualTypes as $type) {
+            $oldWeight = $existingByType[$type->id] ?? 0.0;
+            $availStock = WasteType::getAvailableStock($type->id, $pickup->campus_id);
+            if ($oldWeight > 0 || $availStock > 0) {
+                $this->editItems[] = [
+                    'waste_type_id' => $type->id,
+                    'waste_name' => $type->name,
+                    'waste_category' => $type->category,
+                    'old_weight_kg' => $oldWeight,
+                    'available_stock_kg' => $availStock,
+                    'max_allowable_kg' => round($oldWeight + $availStock, 2),
+                    'weight_kg' => $oldWeight > 0 ? (string) $oldWeight : '',
+                ];
+            }
+        }
+
+        $this->calculateEditTotal();
         $this->showEditModal = true;
     }
 
@@ -279,6 +324,7 @@ class Index extends Component
         $this->showEditModal = false;
         $this->editPickupId = null;
         $this->editBindingInfo = null;
+        $this->editItems = [];
         $this->resetErrorBag();
         $this->resetValidation();
         $this->dispatch('close-modal');
@@ -296,8 +342,18 @@ class Index extends Component
         $this->calculateEditTotal();
     }
 
-    public function updatedEditVolumeKg(): void
+    public function updateEditItemWeight(int $index): void
     {
+        if (isset($this->editItems[$index])) {
+            $weight = floatval($this->editItems[$index]['weight_kg'] ?? 0);
+            $maxVal = floatval($this->editItems[$index]['max_allowable_kg'] ?? 0);
+            if ($weight > $maxVal) {
+                $this->addError("editItems.{$index}.weight_kg", 'Maksimal muatan ' . number_format($maxVal, 1, ',', '.') . ' kg');
+            } else {
+                $this->resetErrorBag("editItems.{$index}.weight_kg");
+            }
+        }
+
         $this->calculateEditTotal();
     }
 
@@ -309,13 +365,15 @@ class Index extends Component
 
     public function calculateEditTotal(): void
     {
-        $vol = floatval($this->editVolumeKg);
-        $cost = floatval($this->editCostPerKg);
-        if ($vol > 0 && $cost > 0) {
-            $this->editTotalCost = (string) round($vol * $cost, 2);
-        } else {
-            $this->editTotalCost = '0';
+        $vol = 0.0;
+        foreach ($this->editItems as $item) {
+            $vol += max(0.0, floatval($item['weight_kg'] ?? 0));
         }
+        $vol = round($vol, 2);
+        $this->editVolumeKg = (string) $vol;
+
+        $cost = floatval($this->editCostPerKg ?: 0);
+        $this->editTotalCost = ($vol > 0 && $cost > 0) ? (string) round($vol * $cost, 2) : '0';
     }
 
     public function updatePickup(PickupController $controller): void
@@ -332,11 +390,11 @@ class Index extends Component
                 'campus_id' => $this->editCampusId,
                 'vendor_id' => $this->editVendorId,
                 'pickup_date' => $this->editDate,
-                'volume_kg' => $this->editVolumeKg,
                 'cost_per_kg' => $this->editCostPerKg,
                 'driver_name' => $this->editDriverName,
                 'vehicle_plate' => $this->editVehiclePlate,
                 'notes' => $this->editNotes,
+                'items' => $this->editItems,
             ]);
 
             $this->showEditModal = false;
@@ -349,7 +407,6 @@ class Index extends Component
                 'campus_id' => 'editCampusId',
                 'vendor_id' => 'editVendorId',
                 'pickup_date' => 'editDate',
-                'volume_kg' => 'editVolumeKg',
                 'cost_per_kg' => 'editCostPerKg',
                 'driver_name' => 'editDriverName',
                 'vehicle_plate' => 'editVehiclePlate',
@@ -412,8 +469,8 @@ class Index extends Component
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin', 'auditor_pimpinan', 'Auditor / Pimpinan']) || !$user->campus_id;
         $canCreate = $user->hasRole(['super_admin', 'Super Admin', 'admin_kampus', 'Admin Kampus', 'koordinator_tps3r', 'Koordinator TPS3R', 'petugas_tps', 'Petugas TPS', 'operator_timbangan', 'Operator Timbangan']) || $user->can('logistics.create');
 
-        $campusQueryId = $isSuperAdmin 
-            ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null) 
+        $campusQueryId = $isSuperAdmin
+            ? (!empty($this->selectedCampusId) ? (int) $this->selectedCampusId : null)
             : (!empty($user->campus_id) ? (int) $user->campus_id : null);
 
         $pickups = Pickup::getFilteredList($campusQueryId, $this->filterDateFrom, $this->filterDateTo, $this->perPage);

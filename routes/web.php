@@ -16,6 +16,10 @@ Route::get('sales', [App\Http\Controllers\SaleController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('sales');
 
+Route::get('processing', [App\Http\Controllers\OrganicProcessingController::class, 'index'])
+    ->middleware(['auth', 'verified'])
+    ->name('processing');
+
 Route::get('pickups', [App\Http\Controllers\PickupController::class, 'index'])
     ->middleware(['auth', 'verified'])
     ->name('pickups');

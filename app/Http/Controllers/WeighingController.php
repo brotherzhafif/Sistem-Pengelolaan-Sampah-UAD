@@ -216,21 +216,15 @@ class WeighingController extends Controller
                 $reduction = $oldWeight - $newWeight;
                 $wasteType = WasteType::find($typeId);
                 
-                if ($wasteType && $wasteType->is_sellable) {
+                if ($wasteType) {
                     $availableStock = WasteType::getAvailableStock($typeId, $session->campus_id);
                     if ($reduction > $availableStock) {
                         $minAllowed = max(0, $oldWeight - $availableStock);
+                        $flowDesc = $wasteType->is_sellable
+                            ? 'terjual'
+                            : ($wasteType->isOrganicCategory() ? 'diolah' : 'diangkut');
                         throw ValidationException::withMessages([
-                            'editItems' => "Bobot '{$wasteType->name}' tidak dapat dikurangi menjadi {$newWeight} kg karena sisa stok di TPS saat ini hanya " . number_format($availableStock, 1, ',', '.') . " kg (sebagian telah terjual). Bobot minimal yang diperbolehkan adalah " . number_format($minAllowed, 1, ',', '.') . " kg.",
-                        ]);
-                    }
-                } elseif ($wasteType && !$wasteType->is_sellable) {
-                    $stockSummary = WasteType::getStockSummary($session->campus_id);
-                    $availableResidual = (float) ($stockSummary['residual_stock_kg'] ?? 0.0);
-                    if ($reduction > $availableResidual) {
-                        $minAllowed = max(0, $oldWeight - $availableResidual);
-                        throw ValidationException::withMessages([
-                            'editItems' => "Bobot residu '{$wasteType->name}' tidak dapat dikurangi menjadi {$newWeight} kg karena sisa residu di TPS hanya " . number_format($availableResidual, 1, ',', '.') . " kg (sebagian telah diangkut). Bobot minimal yang diperbolehkan adalah " . number_format($minAllowed, 1, ',', '.') . " kg.",
+                            'editItems' => "Bobot '{$wasteType->name}' tidak dapat dikurangi menjadi {$newWeight} kg karena sisa stok di TPS saat ini hanya " . number_format($availableStock, 1, ',', '.') . " kg (sebagian telah {$flowDesc}). Bobot minimal yang diperbolehkan adalah " . number_format($minAllowed, 1, ',', '.') . " kg.",
                         ]);
                     }
                 }

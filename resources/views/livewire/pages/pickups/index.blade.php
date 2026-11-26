@@ -61,7 +61,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Sisa Residu di TPS</span>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Semua sampah yang tidak bisa dijual</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Residu non-organik siap angkut TPA</p>
                         </div>
                         <div class="w-7 h-7 rounded-md bg-slate-50 text-slate-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -73,7 +73,7 @@
                         <span class="font-mono text-2xl font-bold text-slate-900">{{ number_format($stockSummary['residual_stock_kg'], 1, ',', '.') }}</span>
                         <span class="text-xs text-slate-500 font-medium">kg</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">Antrean penjemputan pengangkutan vendor</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Organik mandiri ({{ number_format($stockSummary['organic_stock_kg'] ?? 0, 1, ',', '.') }} kg) dikelola terpisah</p>
                 </div>
             </div>
 
@@ -144,15 +144,15 @@
                 </div>
 
                 <div class="overflow-x-auto overflow-y-auto max-h-[540px] sidebar-scroll">
-                    <table class="w-full text-left text-xs text-slate-600 table-fixed border-collapse">
+                    <table class="w-full text-left text-xs text-slate-600 table-fixed border-collapse min-w-[820px]">
                         <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-[2px] shadow-xs border-b border-slate-200 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                             <tr>
-                                <th class="py-3 px-3 w-[14%]">Tanggal</th>
-                                <th class="py-3 px-3 w-[22%]">Kampus & Vendor</th>
-                                <th class="py-3 px-3 w-[15%]">Armada / Driver</th>
-                                <th class="py-3 px-3 text-right w-[14%]">Volume</th>
-                                <th class="py-3 px-3 text-right w-[15%]">Total Biaya</th>
-                                <th class="py-3 px-3 w-[10%]">Petugas</th>
+                                <th class="py-3 px-3 w-[12%]">Tanggal</th>
+                                <th class="py-3 px-3 w-[20%]">Kampus &amp; Vendor</th>
+                                <th class="py-3 px-3 w-[22%]">Detail Sampah Diangkut</th>
+                                <th class="py-3 px-3 w-[13%]">Armada / Driver</th>
+                                <th class="py-3 px-3 text-right w-[11%]">Volume</th>
+                                <th class="py-3 px-3 text-right w-[12%]">Total Biaya</th>
                                 <th class="py-3 px-2 text-center w-[10%]">Aksi</th>
                             </tr>
                         </thead>
@@ -169,6 +169,20 @@
                                         </span>
                                         <div class="font-semibold text-slate-800 truncate" title="{{ $p->vendor->name }}">{{ $p->vendor->name }}</div>
                                     </td>
+                                    <td class="py-2.5 px-3">
+                                        @if ($p->items && $p->items->count() > 0)
+                                            <div class="flex flex-wrap gap-1">
+                                                @foreach ($p->items as $item)
+                                                    <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-amber-50 text-amber-800 border border-amber-200/70">
+                                                        <span class="truncate max-w-[110px]" title="{{ $item->wasteType?->name }}">{{ $item->wasteType?->name ?? 'Residu' }}</span>
+                                                        <span class="font-mono font-bold">{{ number_format($item->weight_kg, 1, ',', '.') }}</span>
+                                                    </span>
+                                                @endforeach
+                                            </div>
+                                        @else
+                                            <span class="text-[11px] text-slate-400 italic">Total residu umum</span>
+                                        @endif
+                                    </td>
                                     <td class="py-2.5 px-3 truncate">
                                         <div class="text-slate-800 truncate" title="{{ $p->driver_name ?: '-' }}">{{ $p->driver_name ?: '-' }}</div>
                                         @if ($p->vehicle_plate)
@@ -184,14 +198,12 @@
                                         <div class="font-mono font-bold text-rose-600">Rp {{ number_format($p->total_cost, 0, ',', '.') }}</div>
                                         <div class="text-[10px] text-slate-400 font-mono">@ Rp {{ number_format($p->cost_per_kg, 0, ',', '.') }}/kg</div>
                                     </td>
-                                    <td class="py-2.5 px-3 text-slate-700 truncate" title="{{ $p->creator?->name ?? 'Sistem' }}">
-                                        <span class="truncate block">{{ $p->creator?->name ?? 'Sistem' }}</span>
-                                    </td>
                                     <td class="py-2.5 px-2 text-center">
                                         <div class="flex items-center justify-center gap-1">
                                             <button wire:click="viewPickup({{ $p->id }})" 
                                                     type="button" 
                                                     title="Lihat Rincian Pengangkutan"
+                                                    aria-label="Lihat Rincian Pengangkutan"
                                                     class="p-1.5 text-slate-400 hover:text-emerald-600 rounded-lg hover:bg-emerald-50 transition cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
@@ -202,6 +214,7 @@
                                             <button wire:click="openEditModal({{ $p->id }})" 
                                                     type="button" 
                                                     title="Edit Catatan Pengangkutan"
+                                                    aria-label="Edit Catatan Pengangkutan"
                                                     class="p-1.5 text-slate-400 hover:text-amber-600 rounded-lg hover:bg-amber-50 transition cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -210,6 +223,7 @@
                                             <button @click="deleteModal = true; $wire.confirmDelete({{ $p->id }})" 
                                                     type="button" 
                                                     title="Hapus Catatan Pengangkutan"
+                                                    aria-label="Hapus Catatan Pengangkutan"
                                                     class="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition cursor-pointer">
                                                 <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -221,7 +235,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="8" class="py-8 text-center text-slate-400">
+                                    <td colspan="7" class="py-8 text-center text-slate-400">
                                         <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 17a2 2 0 11-4 0 2 2 0 014 0zM19 17a2 2 0 11-4 0 2 2 0 014 0z" />
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M13 16V6a1 1 0 00-1-1H4a1 1 0 00-1 1v10a1 1 0 001 1h1m8-1a1 1 0 01-1 1H9m4-1V8a1 1 0 011-1h2.586a1 1 0 01.707.293l3.414 3.414a1 1 0 01.293.707V16a1 1 0 01-1 1h-1m-6-1a1 1 0 001 1h1M5 17a2 2 0 104 0m-4 0a2 2 0 114 0m6 0a2 2 0 104 0m-4 0a2 2 0 114 0" />
@@ -244,14 +258,15 @@
                 <div x-show="showModal"
                      x-cloak
                      style="display: none;"
+                     @keydown.escape.window="if (showModal) { showModal = false; $wire.closeCreateModal(); }"
                      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
                         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                             <div>
                                 <h3 class="text-base font-bold text-slate-900">Catat Pengangkutan Residu Sampah</h3>
-                                <p class="text-xs text-slate-500">Pencatatan volume residu yang diangkut keluar oleh vendor mitra</p>
+                                <p class="text-xs text-slate-500">Catat rincian jenis sampah residu yang diangkut ke TPA oleh vendor mitra</p>
                             </div>
-                            <button @click="showModal = false; $wire.closeCreateModal()" type="button" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                            <button @click="showModal = false; $wire.closeCreateModal()" type="button" aria-label="Tutup modal" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
                             </button>
                         </div>
@@ -286,38 +301,12 @@
                                 </div>
                             </div>
 
-                            <!-- Tanggal & Volume Angkut -->
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                            <!-- Tanggal & Tarif -->
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Angkut <span class="text-rose-500">*</span></label>
                                     <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
                                     @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Volume Muatan (kg) <span class="text-rose-500">*</span></label>
-                                    <input type="number" 
-                                           step="any" 
-                                           min="0" 
-                                           wire:model.live.debounce.300ms="formVolumeKg" 
-                                           x-on:input="
-                                               let maxVal = {{ (float) $this->availableResidualStock }};
-                                               let val = parseFloat($el.value);
-                                               if (!isNaN(val) && maxVal > 0 && val > maxVal) {
-                                                   $el.value = maxVal;
-                                                   $wire.set('formVolumeKg', maxVal);
-                                                   $wire.calculateTotalCost();
-                                                    window.dispatchEvent(new CustomEvent('top-alert', {
-                                                        detail: { message: 'Volume angkut disesuaikan ke sisa residu (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning', title: 'Batas Maksimum Residu' }
-                                                    }));
-                                               }
-                                           "
-                                           placeholder="0.0" 
-                                           class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                    <div class="text-[10px] text-slate-500 font-medium mt-0.5">
-                                        Sisa Residu di TPS: <strong class="text-amber-700 font-mono">{{ number_format($this->availableResidualStock, 1, ',', '.') }} kg</strong>
-                                    </div>
-                                    @error('formVolumeKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
@@ -326,11 +315,85 @@
                                            step="any" 
                                            min="0" 
                                            wire:model.live.debounce.250ms="formCostPerKg" 
-                                           placeholder="Contoh: 100" 
+                                           placeholder="Contoh: 150" 
                                            class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
                                     <div class="text-[10px] text-slate-400 mt-0.5">Otomatis terisi dari data vendor (dapat disesuaikan)</div>
                                     @error('formCostPerKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
+                            </div>
+
+                            <!-- Catatan Pemisahan Organik -->
+                            <div class="p-3 rounded-xl bg-teal-50/80 border border-teal-200/70 text-[11px] text-teal-900">
+                                <span class="font-semibold">Pemisahan Kategori Organik:</span>
+                                Sampah organik (Sisa Makanan, Sampah Taman) dikelola pada menu <a href="{{ route('processing') }}" class="font-bold underline hover:text-teal-700">Pengolahan Organik</a> menjadi pupuk atau pakan, sehingga tidak masuk antrean pengangkutan TPA.
+                            </div>
+
+                            <!-- Rincian Sampah Residu per Jenis -->
+                            <div>
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                    <div>
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Detail Jenis Sampah Diangkut <span class="text-rose-500">*</span></h4>
+                                        <p class="text-[11px] text-slate-500">Masukkan bobot per jenis sampah residu yang dimuat ke armada.</p>
+                                    </div>
+                                    <div class="text-right">
+                                        <span class="text-xs font-bold text-slate-700">Total Muatan: </span>
+                                        <span class="font-mono text-sm font-bold text-slate-900">{{ number_format(floatval($formVolumeKg), 1, ',', '.') }} kg</span>
+                                    </div>
+                                </div>
+
+                                @error('pickupItems')
+                                    <div class="p-2.5 mb-3 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">
+                                        {{ $message }}
+                                    </div>
+                                @enderror
+
+                                @if (empty($pickupItems))
+                                    <div class="p-5 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                                        <h5 class="text-xs font-bold text-slate-800">Belum Ada Stok Residu Siap Angkut</h5>
+                                        <p class="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
+                                            Belum terdapat stok sampah residu non-organik yang tersedia di TPS kampus ini. Pastikan penimbangan kategori Residu/B3 sudah tercatat.
+                                        </p>
+                                    </div>
+                                @else
+                                    <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                        @foreach ($pickupItems as $index => $item)
+                                            <div class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3 hover:bg-slate-50/50 transition">
+                                                <div>
+                                                    <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
+                                                    <div class="flex items-center gap-2 mt-1">
+                                                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">{{ $item['waste_category'] }}</span>
+                                                        <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-amber-50 text-[10px] font-semibold text-amber-800 border border-amber-200/60">
+                                                            <span>Sisa TPS:</span>
+                                                            <span class="font-mono">{{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg</span>
+                                                        </span>
+                                                    </div>
+                                                </div>
+                                                <div class="w-full sm:w-44">
+                                                    <input type="number" step="0.01" min="0" max="{{ $item['available_stock_kg'] }}"
+                                                           wire:model="pickupItems.{{ $index }}.weight_kg"
+                                                           wire:input="updatePickupItemWeight({{ $index }})"
+                                                           x-on:input="
+                                                               let maxVal = {{ (float) $item['available_stock_kg'] }};
+                                                               let val = parseFloat($el.value);
+                                                               if (!isNaN(val) && val > maxVal) {
+                                                                   $el.value = maxVal;
+                                                                   $wire.set('pickupItems.{{ $index }}.weight_kg', maxVal);
+                                                                   $wire.updatePickupItemWeight({{ $index }});
+                                                                   window.dispatchEvent(new CustomEvent('top-alert', {
+                                                                       detail: { message: 'Bobot ' + @js($item['waste_name']) + ' disesuaikan ke sisa stok (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning', title: 'Batas Maksimum Residu' }
+                                                                   }));
+                                                               }
+                                                           "
+                                                           placeholder="0.0 kg"
+                                                           class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 py-2">
+                                                    @error("pickupItems.{$index}.weight_kg")
+                                                        <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
+                                                    @enderror
+                                                </div>
+                                            </div>
+                                        @endforeach
+                                    </div>
+                                @endif
                             </div>
 
                             <!-- Total Biaya Debet Preview Card -->
@@ -388,16 +451,17 @@
                 <div x-show="showEditModal"
                      x-cloak
                      style="display: none;"
+                     @keydown.escape.window="if (showEditModal) { showEditModal = false; $wire.closeEditModal(); }"
                      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
                     <div @click.away="showEditModal = false; $wire.closeEditModal()" 
-                         class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-xl max-h-[90vh] overflow-y-auto animate-scaleUp">
+                         class="bg-white rounded-2xl border border-slate-200 shadow-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto animate-scaleUp">
                         <!-- Header Modal Edit -->
                         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                             <div>
                                 <h3 class="font-bold text-base text-slate-800">Edit Catatan Pengangkutan Residu</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">Penyesuaian data muatan residu dan sinkronisasi buku kas otomatis</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Penyesuaian rincian jenis muatan residu dan sinkronisasi buku kas otomatis</p>
                             </div>
-                            <button @click="showEditModal = false; $wire.closeEditModal()" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
+                            <button @click="showEditModal = false; $wire.closeEditModal()" type="button" aria-label="Tutup modal edit" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
                             </button>
                         </div>
@@ -450,34 +514,12 @@
                                 </div>
                             </div>
 
-                            <!-- Tanggal Pengangkutan -->
-                            <div>
-                                <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pengangkutan <span class="text-rose-500">*</span></label>
-                                <input type="date" wire:model="editDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
-                                @error('editDate') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
-                            </div>
-
-                            <!-- Muatan & Tarif Grid -->
+                            <!-- Tanggal & Tarif -->
                             <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Bobot Muatan Residu (kg) <span class="text-rose-500">*</span></label>
-                                    <input type="number" step="any" min="0" max="{{ (float) ($editOldVolumeKg + $editAvailableResidual) }}" wire:model.live.debounce.300ms="editVolumeKg" x-on:input="
-                                                let maxVal = {{ (float) ($editOldVolumeKg + $editAvailableResidual) }};
-                                                let val = parseFloat($el.value);
-                                                if (!isNaN(val) && maxVal > 0 && val > maxVal) {
-                                                    $el.value = maxVal;
-                                                    $wire.set('editVolumeKg', maxVal);
-                                                    $wire.calculateEditTotalCost();
-                                                    window.dispatchEvent(new CustomEvent('top-alert', {
-                                                        detail: { message: 'Volume angkut disesuaikan ke maksimal (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning', title: 'Batas Maksimum Residu' }
-                                                    }));
-                                                }
-                                            " placeholder="Contoh: 125.5" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
-                                    <div class="text-[10px] text-slate-500 mt-1 flex items-center justify-between">
-                                        <span>Maks: <strong class="text-slate-800 font-mono">{{ number_format($editOldVolumeKg + $editAvailableResidual, 1, ',', '.') }} kg</strong></span>
-                                        <span>(Sisa TPS: {{ number_format($editAvailableResidual, 1, ',', '.') }} kg)</span>
-                                    </div>
-                                    @error('editVolumeKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pengangkutan <span class="text-rose-500">*</span></label>
+                                    <input type="date" wire:model="editDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500">
+                                    @error('editDate') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
@@ -486,9 +528,59 @@
                                            step="any" 
                                            min="0" 
                                            wire:model.live.debounce.250ms="editCostPerKg" 
-                                           placeholder="Contoh: 100" 
+                                           placeholder="Contoh: 150" 
                                            class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
                                     @error('editCostPerKg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
+                                </div>
+                            </div>
+
+                            <!-- Detail Jenis Sampah Edit -->
+                            <div>
+                                <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Detail Jenis Sampah Diangkut <span class="text-rose-500">*</span></h4>
+                                    <div class="text-xs font-bold text-slate-800 font-mono">
+                                        Total: {{ number_format(floatval($editVolumeKg), 1, ',', '.') }} kg
+                                    </div>
+                                </div>
+
+                                @error('editItems')
+                                    <div class="p-2.5 mb-2 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">{{ $message }}</div>
+                                @enderror
+
+                                <div class="border border-slate-200 rounded-xl overflow-hidden divide-y divide-slate-100">
+                                    @foreach ($editItems as $index => $item)
+                                        <div class="p-3 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                                            <div>
+                                                <div class="text-xs font-semibold text-slate-800">{{ $item['waste_name'] }}</div>
+                                                <div class="text-[10px] text-slate-500 mt-0.5">
+                                                    Maks: <strong class="font-mono text-slate-700">{{ number_format($item['max_allowable_kg'], 1, ',', '.') }} kg</strong>
+                                                    (Sisa TPS: {{ number_format($item['available_stock_kg'], 1, ',', '.') }} kg)
+                                                </div>
+                                            </div>
+                                            <div class="w-full sm:w-44">
+                                                <input type="number" step="0.01" min="0" max="{{ $item['max_allowable_kg'] }}"
+                                                       wire:model="editItems.{{ $index }}.weight_kg"
+                                                       wire:input="updateEditItemWeight({{ $index }})"
+                                                       x-on:input="
+                                                           let maxVal = {{ (float) $item['max_allowable_kg'] }};
+                                                           let val = parseFloat($el.value);
+                                                           if (!isNaN(val) && val > maxVal) {
+                                                               $el.value = maxVal;
+                                                               $wire.set('editItems.{{ $index }}.weight_kg', maxVal);
+                                                               $wire.updateEditItemWeight({{ $index }});
+                                                               window.dispatchEvent(new CustomEvent('top-alert', {
+                                                                   detail: { message: 'Muatan disesuaikan ke maksimal (' + maxVal.toLocaleString('id-ID') + ' kg)', type: 'warning', title: 'Batas Maksimum Residu' }
+                                                               }));
+                                                           }
+                                                       "
+                                                       placeholder="0.0 kg"
+                                                       class="w-full text-right font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 py-2">
+                                                @error("editItems.{$index}.weight_kg")
+                                                    <span class="block text-rose-500 text-[10px] mt-0.5">{{ $message }}</span>
+                                                @enderror
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
 
@@ -548,6 +640,7 @@
                 <div x-show="deleteModal"
                      x-cloak
                      style="display: none;"
+                     @keydown.escape.window="if (deleteModal) { deleteModal = false; $wire.cancelDelete(); }"
                      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm animate-fadeIn">
                     <div class="bg-white rounded-2xl border border-slate-200 shadow-xl w-full max-w-md p-6 text-center">
                         <div class="w-12 h-12 rounded-full bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto mb-4">
@@ -627,6 +720,27 @@
                                         </div>
                                     </div>
                                 </div>
+
+                                <!-- Rincian Jenis Sampah yang Diangkut -->
+                                @if ($selectedPickup->items && $selectedPickup->items->count() > 0)
+                                    <div class="rounded-xl border border-slate-200 overflow-hidden">
+                                        <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                                            <span class="text-xs font-bold text-slate-700">Detail Jenis Sampah Diangkut</span>
+                                            <span class="text-[11px] font-mono font-semibold text-slate-600">{{ $selectedPickup->items->count() }} item</span>
+                                        </div>
+                                        <div class="divide-y divide-slate-100 text-xs">
+                                            @foreach ($selectedPickup->items as $item)
+                                                <div class="px-4 py-2.5 flex items-center justify-between">
+                                                    <div>
+                                                        <span class="font-semibold text-slate-800">{{ $item->wasteType?->name ?? 'Residu' }}</span>
+                                                        <span class="ml-1.5 inline-block px-1.5 py-0.5 rounded text-[10px] bg-slate-100 text-slate-600">{{ $item->wasteType?->category ?? 'Residu' }}</span>
+                                                    </div>
+                                                    <span class="font-mono font-bold text-slate-900">{{ number_format($item->weight_kg, 1, ',', '.') }} kg</span>
+                                                </div>
+                                            @endforeach
+                                        </div>
+                                    </div>
+                                @endif
 
                                 <!-- Rincian Granular -->
                                 <div class="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden text-xs">

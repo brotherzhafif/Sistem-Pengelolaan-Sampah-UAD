@@ -20,6 +20,7 @@ class WasteStockMutation extends Model
         'weight_delta_kg',
         'total_weighed_after',
         'total_sold_after',
+        'total_processed_after',
         'total_picked_up_after',
         'current_stock_after',
         'notes',
@@ -30,6 +31,7 @@ class WasteStockMutation extends Model
         'weight_delta_kg' => 'decimal:2',
         'total_weighed_after' => 'decimal:2',
         'total_sold_after' => 'decimal:2',
+        'total_processed_after' => 'decimal:2',
         'total_picked_up_after' => 'decimal:2',
         'current_stock_after' => 'decimal:2',
     ];

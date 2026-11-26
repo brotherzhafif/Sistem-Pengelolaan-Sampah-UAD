@@ -9,6 +9,8 @@ use App\Models\FinancialTransaction;
 use App\Models\GeneralLedger;
 use App\Models\Keuangan;
 use App\Models\Pickup;
+use App\Models\PickupItem;
+use App\Models\Vendor;
 use App\Models\WasteStockSummary;
 use App\Models\WasteType;
 use Illuminate\Http\Request;
@@ -45,40 +47,64 @@ class PickupController extends Controller
             'campus_id' => ['required', 'exists:campuses,id'],
             'vendor_id' => ['required', 'exists:vendors,id'],
             'pickup_date' => ['required', 'date'],
-            'volume_kg' => ['required', 'numeric', 'min:0.01', 'max:50000'],
             'cost_per_kg' => ['required', 'numeric', 'min:0'],
             'driver_name' => ['nullable', 'string', 'max:100'],
             'vehicle_plate' => ['nullable', 'string', 'max:30'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.waste_type_id' => ['required', 'exists:waste_types,id'],
+            'items.*.weight_kg' => ['nullable', 'numeric', 'min:0', 'max:50000'],
         ], [
             'campus_id.required' => 'Unit kampus wajib dipilih.',
             'vendor_id.required' => 'Pihak vendor pengangkut wajib dipilih.',
             'pickup_date.required' => 'Tanggal pengangkutan wajib diisi.',
-            'volume_kg.required' => 'Bobot muatan residu wajib diisi.',
-            'volume_kg.min' => 'Bobot muatan minimal 0.01 kg.',
             'cost_per_kg.required' => 'Biaya per kg wajib diisi.',
+            'items.required' => 'Detail jenis sampah residu yang diangkut wajib diisi.',
         ])->validate();
 
-        $volume = floatval($data['volume_kg']);
         $costPerKg = floatval($data['cost_per_kg']);
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
         $campusId = $isSuperAdmin ? (int) $data['campus_id'] : (int) $user->campus_id;
         $vendorId = (int) $data['vendor_id'];
 
-        // Validasi ketersediaan stok residu di kampus bersangkutan
-        $stockSummary = WasteType::getStockSummary($campusId);
-        $availableResidual = $stockSummary['residual_stock_kg'];
+        $itemsToPick = [];
+        foreach ($data['items'] as $index => $item) {
+            $weight = floatval($item['weight_kg'] ?? 0);
+            if ($weight <= 0) {
+                continue;
+            }
 
-        if ($volume > $availableResidual) {
+            $wasteTypeId = (int) $item['waste_type_id'];
+            $wasteType = WasteType::findOrFail($wasteTypeId);
+
+            if ($wasteType->is_sellable || $wasteType->isOrganicCategory()) {
+                $targetModule = $wasteType->is_sellable ? 'Penjualan Sampah' : 'Pengolahan Organik';
+                throw ValidationException::withMessages([
+                    "pickupItems.{$index}.weight_kg" => "Jenis sampah '{$wasteType->name}' dikelola melalui {$targetModule} dan tidak masuk pengangkutan residu ke TPA.",
+                ]);
+            }
+
+            $availableStock = WasteType::getAvailableStock($wasteTypeId, $campusId);
+            if ($weight > $availableStock) {
+                throw ValidationException::withMessages([
+                    "pickupItems.{$index}.weight_kg" => "Stok '{$wasteType->name}' tidak mencukupi (Tersedia: " . number_format($availableStock, 1, ',', '.') . " kg, Diminta: " . number_format($weight, 1, ',', '.') . " kg).",
+                ]);
+            }
+
+            $itemsToPick[$wasteTypeId] = ($itemsToPick[$wasteTypeId] ?? 0.0) + $weight;
+        }
+
+        if (empty($itemsToPick)) {
             throw ValidationException::withMessages([
-                'formVolumeKg' => "Muatan melebihi stok residu tersedia di kampus ini (Tersedia: " . number_format($availableResidual, 1, ',', '.') . " kg, Diminta: " . number_format($volume, 1, ',', '.') . " kg).",
+                'pickupItems' => 'Harap isi bobot muatan minimal untuk salah satu jenis sampah residu.',
             ]);
         }
 
+        $volume = round(array_sum($itemsToPick), 2);
         $totalCost = round($volume * $costPerKg, 2);
         $pickup = null;
 
-        DB::transaction(function () use ($campusId, $vendorId, $data, $volume, $costPerKg, $totalCost, &$pickup) {
+        DB::transaction(function () use ($campusId, $vendorId, $data, $volume, $costPerKg, $totalCost, $itemsToPick, &$pickup) {
             $pickup = Pickup::create([
                 'campus_id' => $campusId,
                 'vendor_id' => $vendorId,
@@ -92,6 +118,20 @@ class PickupController extends Controller
                 'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
             ]);
 
+            $itemsDelta = [];
+            foreach ($itemsToPick as $wasteTypeId => $weight) {
+                PickupItem::create([
+                    'pickup_id' => $pickup->id,
+                    'waste_type_id' => $wasteTypeId,
+                    'weight_kg' => $weight,
+                ]);
+
+                $itemsDelta[] = [
+                    'waste_type_id' => $wasteTypeId,
+                    'picked_up_delta' => (float) $weight,
+                ];
+            }
+
             // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
             WasteStockSummary::applyMutation(
                 campusId: $campusId,
@@ -100,6 +140,7 @@ class PickupController extends Controller
                 action: 'create',
                 pickedUpDelta: $volume,
                 pickupCostDelta: $totalCost,
+                items: $itemsDelta,
                 notes: "Pengangkutan residu ke TPA/Vendor #{$pickup->id}"
             );
         });
@@ -114,6 +155,7 @@ class PickupController extends Controller
                 'volume_kg' => $volume,
                 'cost_per_kg' => $costPerKg,
                 'total_cost' => $totalCost,
+                'items_count' => count($itemsToPick),
             ],
             campusId: $campusId
         );
@@ -131,7 +173,7 @@ class PickupController extends Controller
     }
 
     /**
-     * Memvalidasi dan memperbarui data transaksi pengangkutan residu.
+     * Memvalidasi dan memperbarui data transaksi pengangkutan residu beserta rincian jenis sampahnya.
      */
     public function update(int $pickupId, array $data): array
     {
@@ -140,7 +182,7 @@ class PickupController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk mengubah data pengangkutan.');
         }
 
-        $pickup = Pickup::findOrFail($pickupId);
+        $pickup = Pickup::with(['items', 'vendor'])->findOrFail($pickupId);
 
         // Otorisasi kampus
         if ($user->campus_id && $user->campus_id !== $pickup->campus_id && !$user->hasRole(['super_admin', 'Super Admin'])) {
@@ -153,18 +195,19 @@ class PickupController extends Controller
             'campus_id' => ['required', 'exists:campuses,id'],
             'vendor_id' => ['required', 'exists:vendors,id'],
             'pickup_date' => ['required', 'date'],
-            'volume_kg' => ['required', 'numeric', 'min:0.01', 'max:50000'],
             'cost_per_kg' => ['required', 'numeric', 'min:0'],
             'driver_name' => ['nullable', 'string', 'max:100'],
             'vehicle_plate' => ['nullable', 'string', 'max:30'],
             'notes' => ['nullable', 'string', 'max:500'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.waste_type_id' => ['required', 'exists:waste_types,id'],
+            'items.*.weight_kg' => ['nullable', 'numeric', 'min:0', 'max:50000'],
         ], [
             'campus_id.required' => 'Unit kampus wajib dipilih.',
             'vendor_id.required' => 'Pihak vendor pengangkut wajib dipilih.',
             'pickup_date.required' => 'Tanggal pengangkutan wajib diisi.',
-            'volume_kg.required' => 'Bobot muatan residu wajib diisi.',
-            'volume_kg.min' => 'Bobot muatan minimal 0.01 kg.',
             'cost_per_kg.required' => 'Biaya per kg wajib diisi.',
+            'items.required' => 'Detail jenis sampah residu yang diangkut wajib diisi.',
         ])->validate();
 
         $bindingInfo = $pickup->getBindingInfo();
@@ -176,24 +219,58 @@ class PickupController extends Controller
             ]);
         }
 
-        $oldVolume = (float) $pickup->volume_kg;
-        $newVolume = floatval($data['volume_kg']);
-        $newCostPerKg = floatval($data['cost_per_kg']);
-        $newTotalCost = round($newVolume * $newCostPerKg, 2);
+        $existingItemsWeight = $pickup->items->pluck('weight_kg', 'waste_type_id')->map(fn ($w) => (float) $w)->toArray();
 
-        // Validasi stok jika volume bertambah
-        $deltaVolume = $newVolume - $oldVolume;
-        if ($deltaVolume > 0) {
-            $stockSummary = WasteType::getStockSummary($pickup->campus_id);
-            $availableResidual = (float) ($stockSummary['residual_stock_kg'] ?? 0.0);
+        $itemsToPick = [];
+        foreach ($data['items'] as $index => $item) {
+            $weight = floatval($item['weight_kg'] ?? 0);
+            if ($weight <= 0) {
+                continue;
+            }
 
-            if ($deltaVolume > $availableResidual) {
-                $maxAllowable = $oldVolume + $availableResidual;
+            $wasteTypeId = (int) $item['waste_type_id'];
+            $wasteType = WasteType::findOrFail($wasteTypeId);
+
+            if ($wasteType->is_sellable || $wasteType->isOrganicCategory()) {
                 throw ValidationException::withMessages([
-                    'editVolumeKg' => "Penambahan muatan (" . number_format($newVolume, 1, ',', '.') . " kg) melebihi sisa stok residu TPS saat ini (" . number_format($availableResidual, 1, ',', '.') . " kg). Maksimal muatan yang dapat diinput adalah " . number_format($maxAllowable, 1, ',', '.') . " kg.",
+                    "editItems.{$index}.weight_kg" => "Jenis sampah '{$wasteType->name}' tidak dapat diangkut sebagai residu ke TPA.",
                 ]);
             }
+
+            $itemsToPick[$wasteTypeId] = ($itemsToPick[$wasteTypeId] ?? 0.0) + $weight;
         }
+
+        if (empty($itemsToPick)) {
+            throw ValidationException::withMessages([
+                'editItems' => 'Harap isi bobot muatan minimal untuk salah satu jenis sampah residu.',
+            ]);
+        }
+
+        foreach ($data['items'] as $index => $item) {
+            $wasteTypeId = (int) $item['waste_type_id'];
+            if (empty($itemsToPick[$wasteTypeId])) {
+                continue;
+            }
+            $newItemWeight = $itemsToPick[$wasteTypeId];
+            $oldItemWeight = $existingItemsWeight[$wasteTypeId] ?? 0.0;
+            $deltaItem = $newItemWeight - $oldItemWeight;
+
+            if ($deltaItem > 0) {
+                $availableStock = WasteType::getAvailableStock($wasteTypeId, $pickup->campus_id);
+                if ($deltaItem > $availableStock) {
+                    $wasteType = WasteType::find($wasteTypeId);
+                    $maxAllowable = $oldItemWeight + $availableStock;
+                    throw ValidationException::withMessages([
+                        "editItems.{$index}.weight_kg" => "Penambahan muatan '" . ($wasteType?->name ?? 'Residu') . "' melebihi sisa stok TPS (Maksimal: " . number_format($maxAllowable, 1, ',', '.') . " kg).",
+                    ]);
+                }
+            }
+        }
+
+        $oldVolume = (float) $pickup->volume_kg;
+        $newVolume = round(array_sum($itemsToPick), 2);
+        $newCostPerKg = floatval($data['cost_per_kg']);
+        $newTotalCost = round($newVolume * $newCostPerKg, 2);
 
         $oldDate = $pickup->pickup_date?->format('Y-m-d');
         $newDate = $data['pickup_date'];
@@ -201,7 +278,21 @@ class PickupController extends Controller
         $oldCost = (float) $pickup->total_cost;
         $deltaCost = $newTotalCost - $oldCost;
 
-        DB::transaction(function () use ($pickup, $data, $targetCampusId, $newVolume, $newCostPerKg, $newTotalCost, $oldDate, $newDate, $deltaPickedUp, $deltaCost) {
+        $allTypeIds = array_unique(array_merge(array_keys($existingItemsWeight), array_keys($itemsToPick)));
+        $itemsDelta = [];
+        foreach ($allTypeIds as $tId) {
+            $diff = ($itemsToPick[$tId] ?? 0.0) - ($existingItemsWeight[$tId] ?? 0.0);
+            if (abs($diff) > 0.0001) {
+                $itemsDelta[] = [
+                    'waste_type_id' => $tId,
+                    'picked_up_delta' => $diff,
+                ];
+            }
+        }
+
+        $vendorName = Vendor::find((int) $data['vendor_id'])?->name ?? 'Mitra Pengangkut';
+
+        DB::transaction(function () use ($pickup, $data, $targetCampusId, $newVolume, $newCostPerKg, $newTotalCost, $oldDate, $newDate, $deltaPickedUp, $deltaCost, $itemsToPick, $itemsDelta, $vendorName) {
             $pickup->update([
                 'campus_id' => $targetCampusId,
                 'vendor_id' => (int) $data['vendor_id'],
@@ -214,6 +305,15 @@ class PickupController extends Controller
                 'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
             ]);
 
+            $pickup->items()->delete();
+            foreach ($itemsToPick as $wasteTypeId => $weight) {
+                PickupItem::create([
+                    'pickup_id' => $pickup->id,
+                    'waste_type_id' => $wasteTypeId,
+                    'weight_kg' => $weight,
+                ]);
+            }
+
             // Update Tabel Rekapitulasi Stok Real-Time (O(1)) & Catat Mutasi
             WasteStockSummary::applyMutation(
                 campusId: $targetCampusId,
@@ -222,12 +322,12 @@ class PickupController extends Controller
                 action: 'update',
                 pickedUpDelta: $deltaPickedUp,
                 pickupCostDelta: $deltaCost,
-                notes: "Pembaruan volume pengangkutan residu #{$pickup->id}"
+                items: $itemsDelta,
+                notes: "Pembaruan rincian pengangkutan residu #{$pickup->id}"
             );
 
             // Sinkronisasi Transaksi Keuangan Buku Kas
             $ft = FinancialTransaction::where('source', 'pickup')->where('ref_id', $pickup->id)->first();
-            $vendorName = $pickup->vendor?->name ?? 'Mitra Pengangkut';
 
             if ($ft) {
                 $ft->update([
@@ -263,6 +363,7 @@ class PickupController extends Controller
                 'volume_kg' => $newVolume,
                 'cost_per_kg' => $newCostPerKg,
                 'total_cost' => $newTotalCost,
+                'items_count' => count($itemsToPick),
             ],
             campusId: $pickup->campus_id
         );
@@ -271,7 +372,7 @@ class PickupController extends Controller
 
         return [
             'success' => true,
-            'pickup' => $pickup,
+            'pickup' => $pickup->fresh(['items.wasteType', 'vendor']),
             'total_cost' => $newTotalCost,
             'new_balance' => $newBalance,
             'message' => 'Data pengangkutan residu berhasil diperbarui dan buku kas disinkronkan.',
@@ -288,7 +389,7 @@ class PickupController extends Controller
             abort(403, 'Akses ditolak: Anda tidak memiliki wewenang untuk menghapus data pengangkutan.');
         }
 
-        $pickup = Pickup::findOrFail($pickupId);
+        $pickup = Pickup::with('items')->findOrFail($pickupId);
 
         // Otorisasi: hanya Super Admin atau user dari kampus bersangkutan
         if ($user->campus_id && $user->campus_id !== $pickup->campus_id && !$user->hasRole(['super_admin', 'Super Admin'])) {
@@ -303,7 +404,16 @@ class PickupController extends Controller
         $pickupId = (int) $pickup->id;
         $totalCost = (float) $pickup->total_cost;
 
-        DB::transaction(function () use ($pickup, $campusId, $pickupId, $volumeKg, $totalCost) {
+        $itemsDelta = [];
+        foreach ($pickup->items as $it) {
+            $itemsDelta[] = [
+                'waste_type_id' => (int) $it->waste_type_id,
+                'picked_up_delta' => -(float) $it->weight_kg,
+            ];
+        }
+
+        DB::transaction(function () use ($pickup, $campusId, $pickupId, $volumeKg, $totalCost, $itemsDelta) {
+            $pickup->items()->delete();
             $pickup->delete(); // Observer otomatis hapus jurnal debet keuangan & re-sync buku besar
 
             WasteStockSummary::applyMutation(
@@ -313,6 +423,7 @@ class PickupController extends Controller
                 action: 'delete',
                 pickedUpDelta: -$volumeKg,
                 pickupCostDelta: -$totalCost,
+                items: $itemsDelta,
                 notes: "Penghapusan data pengangkutan residu #{$pickupId} (stok residu dikembalikan)"
             );
         });

@@ -77,13 +77,13 @@
                     </div>
                 </div>
 
-                <!-- 4. Residu & Terangkut -->
+                <!-- 4. Diolah Organik & Residu TPA -->
                 <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
                     <div class="flex items-center justify-between">
                         <div>
-                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Residu & Terangkut</span>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Sisa organik & residu TPA</p>
+                            <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Diolah &amp; Diangkut</span>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Organik {{ number_format($stockSummary['total_processed_kg'] ?? 0, 1) }} kg | Residu {{ number_format($stockSummary['total_picked_up_kg'] ?? 0, 1) }} kg</p>
                         </div>
                         <div class="w-7 h-7 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -92,12 +92,12 @@
                         </div>
                     </div>
                     <div class="mt-3 flex items-baseline gap-1.5">
-                        <span class="font-mono text-2xl font-bold text-amber-600">{{ number_format($stockSummary['total_picked_up_kg'] ?? 0, 1) }}</span>
-                        <span class="text-xs text-slate-500 font-medium">kg</span>
+                        <span class="font-mono text-2xl font-bold text-amber-600">{{ number_format($stockSummary['residual_stock_kg'] ?? 0, 1) }}</span>
+                        <span class="text-xs text-slate-500 font-medium">kg residu siap angkut</span>
                     </div>
                     <div class="mt-2 flex items-center justify-between text-[11px] border-t border-slate-100 pt-2">
-                        <span class="text-slate-500">Sisa di TPS:</span>
-                        <span class="font-mono font-semibold text-amber-700">{{ number_format($stockSummary['residual_stock_kg'] ?? 0, 1) }} kg</span>
+                        <span class="text-slate-500">Sisa Organik TPS:</span>
+                        <span class="font-mono font-semibold text-emerald-700">{{ number_format($stockSummary['organic_stock_kg'] ?? 0, 1) }} kg</span>
                     </div>
                 </div>
             </div>
@@ -217,12 +217,9 @@
                                         @endif
                                     </div>
                                 </th>
-                                <th class="py-3 px-2 text-right w-[12%] cursor-pointer hover:bg-slate-100 transition" wire:click="setSort('sold')">
+                                <th class="py-3 px-2 text-right w-[12%]">
                                     <div class="flex items-center justify-end gap-1">
-                                        <span>Terjual</span>
-                                        @if ($sortBy === 'sold')
-                                            <span class="text-emerald-600 font-bold">{{ $sortDirection === 'asc' ? '↑' : '↓' }}</span>
-                                        @endif
+                                        <span>Keluar</span>
                                     </div>
                                 </th>
                                 <th class="py-3 px-3 text-right w-[12%] cursor-pointer hover:bg-slate-100 transition" wire:click="setSort('stock')">
@@ -272,10 +269,15 @@
                                                 <span class="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
                                                 <span>Siap Jual</span>
                                             </span>
+                                        @elseif (strtolower($item['waste_category'] ?? '') === 'organik')
+                                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-teal-50 text-teal-700 border border-teal-100">
+                                                <span class="w-1.5 h-1.5 rounded-full bg-teal-500"></span>
+                                                <span>Olah Organik</span>
+                                            </span>
                                         @else
                                             <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-600">
                                                 <span class="w-1.5 h-1.5 rounded-full bg-slate-400"></span>
-                                                <span>Residu</span>
+                                                <span>Residu TPA</span>
                                             </span>
                                         @endif
                                     </td>
@@ -285,9 +287,16 @@
                                         {{ number_format($item['total_weighed_kg'], 1, ',', '.') }} <span class="text-[10px] font-sans text-slate-400">kg</span>
                                     </td>
 
-                                    <!-- Terjual -->
+                                    <!-- Keluar (Terjual / Diolah / Diangkut) -->
+                                    @php
+                                        $outKg = $item['is_sellable']
+                                            ? ($item['total_sold_kg'] ?? 0)
+                                            : (strtolower($item['waste_category'] ?? '') === 'organik'
+                                                ? ($item['total_processed_kg'] ?? 0)
+                                                : ($item['total_picked_up_kg'] ?? 0));
+                                    @endphp
                                     <td class="py-2.5 px-2 text-right font-mono text-slate-700 whitespace-nowrap">
-                                        {{ number_format($item['total_sold_kg'], 1, ',', '.') }} <span class="text-[10px] font-sans text-slate-400">kg</span>
+                                        {{ number_format($outKg, 1, ',', '.') }} <span class="text-[10px] font-sans text-slate-400">kg</span>
                                     </td>
 
                                     <!-- Sisa Stok -->
@@ -396,10 +405,22 @@
                                 <span class="text-slate-500">Total Akumulasi Timbang:</span>
                                 <span class="font-mono font-bold text-slate-800">{{ number_format($detailData['total_weighed_kg'], 1, ',', '.') }} kg</span>
                             </div>
-                            <div class="flex items-center justify-between text-xs py-1">
-                                <span class="text-slate-500">Total Telah Terjual:</span>
-                                <span class="font-mono font-bold text-sky-600">{{ number_format($detailData['total_sold_kg'], 1, ',', '.') }} kg</span>
-                            </div>
+                            @if ($detailData['is_sellable'])
+                                <div class="flex items-center justify-between text-xs py-1">
+                                    <span class="text-slate-500">Total Telah Terjual:</span>
+                                    <span class="font-mono font-bold text-sky-600">{{ number_format($detailData['total_sold_kg'], 1, ',', '.') }} kg</span>
+                                </div>
+                            @elseif (strtolower($detailData['waste_category'] ?? '') === 'organik')
+                                <div class="flex items-center justify-between text-xs py-1">
+                                    <span class="text-slate-500">Total Telah Diolah Mandiri:</span>
+                                    <span class="font-mono font-bold text-teal-600">{{ number_format($detailData['total_processed_kg'] ?? 0, 1, ',', '.') }} kg</span>
+                                </div>
+                            @else
+                                <div class="flex items-center justify-between text-xs py-1">
+                                    <span class="text-slate-500">Total Telah Diangkut ke TPA:</span>
+                                    <span class="font-mono font-bold text-amber-600">{{ number_format($detailData['total_picked_up_kg'] ?? 0, 1, ',', '.') }} kg</span>
+                                </div>
+                            @endif
                             <div class="flex items-center justify-between text-xs py-1.5 border-t border-dashed border-slate-200">
                                 <span class="font-semibold text-slate-800">Sisa Stok Fisik Tersedia:</span>
                                 <span class="font-mono font-bold text-sm {{ $detailData['available_stock_kg'] > 0 ? 'text-emerald-700' : 'text-slate-400' }}">

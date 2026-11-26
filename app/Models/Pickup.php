@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Pickup extends Model
 {
@@ -43,6 +44,11 @@ class Pickup extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function items(): HasMany
+    {
+        return $this->hasMany(PickupItem::class);
     }
 
     public function financialTransaction()
@@ -86,7 +92,7 @@ class Pickup extends Model
      */
     public static function getRecentPickups(?int $campusId, int $limit = 5)
     {
-        return static::with(['campus', 'vendor', 'creator'])
+        return static::with(['campus', 'vendor', 'creator', 'items.wasteType'])
             ->forCampus($campusId)
             ->orderBy('pickup_date', 'desc')
             ->orderBy('id', 'desc')
@@ -99,7 +105,7 @@ class Pickup extends Model
      */
     public static function getFilteredList(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 10)
     {
-        return static::with(['campus', 'vendor', 'creator'])
+        return static::with(['campus', 'vendor', 'creator', 'items.wasteType'])
             ->forCampus($campusId)
             ->when($dateFrom, fn($q) => $q->whereDate('pickup_date', '>=', $dateFrom))
             ->when($dateTo, fn($q) => $q->whereDate('pickup_date', '<=', $dateTo))
@@ -145,7 +151,7 @@ class Pickup extends Model
      */
     public static function getDetailedPickup(int $id): ?self
     {
-        return static::with(['campus', 'vendor', 'creator'])->find($id);
+        return static::with(['campus', 'vendor', 'creator', 'items.wasteType'])->find($id);
     }
 
     /**

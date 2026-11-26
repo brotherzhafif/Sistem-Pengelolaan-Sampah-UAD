@@ -66,7 +66,7 @@ class GeneralLedger extends Model
 
         // Cari tanggal hari sebelum $startDate untuk mendapatkan saldo akhir sebelumnya
         $previousLedger = static::where('campus_id', $campusId)
-            ->where('ledger_date', '<', $startDate)
+            ->whereDate('ledger_date', '<', $startDate)
             ->orderBy('ledger_date', 'desc')
             ->first();
 
@@ -117,18 +117,27 @@ class GeneralLedger extends Model
             $opening = $runningBalance;
             $closing = $opening + $creditSum - $debitSum;
 
-            static::updateOrCreate(
-                [
-                    'campus_id' => $campusId,
-                    'ledger_date' => $date,
-                ],
-                [
+            $ledgerRow = static::where('campus_id', $campusId)
+                ->whereDate('ledger_date', $date)
+                ->first();
+
+            if ($ledgerRow) {
+                $ledgerRow->update([
                     'opening_balance' => $opening,
                     'total_credit' => $creditSum,
                     'total_debit' => $debitSum,
                     'closing_balance' => $closing,
-                ]
-            );
+                ]);
+            } else {
+                static::create([
+                    'campus_id' => $campusId,
+                    'ledger_date' => $date,
+                    'opening_balance' => $opening,
+                    'total_credit' => $creditSum,
+                    'total_debit' => $debitSum,
+                    'closing_balance' => $closing,
+                ]);
+            }
 
             $runningBalance = $closing;
         }

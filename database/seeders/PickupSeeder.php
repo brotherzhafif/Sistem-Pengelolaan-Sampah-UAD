@@ -4,8 +4,10 @@ namespace Database\Seeders;
 
 use App\Models\Campus;
 use App\Models\Pickup;
+use App\Models\PickupItem;
 use App\Models\User;
 use App\Models\Vendor;
+use App\Models\WasteType;
 use Carbon\Carbon;
 use Illuminate\Database\Seeder;
 
@@ -46,7 +48,7 @@ class PickupSeeder extends Seeder
                 $volumeKg = $isMainCampus ? (rand(280, 420) + (rand(0, 9) / 10)) : (rand(140, 260) + (rand(0, 9) / 10));
                 $totalCost = round($volumeKg * $costPerKg, 2);
 
-                Pickup::create([
+                $pickup = Pickup::create([
                     'campus_id' => $campus->id,
                     'vendor_id' => $vendor->id,
                     'pickup_date' => $pickupDate,
@@ -58,6 +60,16 @@ class PickupSeeder extends Seeder
                     'created_by' => $user->id,
                     'notes' => 'Pengangkutan residu non-daur ulang ritase reguler ' . $campus->name . ' ke TPA Piyungan/Bawuran',
                 ]);
+
+                $residuType = WasteType::where('name', 'Residu Campur')->first()
+                    ?? WasteType::where('is_sellable', false)->whereRaw('LOWER(category) != ?', ['organik'])->first();
+                if ($residuType) {
+                    PickupItem::create([
+                        'pickup_id' => $pickup->id,
+                        'waste_type_id' => $residuType->id,
+                        'weight_kg' => $volumeKg,
+                    ]);
+                }
             }
         }
     }

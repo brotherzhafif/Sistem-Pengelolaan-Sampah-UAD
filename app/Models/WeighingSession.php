@@ -99,39 +99,30 @@ class WeighingSession extends Model
     {
         $campusId = $this->campus_id;
         $items = $this->items()->with('wasteType')->get();
-        
+
         $totalSessionWeight = 0.0;
         $totalRetained = 0.0;
         $features = [];
 
-        // Hitung stok tersedia untuk residu di kampus ini
-        $residualWeighed = (float) WeighingItem::join('weighing_sessions', 'weighing_items.weighing_session_id', '=', 'weighing_sessions.id')
-            ->where('weighing_sessions.campus_id', $campusId)
-            ->whereHas('wasteType', fn($q) => $q->where('is_sellable', false))
-            ->sum('weighing_items.weight_kg');
-        $stockMetrics = WasteStockSummary::getMetrics($campusId);
-        $residualPickedUp = (float) ($stockMetrics['total_picked_up_kg'] ?? 0.0);
-        $availableResidual = max(0.0, $residualWeighed - $residualPickedUp);
-
         foreach ($items as $item) {
             $weight = (float) $item->weight_kg;
             $totalSessionWeight += $weight;
-            $isSellable = (bool) ($item->wasteType?->is_sellable ?? false);
+            $wasteType = $item->wasteType;
+            $isSellable = (bool) ($wasteType?->is_sellable ?? false);
+            $isOrganic = !$isSellable && strtolower(trim((string) ($wasteType?->category ?? ''))) === 'organik';
 
-            if ($isSellable) {
-                $available = WasteType::getAvailableStock($item->waste_type_id, $campusId);
-            } else {
-                $available = $availableResidual;
-            }
+            $available = WasteType::getAvailableStock($item->waste_type_id, $campusId);
 
-            // Jumlah yang bisa dipotong/dihapus jika ada sisa stok
+            // Jumlah yang bisa dipotong/dihapus berdasarkan sisa stok jenis sampah tersebut
             $deductible = min($weight, max(0.0, $available));
-            // Jumlah yang sudah terikat/terpakai transaksi penjualan/pengangkutan
+            // Jumlah yang sudah terikat transaksi penjualan / pengolahan organik / pengangkutan
             $retained = max(0.0, $weight - $deductible);
 
             if ($retained > 0.0001) {
                 if ($isSellable) {
                     $features['Penjualan Sampah'] = true;
+                } elseif ($isOrganic) {
+                    $features['Pengolahan Organik'] = true;
                 } else {
                     $features['Pengangkutan Residu'] = true;
                 }
@@ -143,14 +134,27 @@ class WeighingSession extends Model
         $featuresList = array_keys($features);
         $canFullyDelete = $totalRetained <= 0.0001;
 
+        $primaryUrl = null;
+        $primaryLabel = null;
+        if (in_array('Penjualan Sampah', $featuresList)) {
+            $primaryUrl = route('sales');
+            $primaryLabel = 'Lihat Penjualan';
+        } elseif (in_array('Pengolahan Organik', $featuresList)) {
+            $primaryUrl = route('processing');
+            $primaryLabel = 'Lihat Pengolahan Organik';
+        } elseif (in_array('Pengangkutan Residu', $featuresList)) {
+            $primaryUrl = route('pickups');
+            $primaryLabel = 'Lihat Pengangkutan';
+        }
+
         return [
             'total_session_weight' => $totalSessionWeight,
             'total_retained' => $totalRetained,
             'can_fully_delete' => $canFullyDelete,
             'is_fully_locked' => !$canFullyDelete,
             'features' => $featuresList,
-            'primary_url' => in_array('Penjualan Sampah', $featuresList) ? route('sales') : (in_array('Pengangkutan Residu', $featuresList) ? route('pickups') : null),
-            'primary_label' => in_array('Penjualan Sampah', $featuresList) ? 'Lihat Penjualan' : (in_array('Pengangkutan Residu', $featuresList) ? 'Lihat Pengangkutan' : null),
+            'primary_url' => $primaryUrl,
+            'primary_label' => $primaryLabel,
         ];
     }
 

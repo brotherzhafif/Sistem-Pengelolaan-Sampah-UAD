@@ -49,7 +49,41 @@ class WasteType extends Model
     }
 
     /**
-     * Mengambil ringkasan stok sampah terpilah dan residu per kampus atau keseluruhan (O(1)).
+     * Mengambil daftar jenis sampah aktif kategori Organik yang dapat diolah sendiri.
+     */
+    public static function getActiveOrganicTypes()
+    {
+        return static::where('is_sellable', false)
+            ->whereRaw('LOWER(category) = ?', ['organik'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
+    /**
+     * Mengambil daftar jenis sampah residu non-organik aktif yang dapat diangkut ke TPA.
+     */
+    public static function getActiveResidualTypes()
+    {
+        return static::where('is_sellable', false)
+            ->whereRaw('LOWER(category) != ?', ['organik'])
+            ->where('is_active', true)
+            ->orderBy('name')
+            ->get();
+    }
+
+    public function isOrganicCategory(): bool
+    {
+        return !$this->is_sellable && strtolower(trim((string) $this->category)) === 'organik';
+    }
+
+    public function isResidualCategory(): bool
+    {
+        return !$this->is_sellable && strtolower(trim((string) $this->category)) !== 'organik';
+    }
+
+    /**
+     * Mengambil ringkasan stok sampah terpilah, organik, dan residu per kampus atau keseluruhan (O(1)).
      */
     public static function getStockSummary(int|string|null $campusId = null): array
     {
@@ -64,6 +98,8 @@ class WasteType extends Model
             $typeRows = $typeSummaries->where('waste_type_id', $type->id);
             $weighed = (float) $typeRows->sum('total_weighed_kg');
             $sold = (float) $typeRows->sum('total_sold_kg');
+            $processed = (float) $typeRows->sum('total_processed_kg');
+            $pickedUp = (float) $typeRows->sum('total_picked_up_kg');
             $available = (float) $typeRows->sum('available_stock_kg');
             $itemPotentialRevenue = (float) $typeRows->sum('potential_revenue');
 
@@ -75,6 +111,8 @@ class WasteType extends Model
                 'default_price_per_kg' => (float) $type->default_price_per_kg,
                 'total_weighed_kg' => $weighed,
                 'total_sold_kg' => $sold,
+                'total_processed_kg' => $processed,
+                'total_picked_up_kg' => $pickedUp,
                 'available_stock_kg' => $available,
                 'potential_revenue' => $itemPotentialRevenue,
             ];
@@ -83,8 +121,12 @@ class WasteType extends Model
         return [
             'total_weighed_kg' => $metrics['total_weighed_kg'],
             'total_sold_kg' => $metrics['total_sold_kg'],
+            'total_processed_kg' => $metrics['total_processed_kg'],
             'total_picked_up_kg' => $metrics['total_picked_up_kg'],
             'sellable_stock_kg' => $metrics['sellable_stock_kg'],
+            'organic_stock_kg' => $metrics['organic_stock_kg'],
+            'total_compost_kg' => $metrics['total_compost_kg'],
+            'total_feed_kg' => $metrics['total_feed_kg'],
             'potential_revenue' => $metrics['potential_revenue'],
             'residual_stock_kg' => $metrics['residual_stock_kg'],
             'total_sales_revenue' => $metrics['total_sales_revenue'],
@@ -95,14 +137,41 @@ class WasteType extends Model
     }
 
     /**
-     * Mengambil daftar jenis sampah terpilah yang memiliki stok tersedia (> 0 kg)
-     * untuk penimbangan yang sudah dilakukan pada kampus tertentu.
+     * Mengambil daftar jenis sampah terpilah yang memiliki stok tersedia (> 0 kg).
      */
     public static function getSellableTypesWithAvailableStock(int|string|null $campusId = null): array
     {
         $summary = static::getStockSummary($campusId);
         return $summary['items_breakdown']
             ->filter(fn ($item) => !empty($item['is_sellable']) && (float) $item['available_stock_kg'] > 0)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Mengambil daftar jenis sampah organik yang memiliki stok tersedia (> 0 kg) untuk diolah mandiri.
+     */
+    public static function getOrganicTypesWithAvailableStock(int|string|null $campusId = null): array
+    {
+        $summary = static::getStockSummary($campusId);
+        return $summary['items_breakdown']
+            ->filter(fn ($item) => empty($item['is_sellable'])
+                && strtolower(trim((string) ($item['waste_category'] ?? ''))) === 'organik'
+                && (float) $item['available_stock_kg'] > 0)
+            ->values()
+            ->all();
+    }
+
+    /**
+     * Mengambil daftar jenis sampah residu non-organik yang memiliki stok tersedia (> 0 kg) untuk diangkut ke TPA.
+     */
+    public static function getResidualTypesWithAvailableStock(int|string|null $campusId = null): array
+    {
+        $summary = static::getStockSummary($campusId);
+        return $summary['items_breakdown']
+            ->filter(fn ($item) => empty($item['is_sellable'])
+                && strtolower(trim((string) ($item['waste_category'] ?? ''))) !== 'organik'
+                && (float) $item['available_stock_kg'] > 0)
             ->values()
             ->all();
     }
@@ -133,8 +202,24 @@ class WasteType extends Model
     }
 
     /**
+     * Relasi ke seluruh baris item pengangkutan residu.
+     */
+    public function pickupItems()
+    {
+        return $this->hasMany(PickupItem::class);
+    }
+
+    /**
+     * Relasi ke seluruh baris item pengolahan organik.
+     */
+    public function organicProcessingItems()
+    {
+        return $this->hasMany(OrganicProcessingItem::class);
+    }
+
+    /**
      * Memeriksa keterikatan data relasional (Foreign Key) yang merujuk ke jenis sampah ini.
-     * Mencegah penghapusan jika sudah digunakan pada penimbangan atau penjualan.
+     * Mencegah penghapusan jika sudah digunakan pada penimbangan, penjualan, pengangkutan, atau pengolahan organik.
      */
     public function getBindingInfo(): array
     {
@@ -153,6 +238,22 @@ class WasteType extends Model
             if (!$primaryUrl) {
                 $primaryUrl = route('sales');
                 $primaryLabel = 'Lihat Penjualan';
+            }
+        }
+
+        if (PickupItem::where('waste_type_id', $this->id)->exists()) {
+            $features[] = 'Pengangkutan Residu';
+            if (!$primaryUrl) {
+                $primaryUrl = route('pickups');
+                $primaryLabel = 'Lihat Pengangkutan';
+            }
+        }
+
+        if (OrganicProcessingItem::where('waste_type_id', $this->id)->exists()) {
+            $features[] = 'Pengolahan Organik';
+            if (!$primaryUrl) {
+                $primaryUrl = route('processing');
+                $primaryLabel = 'Lihat Pengolahan';
             }
         }
 
