@@ -1,4 +1,5 @@
 import urllib.request
+import urllib.error
 import ssl
 import json
 import re
@@ -15,7 +16,7 @@ opener = urllib.request.build_opener(urllib.request.HTTPCookieProcessor(jar), ur
 BASE = 'https://ps2.brotherzhafif.my.id'
 
 print("=" * 60)
-print("TESTING AUTH FLOW (LOGIN & REGISTER) ON LIVE VPS")
+print("TESTING AUTH FLOW (LOGIN & DISABLED REGISTER) ON LIVE VPS")
 print("Target:", BASE)
 print("=" * 60)
 
@@ -84,20 +85,16 @@ assert dash_res.status == 200, f"Expected 200 from /dashboard, got {dash_res.sta
 assert "Dashboard Teknis" in dash_html or "Saldo Kas" in dash_html, "Dashboard content missing"
 print("  [+] Authenticated session verified on /dashboard!")
 
-# 4. Test Register Page
-print("\n[4] Fetching GET /register...")
+# 4. Verify Register Page is Disabled (404)
+print("\n[4] Verifying GET /register is disabled (404)...")
 reg_req = urllib.request.Request(f'{BASE}/register', headers={'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64)'})
-reg_res = opener.open(reg_req)
-reg_html = reg_res.read().decode('utf-8')
-print("  Status:", reg_res.status)
-assert reg_res.status == 200, f"Expected 200 from /register, got {reg_res.status}"
-reg_form_m = re.search(r'<form\s+([^>]+)>', reg_html)
-if reg_form_m:
-    reg_attrs = reg_form_m.group(1)
-    print("  Register Form attributes:", reg_attrs[:120])
-    assert 'method="POST"' in reg_attrs or "method='POST'" in reg_attrs, "Register form must have method=POST"
-    assert 'action="javascript:void(0);"' in reg_attrs or 'action="#"' in reg_attrs, "Register form must have safe action"
-print("  [+] Register page verified!")
+try:
+    reg_res = opener.open(reg_req)
+    raise AssertionError(f"Expected 404 from /register, got {reg_res.status}")
+except urllib.error.HTTPError as e:
+    print("  Status:", e.code)
+    assert e.code == 404, f"Expected 404 from /register, got {e.code}"
+print("  [+] Public register route disabled (404) verified!")
 
 print("\n" + "=" * 60)
 print("ALL AUTH FLOW & SECURITY CHECKS PASSED!")

@@ -107,6 +107,9 @@ class UserController extends Controller
                 'campus_id' => $campusToSave,
             ]);
 
+            // Akun yang dibuat oleh admin langsung berstatus terverifikasi
+            $user->forceFill(['email_verified_at' => now()])->save();
+
             $user->syncRoles([$selectedRole]);
 
             ActivityLog::record(

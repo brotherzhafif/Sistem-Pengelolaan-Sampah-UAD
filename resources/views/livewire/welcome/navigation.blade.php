@@ -13,20 +13,10 @@
     @else
         <a
             href="{{ route('login') }}"
-            class="btn btn-ghost btn-sm font-semibold text-neutral hover:bg-base-200"
+            class="btn btn-primary btn-sm text-white font-semibold shadow-md shadow-primary/20 hover:scale-105 transition duration-200 min-h-[44px] inline-flex items-center px-4"
             wire:navigate
         >
             Masuk
         </a>
-
-        @if (Route::has('register'))
-            <a
-                href="{{ route('register') }}"
-                class="btn btn-primary btn-sm text-white font-semibold shadow-md shadow-primary/20 hover:scale-105 transition duration-200"
-                wire:navigate
-            >
-                Daftar
-            </a>
-        @endif
     @endauth
 </nav>

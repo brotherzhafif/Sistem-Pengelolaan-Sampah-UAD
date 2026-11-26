@@ -115,15 +115,6 @@ new #[Layout('layouts.guest')] class extends Component
                 </svg>
             </button>
         </div>
-
-        @if (Route::has('register'))
-            <div class="text-center pt-3 text-sm text-base-content/70">
-                Belum memiliki akun?
-                <a class="font-bold text-primary hover:underline hover:text-emerald-700 transition ms-1" href="{{ route('register') }}" wire:navigate>
-                    Daftar sekarang
-                </a>
-            </div>
-        @endif
     </form>
 
     <script data-cfasync="false">

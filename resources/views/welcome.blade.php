@@ -63,17 +63,19 @@
                                 </svg>
                             </a>
                         @else
-                            <a href="{{ route('register') }}" class="btn btn-primary btn-lg text-white font-bold shadow-xl shadow-primary/25 hover:shadow-primary/40 px-8">
-                                Mulai Sekarang
-                                <svg class="w-5 h-5 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-                                </svg>
+                            <a href="{{ route('login') }}" class="btn btn-primary btn-lg text-white font-bold shadow-xl shadow-primary/25 hover:shadow-primary/40 px-8">
+                                Masuk ke Sistem
                             </a>
-                            <a href="{{ route('login') }}" class="btn btn-outline btn-lg font-bold px-8">
-                                Masuk ke Akun
+                            <a href="{{ route('kap.survey') }}" class="btn btn-outline btn-lg font-bold px-8">
+                                Isi Survei KAP
                             </a>
                         @endauth
                     </div>
+                    @guest
+                        <p class="mt-3 text-xs text-base-content/60">
+                            Akun pengelola diterbitkan oleh Admin Unit Kampus atau Admin Pusat.
+                        </p>
+                    @endguest
                 </div>
 
                 <!-- Stats Highlight (DaisyUI stats) -->
