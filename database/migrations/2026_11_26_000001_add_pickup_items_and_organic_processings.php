@@ -56,7 +56,11 @@ return new class extends Migration
                 $table->decimal('weight_kg', 10, 2);
                 $table->timestamps();
 
-                $table->index(['organic_processing_id', 'waste_type_id']);
+                $table->index(['organic_processing_id', 'waste_type_id'], 'opi_proc_waste_idx');
+            });
+        } elseif (!Schema::hasIndex('organic_processing_items', 'opi_proc_waste_idx')) {
+            Schema::table('organic_processing_items', function (Blueprint $table) {
+                $table->index(['organic_processing_id', 'waste_type_id'], 'opi_proc_waste_idx');
             });
         }
 
