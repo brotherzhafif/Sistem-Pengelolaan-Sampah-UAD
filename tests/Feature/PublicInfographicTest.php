@@ -8,6 +8,7 @@ use App\Http\Controllers\SaleController;
 use App\Http\Controllers\WeighingController;
 use App\Models\Buyer;
 use App\Models\Campus;
+use App\Models\OrganicOutputCategory;
 use App\Models\User;
 use App\Models\Vendor;
 use App\Models\WasteSource;
@@ -58,6 +59,7 @@ class PublicInfographicTest extends TestCase
         $kardus = WasteType::where('name', 'Kardus')->firstOrFail();
         $sisaMakanan = WasteType::where('name', 'Organik Sisa Makanan')->firstOrFail();
         $residu = WasteType::where('name', 'Residu Campur')->firstOrFail();
+        $pupuk = OrganicOutputCategory::where('name', 'Pupuk')->firstOrFail();
         $buyer = Buyer::firstOrFail();
         $vendor = Vendor::firstOrFail();
         $source1 = WasteSource::where('campus_id', $campus1->id)->firstOrFail();
@@ -84,12 +86,12 @@ class PublicInfographicTest extends TestCase
             ],
         ]);
 
-        // Terkelola 2: Olah Organik 30 kg -> Pupuk 14 kg, Pakan 4 kg
+        // Terkelola 2: Olah Organik 30 kg -> Pupuk 14 kg
         app(OrganicProcessingController::class)->store([
             'campus_id' => $campus1->id,
             'process_date' => now()->format('Y-m-d'),
-            'compost_output_kg' => 14,
-            'feed_output_kg' => 4,
+            'organic_output_category_id' => $pupuk->id,
+            'output_weight_kg' => 14,
             'items' => [
                 ['waste_type_id' => $sisaMakanan->id, 'weight_kg' => 30],
             ],
@@ -106,7 +108,6 @@ class PublicInfographicTest extends TestCase
             ],
         ]);
 
-        // Kampus 2 kosong untuk menguji filter kampus
         auth()->logout();
         $this->assertGuest();
 
@@ -121,7 +122,7 @@ class PublicInfographicTest extends TestCase
             ->assertSee('75,0%')
             ->assertSee('20,0')
             ->assertSee('25,0%')
-            ->assertSee('Pupuk 14,0 kg | Pakan 4,0 kg')
+            ->assertSee('Pupuk 14,0 kg')
             ->assertDontSee('54.000')
             ->assertDontSee('Rp ');
 

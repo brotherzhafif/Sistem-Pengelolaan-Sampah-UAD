@@ -4,6 +4,7 @@ namespace App\Livewire\Pages\Processing;
 
 use App\Http\Controllers\OrganicProcessingController;
 use App\Models\Campus;
+use App\Models\OrganicOutputCategory;
 use App\Models\OrganicProcessing;
 use App\Models\WasteType;
 use Carbon\Carbon;
@@ -45,9 +46,8 @@ class Index extends Component
     public bool $showCreateModal = false;
     public $formCampusId = null;
     public string $formDate = '';
-    public string $formCompostOutputKg = '0';
-    public string $formFeedOutputKg = '0';
-    public string $formMethod = '';
+    public $formOutputCategoryId = null;
+    public string $formOutputWeightKg = '';
     public string $formNotes = '';
     public array $processingItems = [];
 
@@ -56,17 +56,16 @@ class Index extends Component
     public ?int $editProcessingId = null;
     public $editCampusId = null;
     public string $editDate = '';
-    public string $editCompostOutputKg = '0';
-    public string $editFeedOutputKg = '0';
-    public string $editMethod = '';
+    public $editOutputCategoryId = null;
+    public string $editOutputWeightKg = '';
     public string $editNotes = '';
     public array $editItems = [];
 
     // Delete & Detail Modal state
     public ?int $confirmDeleteId = null;
     public float $deleteInputWeight = 0.0;
-    public float $deleteCompostWeight = 0.0;
-    public float $deleteFeedWeight = 0.0;
+    public float $deleteOutputWeight = 0.0;
+    public string $deleteOutputLabel = '';
     public string $deleteDateLabel = '';
     public ?int $viewProcessingId = null;
 
@@ -105,9 +104,8 @@ class Index extends Component
             ? (int) $this->selectedCampusId
             : ($user->campus_id ? (int) $user->campus_id : Campus::first()?->id);
         $this->formDate = Carbon::today()->format('Y-m-d');
-        $this->formCompostOutputKg = '';
-        $this->formFeedOutputKg = '';
-        $this->formMethod = '';
+        $this->formOutputCategoryId = OrganicOutputCategory::getActiveCategories()->first()?->id;
+        $this->formOutputWeightKg = '';
         $this->formNotes = '';
 
         $this->loadOrganicItems();
@@ -180,9 +178,8 @@ class Index extends Component
             $result = $controller->store([
                 'campus_id' => $this->formCampusId,
                 'process_date' => $this->formDate,
-                'compost_output_kg' => $this->formCompostOutputKg !== '' ? $this->formCompostOutputKg : 0,
-                'feed_output_kg' => $this->formFeedOutputKg !== '' ? $this->formFeedOutputKg : 0,
-                'method' => $this->formMethod,
+                'organic_output_category_id' => $this->formOutputCategoryId,
+                'output_weight_kg' => $this->formOutputWeightKg,
                 'notes' => $this->formNotes,
                 'items' => $this->processingItems,
             ]);
@@ -212,9 +209,8 @@ class Index extends Component
         $this->editProcessingId = $processing->id;
         $this->editCampusId = $processing->campus_id;
         $this->editDate = $processing->process_date ? $processing->process_date->format('Y-m-d') : Carbon::today()->format('Y-m-d');
-        $this->editCompostOutputKg = (string) (float) $processing->compost_output_kg;
-        $this->editFeedOutputKg = (string) (float) $processing->feed_output_kg;
-        $this->editMethod = (string) ($processing->method ?? '');
+        $this->editOutputCategoryId = $processing->organic_output_category_id ?: OrganicOutputCategory::getActiveCategories()->first()?->id;
+        $this->editOutputWeightKg = (string) (float) $processing->output_weight_kg;
         $this->editNotes = (string) ($processing->notes ?? '');
 
         $existingByType = $processing->items->pluck('weight_kg', 'waste_type_id')->map(fn ($w) => (float) $w)->toArray();
@@ -271,9 +267,8 @@ class Index extends Component
             $result = $controller->update($this->editProcessingId, [
                 'campus_id' => $this->editCampusId,
                 'process_date' => $this->editDate,
-                'compost_output_kg' => $this->editCompostOutputKg !== '' ? $this->editCompostOutputKg : 0,
-                'feed_output_kg' => $this->editFeedOutputKg !== '' ? $this->editFeedOutputKg : 0,
-                'method' => $this->editMethod,
+                'organic_output_category_id' => $this->editOutputCategoryId,
+                'output_weight_kg' => $this->editOutputWeightKg,
                 'notes' => $this->editNotes,
                 'items' => $this->editItems,
             ]);
@@ -294,12 +289,12 @@ class Index extends Component
 
     public function confirmDelete(int $id): void
     {
-        $processing = OrganicProcessing::find($id);
+        $processing = OrganicProcessing::with('outputCategory')->find($id);
         if ($processing) {
             $this->confirmDeleteId = $processing->id;
             $this->deleteInputWeight = (float) $processing->input_weight_kg;
-            $this->deleteCompostWeight = (float) $processing->compost_output_kg;
-            $this->deleteFeedWeight = (float) $processing->feed_output_kg;
+            $this->deleteOutputWeight = (float) $processing->output_weight_kg;
+            $this->deleteOutputLabel = $processing->outputCategory?->name ?? 'Hasil Olah';
             $this->deleteDateLabel = $processing->process_date ? $processing->process_date->translatedFormat('d M Y') : '';
         }
     }
@@ -359,6 +354,8 @@ class Index extends Component
             'isSuperAdmin' => $isSuperAdmin,
             'canCreate' => $canCreate,
             'campuses' => Campus::getActiveCampuses(),
+            'outputCategories' => OrganicOutputCategory::getActiveCategories(),
+            'allOutputCategories' => OrganicOutputCategory::getAllCategories(),
             'processings' => $processings,
             'selectedProcessing' => $this->viewProcessingId ? OrganicProcessing::getDetailedProcessing($this->viewProcessingId) : null,
             'totalsFiltered' => $totalsFiltered,

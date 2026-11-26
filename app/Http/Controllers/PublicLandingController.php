@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Campus;
+use App\Models\OrganicProcessing;
 use App\Models\WasteStockSummary;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -35,6 +36,8 @@ class PublicLandingController extends Controller
                     'sold_share_pct' => 0.0,
                     'processed_kg' => 0.0,
                     'processed_share_pct' => 0.0,
+                    'processed_output_kg' => 0.0,
+                    'processed_outputs' => [],
                     'compost_kg' => 0.0,
                     'feed_kg' => 0.0,
                     'unmanaged_kg' => 0.0,
@@ -125,6 +128,10 @@ class PublicLandingController extends Controller
         $soldSharePct = $totalHandledKg > 0 ? round(($soldKg / $totalHandledKg) * 100, 1) : 0.0;
         $processedSharePct = $totalHandledKg > 0 ? round(max(0.0, $managedPct - $soldSharePct), 1) : 0.0;
 
+        $processingTotals = Schema::hasTable('organic_processings') && Schema::hasTable('organic_output_categories')
+            ? OrganicProcessing::getTotals($activeCampusId)
+            : ['total_output_kg' => 0.0, 'by_category' => []];
+
         $lastUpdatedLabel = $lastUpdatedAt
             ? Carbon::parse($lastUpdatedAt)->translatedFormat('d M Y, H:i') . ' WIB'
             : null;
@@ -141,6 +148,8 @@ class PublicLandingController extends Controller
                 'sold_share_pct' => $soldSharePct,
                 'processed_kg' => $processedKg,
                 'processed_share_pct' => $processedSharePct,
+                'processed_output_kg' => (float) ($processingTotals['total_output_kg'] ?? 0.0),
+                'processed_outputs' => $processingTotals['by_category'] ?? [],
                 'compost_kg' => $compostKg,
                 'feed_kg' => $feedKg,
                 'unmanaged_kg' => $unmanagedKg,

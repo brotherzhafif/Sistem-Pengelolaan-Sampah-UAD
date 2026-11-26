@@ -6,6 +6,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Support\Facades\DB;
 
 class OrganicProcessing extends Model
 {
@@ -15,6 +16,8 @@ class OrganicProcessing extends Model
         'campus_id',
         'process_date',
         'input_weight_kg',
+        'organic_output_category_id',
+        'output_weight_kg',
         'compost_output_kg',
         'feed_output_kg',
         'method',
@@ -25,6 +28,7 @@ class OrganicProcessing extends Model
     protected $casts = [
         'process_date' => 'date',
         'input_weight_kg' => 'decimal:2',
+        'output_weight_kg' => 'decimal:2',
         'compost_output_kg' => 'decimal:2',
         'feed_output_kg' => 'decimal:2',
     ];
@@ -37,6 +41,11 @@ class OrganicProcessing extends Model
     public function creator(): BelongsTo
     {
         return $this->belongsTo(User::class, 'created_by');
+    }
+
+    public function outputCategory(): BelongsTo
+    {
+        return $this->belongsTo(OrganicOutputCategory::class, 'organic_output_category_id');
     }
 
     public function items(): HasMany
@@ -54,7 +63,7 @@ class OrganicProcessing extends Model
      */
     public static function getFilteredList(?int $campusId, ?string $dateFrom, ?string $dateTo, int $perPage = 10)
     {
-        return static::with(['campus', 'creator', 'items.wasteType'])
+        return static::with(['campus', 'creator', 'outputCategory', 'items.wasteType'])
             ->forCampus($campusId)
             ->when($dateFrom, fn ($q) => $q->whereDate('process_date', '>=', $dateFrom))
             ->when($dateTo, fn ($q) => $q->whereDate('process_date', '<=', $dateTo))
@@ -68,33 +77,46 @@ class OrganicProcessing extends Model
      */
     public static function getDetailedProcessing(int $id): ?self
     {
-        return static::with(['campus', 'creator', 'items.wasteType'])->find($id);
+        return static::with(['campus', 'creator', 'outputCategory', 'items.wasteType'])->find($id);
     }
 
     /**
-     * Mengambil akumulasi total input organik dan hasil olah (pupuk & pakan) terfilter.
+     * Mengambil akumulasi total input organik dan hasil olah per kategori Master Data.
      */
-    public static function getTotals(?int $campusId, ?string $dateFrom, ?string $dateTo): array
+    public static function getTotals(?int $campusId, ?string $dateFrom = null, ?string $dateTo = null): array
     {
-        if (empty($dateFrom) && empty($dateTo)) {
-            $metrics = WasteStockSummary::getMetrics($campusId);
-            return [
-                'total_input_kg' => (float) ($metrics['total_processed_kg'] ?? 0.0),
-                'total_compost_kg' => (float) ($metrics['total_compost_kg'] ?? 0.0),
-                'total_feed_kg' => (float) ($metrics['total_feed_kg'] ?? 0.0),
-            ];
-        }
-
-        $row = static::forCampus($campusId)
+        $baseQuery = static::forCampus($campusId)
             ->when($dateFrom, fn ($q) => $q->whereDate('process_date', '>=', $dateFrom))
-            ->when($dateTo, fn ($q) => $q->whereDate('process_date', '<=', $dateTo))
-            ->selectRaw('COALESCE(SUM(input_weight_kg), 0) as input_kg, COALESCE(SUM(compost_output_kg), 0) as compost_kg, COALESCE(SUM(feed_output_kg), 0) as feed_kg')
+            ->when($dateTo, fn ($q) => $q->whereDate('process_date', '<=', $dateTo));
+
+        $row = (clone $baseQuery)
+            ->selectRaw('COALESCE(SUM(input_weight_kg), 0) as input_kg, COALESCE(SUM(output_weight_kg), 0) as output_kg')
             ->first();
+
+        $byCategory = static::query()
+            ->join('organic_output_categories', 'organic_processings.organic_output_category_id', '=', 'organic_output_categories.id')
+            ->when($campusId, fn ($q) => $q->where('organic_processings.campus_id', $campusId))
+            ->when($dateFrom, fn ($q) => $q->whereDate('organic_processings.process_date', '>=', $dateFrom))
+            ->when($dateTo, fn ($q) => $q->whereDate('organic_processings.process_date', '<=', $dateTo))
+            ->groupBy('organic_output_categories.id', 'organic_output_categories.name')
+            ->select(
+                'organic_output_categories.id as category_id',
+                'organic_output_categories.name as category_name',
+                DB::raw('COALESCE(SUM(organic_processings.output_weight_kg), 0) as total_output_kg')
+            )
+            ->orderByDesc('total_output_kg')
+            ->get()
+            ->map(fn ($r) => [
+                'category_id' => (int) $r->category_id,
+                'category_name' => $r->category_name,
+                'total_output_kg' => (float) $r->total_output_kg,
+            ])
+            ->toArray();
 
         return [
             'total_input_kg' => (float) ($row->input_kg ?? 0.0),
-            'total_compost_kg' => (float) ($row->compost_kg ?? 0.0),
-            'total_feed_kg' => (float) ($row->feed_kg ?? 0.0),
+            'total_output_kg' => (float) ($row->output_kg ?? 0.0),
+            'by_category' => $byCategory,
         ];
     }
 }

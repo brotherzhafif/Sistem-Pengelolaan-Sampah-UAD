@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Livewire\Pages\Processing\Index as ProcessingComponent;
 use App\Models\ActivityLog;
+use App\Models\OrganicOutputCategory;
 use App\Models\OrganicProcessing;
 use App\Models\OrganicProcessingItem;
 use App\Models\WasteStockSummary;
@@ -37,7 +38,7 @@ class OrganicProcessingController extends Controller
     }
 
     /**
-     * Memvalidasi stok organik dan menyimpan catatan pengolahan mandiri beserta hasil olah (pupuk & pakan).
+     * Memvalidasi stok organik dan menyimpan catatan pengolahan (input awal -> jadi apa & berat hasil).
      */
     public function store(array $data): array
     {
@@ -55,9 +56,8 @@ class OrganicProcessingController extends Controller
         Validator::make($data, [
             'campus_id' => ['required', 'exists:campuses,id'],
             'process_date' => ['required', 'date'],
-            'compost_output_kg' => ['nullable', 'numeric', 'min:0', 'max:50000'],
-            'feed_output_kg' => ['nullable', 'numeric', 'min:0', 'max:50000'],
-            'method' => ['nullable', 'string', 'max:50'],
+            'organic_output_category_id' => ['required', 'exists:organic_output_categories,id'],
+            'output_weight_kg' => ['required', 'numeric', 'min:0.01', 'max:50000'],
             'notes' => ['nullable', 'string', 'max:500'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.waste_type_id' => ['required', 'exists:waste_types,id'],
@@ -65,20 +65,18 @@ class OrganicProcessingController extends Controller
         ], [
             'campus_id.required' => 'Unit kampus wajib dipilih.',
             'process_date.required' => 'Tanggal pengolahan wajib diisi.',
+            'organic_output_category_id.required' => 'Jenis hasil olahan (Master Data) wajib dipilih.',
+            'output_weight_kg.required' => 'Berat hasil setelah diolah wajib diisi.',
+            'output_weight_kg.min' => 'Berat hasil setelah diolah minimal 0.01 kg.',
             'items.required' => 'Rincian sampah organik yang diolah wajib diisi.',
         ])->validate();
 
         $isSuperAdmin = $user->hasRole(['super_admin', 'Super Admin']);
         $campusId = $isSuperAdmin ? (int) $data['campus_id'] : (int) $user->campus_id;
 
-        $compostKg = round(floatval($data['compost_output_kg'] ?? 0), 2);
-        $feedKg = round(floatval($data['feed_output_kg'] ?? 0), 2);
-
-        if (($compostKg + $feedKg) <= 0) {
-            throw ValidationException::withMessages([
-                'formOutputs' => 'Harap isi berat hasil olah (pupuk dan/atau pakan) minimal > 0 kg.',
-            ]);
-        }
+        $outputCategoryId = (int) $data['organic_output_category_id'];
+        $outputCategory = OrganicOutputCategory::findOrFail($outputCategoryId);
+        $outputWeightKg = round(floatval($data['output_weight_kg']), 2);
 
         $itemsToProcess = [];
         foreach ($data['items'] as $index => $item) {
@@ -108,21 +106,23 @@ class OrganicProcessingController extends Controller
 
         if (empty($itemsToProcess)) {
             throw ValidationException::withMessages([
-                'processingItems' => 'Harap isi berat bahan sampah organik minimal untuk salah satu jenis.',
+                'processingItems' => 'Harap isi berat awal minimal untuk salah satu jenis sampah organik.',
             ]);
         }
 
         $inputWeightKg = round(array_sum($itemsToProcess), 2);
         $processing = null;
 
-        DB::transaction(function () use ($campusId, $data, $inputWeightKg, $compostKg, $feedKg, $itemsToProcess, &$processing) {
+        DB::transaction(function () use ($campusId, $data, $inputWeightKg, $outputCategoryId, $outputCategory, $outputWeightKg, $itemsToProcess, &$processing) {
             $processing = OrganicProcessing::create([
                 'campus_id' => $campusId,
                 'process_date' => $data['process_date'],
                 'input_weight_kg' => $inputWeightKg,
-                'compost_output_kg' => $compostKg,
-                'feed_output_kg' => $feedKg,
-                'method' => !empty($data['method']) ? strip_tags(trim($data['method'])) : null,
+                'organic_output_category_id' => $outputCategoryId,
+                'output_weight_kg' => $outputWeightKg,
+                'compost_output_kg' => 0.00,
+                'feed_output_kg' => 0.00,
+                'method' => $outputCategory->name,
                 'created_by' => auth()->id(),
                 'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
             ]);
@@ -147,31 +147,30 @@ class OrganicProcessingController extends Controller
                 referenceId: $processing->id,
                 action: 'create',
                 items: $itemsDelta,
-                notes: "Pengolahan organik mandiri #{$processing->id} (Pupuk {$compostKg} kg, Pakan {$feedKg} kg)",
+                notes: "Pengolahan organik #{$processing->id}: {$inputWeightKg} kg -> {$outputCategory->name} {$outputWeightKg} kg",
                 processedDelta: $inputWeightKg,
-                compostDelta: $compostKg,
-                feedDelta: $feedKg
+                processedOutputDelta: $outputWeightKg
             );
         });
 
         ActivityLog::record(
             module: 'organic_processing',
             action: 'create',
-            description: "Mencatat pengolahan organik (#{$processing->id}) seberat " . number_format($inputWeightKg, 1, ',', '.') . " kg menjadi pupuk " . number_format($compostKg, 1, ',', '.') . " kg & pakan " . number_format($feedKg, 1, ',', '.') . " kg",
+            description: "Mencatat pengolahan organik (#{$processing->id}) seberat " . number_format($inputWeightKg, 1, ',', '.') . " kg menjadi {$outputCategory->name} (" . number_format($outputWeightKg, 1, ',', '.') . " kg)",
             properties: [
                 'processing_id' => $processing->id,
                 'campus_id' => $campusId,
                 'input_weight_kg' => $inputWeightKg,
-                'compost_output_kg' => $compostKg,
-                'feed_output_kg' => $feedKg,
+                'organic_output_category_id' => $outputCategoryId,
+                'output_weight_kg' => $outputWeightKg,
             ],
             campusId: $campusId
         );
 
         return [
             'success' => true,
-            'processing' => $processing,
-            'message' => 'Pengolahan ' . number_format($inputWeightKg, 1, ',', '.') . ' kg organik tersimpan (Pupuk: ' . number_format($compostKg, 1, ',', '.') . ' kg, Pakan: ' . number_format($feedKg, 1, ',', '.') . ' kg).',
+            'processing' => $processing->fresh(['outputCategory', 'items.wasteType']),
+            'message' => 'Pengolahan ' . number_format($inputWeightKg, 1, ',', '.') . ' kg organik menjadi ' . $outputCategory->name . ' (' . number_format($outputWeightKg, 1, ',', '.') . ' kg) tersimpan.',
         ];
     }
 
@@ -202,9 +201,8 @@ class OrganicProcessingController extends Controller
         Validator::make($data, [
             'campus_id' => ['required', 'exists:campuses,id'],
             'process_date' => ['required', 'date'],
-            'compost_output_kg' => ['nullable', 'numeric', 'min:0', 'max:50000'],
-            'feed_output_kg' => ['nullable', 'numeric', 'min:0', 'max:50000'],
-            'method' => ['nullable', 'string', 'max:50'],
+            'organic_output_category_id' => ['required', 'exists:organic_output_categories,id'],
+            'output_weight_kg' => ['required', 'numeric', 'min:0.01', 'max:50000'],
             'notes' => ['nullable', 'string', 'max:500'],
             'items' => ['required', 'array', 'min:1'],
             'items.*.waste_type_id' => ['required', 'exists:waste_types,id'],
@@ -212,17 +210,15 @@ class OrganicProcessingController extends Controller
         ], [
             'campus_id.required' => 'Unit kampus wajib dipilih.',
             'process_date.required' => 'Tanggal pengolahan wajib diisi.',
+            'organic_output_category_id.required' => 'Jenis hasil olahan (Master Data) wajib dipilih.',
+            'output_weight_kg.required' => 'Berat hasil setelah diolah wajib diisi.',
+            'output_weight_kg.min' => 'Berat hasil setelah diolah minimal 0.01 kg.',
             'items.required' => 'Rincian sampah organik yang diolah wajib diisi.',
         ])->validate();
 
-        $compostKg = round(floatval($data['compost_output_kg'] ?? 0), 2);
-        $feedKg = round(floatval($data['feed_output_kg'] ?? 0), 2);
-
-        if (($compostKg + $feedKg) <= 0) {
-            throw ValidationException::withMessages([
-                'editOutputs' => 'Harap isi berat hasil olah (pupuk dan/atau pakan) minimal > 0 kg.',
-            ]);
-        }
+        $outputCategoryId = (int) $data['organic_output_category_id'];
+        $outputCategory = OrganicOutputCategory::findOrFail($outputCategoryId);
+        $outputWeightKg = round(floatval($data['output_weight_kg']), 2);
 
         $campusId = (int) $processing->campus_id;
         $existingWeights = $processing->items->pluck('weight_kg', 'waste_type_id')->map(fn ($w) => (float) $w)->toArray();
@@ -248,7 +244,7 @@ class OrganicProcessingController extends Controller
 
         if (empty($itemsToProcess)) {
             throw ValidationException::withMessages([
-                'editItems' => 'Harap isi berat bahan sampah organik minimal untuk salah satu jenis.',
+                'editItems' => 'Harap isi berat awal minimal untuk salah satu jenis sampah organik.',
             ]);
         }
 
@@ -276,8 +272,7 @@ class OrganicProcessingController extends Controller
         $oldInputWeight = (float) $processing->input_weight_kg;
         $newInputWeight = round(array_sum($itemsToProcess), 2);
         $deltaInput = $newInputWeight - $oldInputWeight;
-        $deltaCompost = $compostKg - (float) $processing->compost_output_kg;
-        $deltaFeed = $feedKg - (float) $processing->feed_output_kg;
+        $deltaOutput = $outputWeightKg - (float) $processing->output_weight_kg;
 
         $allTypeIds = array_unique(array_merge(array_keys($existingWeights), array_keys($itemsToProcess)));
         $itemsDelta = [];
@@ -291,13 +286,13 @@ class OrganicProcessingController extends Controller
             }
         }
 
-        DB::transaction(function () use ($processing, $campusId, $data, $newInputWeight, $compostKg, $feedKg, $itemsToProcess, $itemsDelta, $deltaInput, $deltaCompost, $deltaFeed) {
+        DB::transaction(function () use ($processing, $campusId, $data, $newInputWeight, $outputCategoryId, $outputCategory, $outputWeightKg, $itemsToProcess, $itemsDelta, $deltaInput, $deltaOutput) {
             $processing->update([
                 'process_date' => $data['process_date'],
                 'input_weight_kg' => $newInputWeight,
-                'compost_output_kg' => $compostKg,
-                'feed_output_kg' => $feedKg,
-                'method' => !empty($data['method']) ? strip_tags(trim($data['method'])) : null,
+                'organic_output_category_id' => $outputCategoryId,
+                'output_weight_kg' => $outputWeightKg,
+                'method' => $outputCategory->name,
                 'notes' => !empty($data['notes']) ? strip_tags(trim($data['notes'])) : null,
             ]);
 
@@ -316,30 +311,29 @@ class OrganicProcessingController extends Controller
                 referenceId: $processing->id,
                 action: 'update',
                 items: $itemsDelta,
-                notes: "Pembaruan pengolahan organik #{$processing->id}",
+                notes: "Pembaruan pengolahan organik #{$processing->id}: {$newInputWeight} kg -> {$outputCategory->name} {$outputWeightKg} kg",
                 processedDelta: $deltaInput,
-                compostDelta: $deltaCompost,
-                feedDelta: $deltaFeed
+                processedOutputDelta: $deltaOutput
             );
         });
 
         ActivityLog::record(
             module: 'organic_processing',
             action: 'update',
-            description: "Memperbarui pengolahan organik (#{$processing->id}) seberat " . number_format($newInputWeight, 1, ',', '.') . " kg (Pupuk " . number_format($compostKg, 1, ',', '.') . " kg, Pakan " . number_format($feedKg, 1, ',', '.') . " kg)",
+            description: "Memperbarui pengolahan organik (#{$processing->id}) seberat " . number_format($newInputWeight, 1, ',', '.') . " kg menjadi {$outputCategory->name} (" . number_format($outputWeightKg, 1, ',', '.') . " kg)",
             properties: [
                 'processing_id' => $processing->id,
                 'campus_id' => $campusId,
                 'input_weight_kg' => $newInputWeight,
-                'compost_output_kg' => $compostKg,
-                'feed_output_kg' => $feedKg,
+                'organic_output_category_id' => $outputCategoryId,
+                'output_weight_kg' => $outputWeightKg,
             ],
             campusId: $campusId
         );
 
         return [
             'success' => true,
-            'processing' => $processing,
+            'processing' => $processing->fresh(['outputCategory', 'items.wasteType']),
             'message' => 'Data pengolahan sampah organik berhasil diperbarui.',
         ];
     }
@@ -370,8 +364,7 @@ class OrganicProcessingController extends Controller
         }
 
         $inputWeightKg = (float) $processing->input_weight_kg;
-        $compostKg = (float) $processing->compost_output_kg;
-        $feedKg = (float) $processing->feed_output_kg;
+        $outputWeightKg = (float) $processing->output_weight_kg;
         $campusId = (int) $processing->campus_id;
         $id = (int) $processing->id;
 
@@ -383,7 +376,7 @@ class OrganicProcessingController extends Controller
             ];
         }
 
-        DB::transaction(function () use ($processing, $campusId, $id, $inputWeightKg, $compostKg, $feedKg, $itemsDelta) {
+        DB::transaction(function () use ($processing, $campusId, $id, $inputWeightKg, $outputWeightKg, $itemsDelta) {
             $processing->items()->delete();
             $processing->delete();
 
@@ -395,8 +388,7 @@ class OrganicProcessingController extends Controller
                 items: $itemsDelta,
                 notes: "Penghapusan pengolahan organik #{$id} (stok organik dikembalikan)",
                 processedDelta: -$inputWeightKg,
-                compostDelta: -$compostKg,
-                feedDelta: -$feedKg
+                processedOutputDelta: -$outputWeightKg
             );
         });
 

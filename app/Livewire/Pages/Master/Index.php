@@ -6,6 +6,7 @@ use App\Http\Controllers\MasterDataController;
 use App\Models\Buyer;
 use App\Models\Campus;
 use App\Models\ExpenseCategory;
+use App\Models\OrganicOutputCategory;
 use App\Models\Vendor;
 use App\Models\WasteSource;
 use App\Models\WasteType;
@@ -54,8 +55,13 @@ class Index extends Component
     public string $categoryName = '';
     public ?int $editingCategoryId = null;
 
+    // Organic Output Category Form state
+    public string $organicOutputName = '';
+    public bool $organicOutputIsActive = true;
+    public ?int $editingOrganicOutputId = null;
+
     // Delete Confirmation Modal State
-    public ?string $deleteType = null; // 'campus', 'source', 'type', 'vendor', 'buyer', 'category'
+    public ?string $deleteType = null; // 'campus', 'source', 'type', 'vendor', 'buyer', 'category', 'organic_output'
     public ?int $deleteTargetId = null;
     public string $deleteTargetName = '';
     public ?array $deleteBindingInfo = null;
@@ -73,6 +79,7 @@ class Index extends Component
             'vendor' => Vendor::find($id),
             'buyer' => Buyer::find($id),
             'category' => ExpenseCategory::find($id),
+            'organic_output' => OrganicOutputCategory::find($id),
             default => null,
         };
 
@@ -139,6 +146,7 @@ class Index extends Component
             'vendors' => Vendor::getAllVendors(),
             'buyers' => Buyer::getAllBuyers(),
             'expenseCategories' => ExpenseCategory::getAllCategories(),
+            'organicOutputCategories' => OrganicOutputCategory::getAllCategories(),
             'activeTab' => $this->activeTab,
             'deleteType' => $this->deleteType,
             'deleteTargetId' => $this->deleteTargetId,
@@ -149,6 +157,7 @@ class Index extends Component
             'editingVendorId' => $this->editingVendorId,
             'editingBuyerId' => $this->editingBuyerId,
             'editingCategoryId' => $this->editingCategoryId,
+            'editingOrganicOutputId' => $this->editingOrganicOutputId,
             'editingCampusId' => $this->editingCampusId,
         ]);
     }
@@ -347,6 +356,40 @@ class Index extends Component
         } else {
             $this->dispatch('toast', message: $res['message'], type: 'error');
         }
+    }
+
+    // --- Action: Organic Output Category ---
+    public function saveOrganicOutputCategory(): void
+    {
+        $result = app(MasterDataController::class)->saveOrganicOutputCategory([
+            'id' => $this->editingOrganicOutputId,
+            'name' => $this->organicOutputName,
+            'is_active' => $this->organicOutputIsActive,
+        ]);
+
+        $this->reset(['organicOutputName', 'editingOrganicOutputId']);
+        $this->organicOutputIsActive = true;
+        $this->dispatch('toast', message: $result['message'], type: 'success');
+        session()->flash('message', $result['message']);
+    }
+
+    public function editOrganicOutputCategory(int $id): void
+    {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            $this->dispatch('toast', message: 'Hanya Super Administrator yang berhak mengedit kategori hasil olah organik.', type: 'error');
+            return;
+        }
+
+        $cat = OrganicOutputCategory::findOrFail($id);
+        $this->editingOrganicOutputId = $cat->id;
+        $this->organicOutputName = $cat->name;
+        $this->organicOutputIsActive = (bool) $cat->is_active;
+    }
+
+    public function cancelEditOrganicOutput(): void
+    {
+        $this->reset(['organicOutputName', 'editingOrganicOutputId']);
+        $this->organicOutputIsActive = true;
     }
 
     // --- Action: Campus (Unit Kampus) ---

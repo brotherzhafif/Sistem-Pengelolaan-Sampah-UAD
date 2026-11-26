@@ -5,6 +5,7 @@ namespace Database\Seeders;
 use App\Models\Buyer;
 use App\Models\Campus;
 use App\Models\ExpenseCategory;
+use App\Models\OrganicOutputCategory;
 use App\Models\Vendor;
 use App\Models\WasteSource;
 use App\Models\WasteType;
@@ -142,6 +143,20 @@ class MasterDataSeeder extends Seeder
 
         foreach ($categories as $categoryName) {
             ExpenseCategory::firstOrCreate(['name' => $categoryName]);
+        }
+
+        // 4b. Seed Contoh Kategori Hasil Pengolahan Organik (Master Data)
+        $organicOutputs = [
+            'Pupuk',
+            'Pakan',
+            'Pupuk Cair',
+        ];
+
+        foreach ($organicOutputs as $outputName) {
+            OrganicOutputCategory::firstOrCreate(
+                ['name' => $outputName],
+                ['is_active' => true]
+            );
         }
 
         // 5. Seed Sumber Sampah Standar per Kampus (SRS M7)

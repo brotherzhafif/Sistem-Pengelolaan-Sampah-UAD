@@ -36,6 +36,10 @@
                         class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition {{ $activeTab === 'categories' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
                     Kategori Pengeluaran
                 </button>
+                <button wire:click="$set('activeTab', 'organic_outputs')" 
+                        class="px-3.5 py-1.5 rounded-lg text-xs font-semibold transition {{ $activeTab === 'organic_outputs' ? 'bg-slate-900 text-white shadow-sm' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50' }}">
+                    Hasil Olah Organik
+                </button>
             </div>
 
             <!-- Tab 0: Unit Kampus UAD -->
@@ -671,6 +675,104 @@
                                 <span class="italic">Gulir ke bawah untuk data lainnya</span>
                             </div>
                         @endif
+                    </div>
+                </div>
+            @endif
+
+            <!-- Tab 6: Kategori Hasil Pengolahan Organik -->
+            @if ($activeTab === 'organic_outputs')
+                <div class="grid grid-cols-1 lg:grid-cols-3 gap-5">
+                    @if ($isSuperAdmin)
+                        <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm h-fit">
+                            <h3 class="font-bold text-sm text-slate-900 mb-1">
+                                {{ $editingOrganicOutputId ? 'Edit Kategori Hasil Olah' : 'Tambah Kategori Hasil Olah' }}
+                            </h3>
+                            <p class="text-[11px] text-slate-500 mb-3">Pilihan jenis produk olahan sampah organik (contoh: Pupuk, Pakan, Pupuk Cair)</p>
+                            <form wire:submit="saveOrganicOutputCategory" class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Nama Kategori Hasil Olah</label>
+                                    <input wire:model="organicOutputName" type="text" placeholder="Contoh: Pupuk, Pakan, Pupuk Cair" required maxlength="100" class="w-full text-xs border border-slate-200 rounded-lg px-3 py-2 focus:outline-none focus:border-emerald-500">
+                                    <x-input-error :messages="$errors->get('name')" class="mt-1" />
+                                </div>
+                                <div class="flex items-center gap-2 pt-1">
+                                    <input wire:model="organicOutputIsActive" type="checkbox" id="organic_output_active" class="rounded border-slate-300 text-emerald-600 focus:ring-emerald-500">
+                                    <label for="organic_output_active" class="text-xs text-slate-700 font-medium">Aktif (ditampilkan di Pengolahan Organik)</label>
+                                </div>
+                                <div class="flex gap-2 pt-2">
+                                    <button type="submit" class="px-4 py-2 rounded-lg bg-emerald-600 text-white text-xs font-semibold hover:bg-emerald-700 transition cursor-pointer">
+                                        {{ $editingOrganicOutputId ? 'Perbarui Kategori' : 'Simpan Kategori' }}
+                                    </button>
+                                    @if ($editingOrganicOutputId)
+                                        <button type="button" wire:click="cancelEditOrganicOutput" class="px-3 py-2 rounded-lg border border-slate-200 text-xs font-semibold text-slate-600 hover:bg-slate-50 cursor-pointer">
+                                            Batal
+                                        </button>
+                                    @endif
+                                </div>
+                            </form>
+                        </div>
+                    @else
+                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-5 text-center h-fit">
+                            <div class="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 text-slate-500 flex items-center justify-center mx-auto mb-2.5">
+                                <svg class="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/>
+                                </svg>
+                            </div>
+                            <h4 class="font-bold text-xs text-slate-800">Master Data Terpusat</h4>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-relaxed">
+                                Kategori hasil olah organik dikelola terpusat oleh Super Administrator.
+                            </p>
+                        </div>
+                    @endif
+
+                    <div class="lg:col-span-2 bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden flex flex-col">
+                        <div class="p-4 border-b border-slate-200 shrink-0">
+                            <span class="text-xs font-bold text-slate-800 uppercase tracking-wider">Daftar Kategori Hasil Pengolahan Organik ({{ $organicOutputCategories->count() }})</span>
+                        </div>
+                        <div class="overflow-x-auto overflow-y-auto max-h-[480px] sidebar-scroll">
+                            <table class="w-full text-left text-xs">
+                                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[11px] sticky top-0 z-10 shadow-xs">
+                                    <tr>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Nama Hasil Olah</th>
+                                        <th class="py-2.5 px-4 font-semibold bg-slate-50">Status</th>
+                                        <th class="py-2.5 px-4 font-semibold text-right bg-slate-50">{{ $isSuperAdmin ? 'Aksi' : 'Wewenang' }}</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-100">
+                                    @forelse ($organicOutputCategories as $outputCat)
+                                        <tr class="hover:bg-slate-50/60">
+                                            <td class="py-3 px-4 font-medium text-slate-900">{{ $outputCat->name }}</td>
+                                            <td class="py-3 px-4">
+                                                @if ($outputCat->is_active)
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-200">Aktif</span>
+                                                @else
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-500 border border-slate-200">Nonaktif</span>
+                                                @endif
+                                            </td>
+                                            @if ($isSuperAdmin)
+                                                <td class="py-3 px-4 text-right">
+                                                    <div class="inline-flex items-center gap-1 justify-end">
+                                                        <button wire:click="editOrganicOutputCategory({{ $outputCat->id }})" title="Edit Kategori Hasil Olah" aria-label="Edit Kategori Hasil Olah" class="p-1.5 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 rounded-lg transition cursor-pointer">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg>
+                                                        </button>
+                                                        <button @click="deleteModal = true; $wire.confirmDelete('organic_output', {{ $outputCat->id }}, '{{ addslashes($outputCat->name) }}')" title="Hapus Kategori Hasil Olah" aria-label="Hapus Kategori Hasil Olah" class="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-lg transition cursor-pointer">
+                                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                                                        </button>
+                                                    </div>
+                                                </td>
+                                            @else
+                                                <td class="py-3 px-4 text-right">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-slate-100 text-slate-400 border border-slate-200">Pusat</span>
+                                                </td>
+                                            @endif
+                                        </tr>
+                                    @empty
+                                        <tr>
+                                            <td colspan="3" class="py-6 text-center text-slate-400">Belum ada kategori hasil olah organik.</td>
+                                        </tr>
+                                    @endforelse
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
             @endif

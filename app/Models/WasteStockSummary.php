@@ -19,6 +19,7 @@ class WasteStockSummary extends Model
         'total_weighed_kg',
         'total_sold_kg',
         'total_processed_kg',
+        'total_processed_output_kg',
         'total_picked_up_kg',
         'current_stock_kg',
         'total_sales_revenue',
@@ -36,6 +37,7 @@ class WasteStockSummary extends Model
         'total_weighed_kg' => 'decimal:2',
         'total_sold_kg' => 'decimal:2',
         'total_processed_kg' => 'decimal:2',
+        'total_processed_output_kg' => 'decimal:2',
         'total_picked_up_kg' => 'decimal:2',
         'current_stock_kg' => 'decimal:2',
         'total_sales_revenue' => 'decimal:2',
@@ -76,6 +78,7 @@ class WasteStockSummary extends Model
                     'total_weighed_kg' => 0.00,
                     'total_sold_kg' => 0.00,
                     'total_processed_kg' => 0.00,
+                    'total_processed_output_kg' => 0.00,
                     'total_picked_up_kg' => 0.00,
                     'current_stock_kg' => 0.00,
                     'total_sales_revenue' => 0.00,
@@ -93,6 +96,7 @@ class WasteStockSummary extends Model
                 'total_weighed_kg' => (float) $summary->total_weighed_kg,
                 'total_sold_kg' => (float) $summary->total_sold_kg,
                 'total_processed_kg' => (float) $summary->total_processed_kg,
+                'total_processed_output_kg' => (float) $summary->total_processed_output_kg,
                 'total_picked_up_kg' => (float) $summary->total_picked_up_kg,
                 'current_stock_kg' => (float) $summary->current_stock_kg,
                 'total_sales_revenue' => (float) $summary->total_sales_revenue,
@@ -112,6 +116,7 @@ class WasteStockSummary extends Model
             COALESCE(SUM(total_weighed_kg), 0) as total_weighed,
             COALESCE(SUM(total_sold_kg), 0) as total_sold,
             COALESCE(SUM(total_processed_kg), 0) as total_processed,
+            COALESCE(SUM(total_processed_output_kg), 0) as total_processed_output,
             COALESCE(SUM(total_picked_up_kg), 0) as total_picked_up,
             COALESCE(SUM(current_stock_kg), 0) as current_stock,
             COALESCE(SUM(total_sales_revenue), 0) as total_revenue,
@@ -128,6 +133,7 @@ class WasteStockSummary extends Model
             'total_weighed_kg' => (float) ($totals->total_weighed ?? 0.0),
             'total_sold_kg' => (float) ($totals->total_sold ?? 0.0),
             'total_processed_kg' => (float) ($totals->total_processed ?? 0.0),
+            'total_processed_output_kg' => (float) ($totals->total_processed_output ?? 0.0),
             'total_picked_up_kg' => (float) ($totals->total_picked_up ?? 0.0),
             'current_stock_kg' => (float) ($totals->current_stock ?? 0.0),
             'total_sales_revenue' => (float) ($totals->total_revenue ?? 0.0),
@@ -160,7 +166,8 @@ class WasteStockSummary extends Model
         ?int $userId = null,
         float $processedDelta = 0.0,
         float $compostDelta = 0.0,
-        float $feedDelta = 0.0
+        float $feedDelta = 0.0,
+        float $processedOutputDelta = 0.0
     ): self {
         return DB::transaction(function () use (
             $campusId,
@@ -177,7 +184,8 @@ class WasteStockSummary extends Model
             $userId,
             $processedDelta,
             $compostDelta,
-            $feedDelta
+            $feedDelta,
+            $processedOutputDelta
         ) {
             $summary = static::where('campus_id', $campusId)->lockForUpdate()->first();
 
@@ -187,6 +195,7 @@ class WasteStockSummary extends Model
                     'total_weighed_kg' => 0.00,
                     'total_sold_kg' => 0.00,
                     'total_processed_kg' => 0.00,
+                    'total_processed_output_kg' => 0.00,
                     'total_picked_up_kg' => 0.00,
                     'current_stock_kg' => 0.00,
                     'total_sales_revenue' => 0.00,
@@ -217,6 +226,7 @@ class WasteStockSummary extends Model
             $newWeighed = max(0.0, (float) $summary->total_weighed_kg + $weighedDelta);
             $newSold = max(0.0, (float) $summary->total_sold_kg + $soldDelta);
             $newProcessed = max(0.0, (float) $summary->total_processed_kg + $processedDelta);
+            $newProcessedOutput = max(0.0, (float) $summary->total_processed_output_kg + $processedOutputDelta);
             $newPickedUp = max(0.0, (float) $summary->total_picked_up_kg + $pickedUpDelta);
             $newCompost = max(0.0, (float) $summary->total_compost_kg + $compostDelta);
             $newFeed = max(0.0, (float) $summary->total_feed_kg + $feedDelta);
@@ -261,6 +271,7 @@ class WasteStockSummary extends Model
                 'total_weighed_kg' => $newWeighed,
                 'total_sold_kg' => $newSold,
                 'total_processed_kg' => $newProcessed,
+                'total_processed_output_kg' => $newProcessedOutput,
                 'total_picked_up_kg' => $newPickedUp,
                 'current_stock_kg' => $newCurrentStock,
                 'total_sales_revenue' => $newSalesRevenue,
@@ -332,9 +343,10 @@ class WasteStockSummary extends Model
                 ->toArray();
 
             $processingTotals = OrganicProcessing::where('campus_id', $campusId)
-                ->selectRaw('COALESCE(SUM(input_weight_kg), 0) as total_input, COALESCE(SUM(compost_output_kg), 0) as total_compost, COALESCE(SUM(feed_output_kg), 0) as total_feed')
+                ->selectRaw('COALESCE(SUM(input_weight_kg), 0) as total_input, COALESCE(SUM(output_weight_kg), 0) as total_output, COALESCE(SUM(compost_output_kg), 0) as total_compost, COALESCE(SUM(feed_output_kg), 0) as total_feed')
                 ->first();
             $totalProcessed = (float) ($processingTotals->total_input ?? 0.0);
+            $totalProcessedOutput = (float) ($processingTotals->total_output ?? 0.0);
             $totalCompost = (float) ($processingTotals->total_compost ?? 0.0);
             $totalFeed = (float) ($processingTotals->total_feed ?? 0.0);
 
@@ -410,6 +422,7 @@ class WasteStockSummary extends Model
                     'total_weighed_kg' => $totalWeighed,
                     'total_sold_kg' => $totalSold,
                     'total_processed_kg' => $totalProcessed,
+                    'total_processed_output_kg' => $totalProcessedOutput,
                     'total_picked_up_kg' => $totalPickedUp,
                     'current_stock_kg' => $currentStock,
                     'total_sales_revenue' => $totalSalesRevenue,

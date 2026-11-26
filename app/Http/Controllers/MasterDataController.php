@@ -8,6 +8,7 @@ use App\Models\Buyer;
 use App\Models\Campus;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
+use App\Models\OrganicOutputCategory;
 use App\Models\Pickup;
 use App\Models\Sale;
 use App\Models\SaleItem;
@@ -247,6 +248,52 @@ class MasterDataController extends Controller
     }
 
     /**
+     * Simpan / Perbarui Kategori Hasil Pengolahan Organik.
+     */
+    public function saveOrganicOutputCategory(array $data): array
+    {
+        if (!auth()->user()->hasRole(['super_admin', 'Super Admin'])) {
+            abort(403, 'Akses ditolak: Hanya Super Administrator yang berhak mengonfigurasi kategori hasil pengolahan organik.');
+        }
+
+        $editingId = !empty($data['id']) ? (int) $data['id'] : null;
+
+        Validator::make($data, [
+            'name' => [
+                'required',
+                'string',
+                'max:100',
+                \Illuminate\Validation\Rule::unique('organic_output_categories', 'name')->ignore($editingId),
+            ],
+            'is_active' => ['nullable', 'boolean'],
+        ], [
+            'name.required' => 'Nama kategori hasil olah wajib diisi.',
+            'name.unique' => 'Nama kategori hasil olah ini sudah terdaftar.',
+        ])->validate();
+
+        $cat = OrganicOutputCategory::updateOrCreate(
+            ['id' => $editingId],
+            [
+                'name' => strip_tags(trim($data['name'])),
+                'is_active' => isset($data['is_active']) ? (bool) $data['is_active'] : true,
+            ]
+        );
+
+        ActivityLog::record(
+            module: 'master_data',
+            action: $editingId ? 'update' : 'create',
+            description: ($editingId ? 'Memperbarui' : 'Menambahkan') . " kategori hasil olah organik '{$cat->name}'",
+            properties: ['organic_output_category_id' => $cat->id, 'name' => $cat->name, 'is_active' => $cat->is_active]
+        );
+
+        return [
+            'success' => true,
+            'category' => $cat,
+            'message' => 'Kategori hasil pengolahan organik berhasil disimpan.',
+        ];
+    }
+
+    /**
      * Simpan / Perbarui Unit Kampus.
      */
     public function saveCampus(array $data): array
@@ -413,6 +460,20 @@ class MasterDataController extends Controller
                 }
                 $entity->delete();
                 $msg = 'Kategori pengeluaran berhasil dihapus.';
+                break;
+            case 'organic_output':
+                $entity = OrganicOutputCategory::findOrFail($id);
+                $name = $entity->name;
+                $binding = $entity->getBindingInfo();
+                if ($binding['is_bound']) {
+                    return [
+                        'success' => false,
+                        'message' => "Tidak dapat menghapus kategori hasil olah '{$name}': " . implode('. ', $binding['reasons']),
+                        'binding' => $binding,
+                    ];
+                }
+                $entity->delete();
+                $msg = 'Kategori hasil pengolahan organik berhasil dihapus.';
                 break;
             default:
                 return ['success' => false, 'message' => 'Tipe data master tidak valid.'];

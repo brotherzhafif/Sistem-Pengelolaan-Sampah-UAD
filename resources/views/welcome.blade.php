@@ -71,11 +71,6 @@
                             </a>
                         @endauth
                     </div>
-                    @guest
-                        <p class="mt-3 text-xs text-base-content/60">
-                            Akun pengelola diterbitkan oleh Admin Unit Kampus atau Admin Pusat.
-                        </p>
-                    @endguest
                 </div>
 
                 <!-- Stats Highlight (DaisyUI stats) -->
@@ -243,7 +238,7 @@
                                                 <span class="w-3 h-3 rounded-sm shrink-0" style="background-color: #0d9488;"></span>
                                                 <div class="min-w-0">
                                                     <div class="font-bold text-[#111a2e]">Diolah Mandiri (Organik)</div>
-                                                    <div class="text-[11px] text-slate-600">Diolah menjadi pupuk dan pakan</div>
+                                                    <div class="text-[11px] text-slate-600">Diolah menjadi produk organik (Master Data)</div>
                                                 </div>
                                             </div>
                                             <div class="text-right font-mono shrink-0 whitespace-nowrap">
@@ -289,9 +284,15 @@
                             </div>
                             <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/70">
                                 <span class="text-[11px] font-medium text-[#047857] block">Produk Olah Organik</span>
-                                <span class="font-mono font-bold text-[#047857] text-xs">
-                                    Pupuk {{ number_format($infographic['compost_kg'], 1, ',', '.') }} kg | Pakan {{ number_format($infographic['feed_kg'], 1, ',', '.') }} kg
-                                </span>
+                                @if (!empty($infographic['processed_outputs']))
+                                    <span class="font-mono font-bold text-[#047857] text-xs">
+                                        @foreach ($infographic['processed_outputs'] as $out)
+                                            {{ $loop->first ? '' : ' | ' }}{{ $out['category_name'] }} {{ number_format($out['total_output_kg'], 1, ',', '.') }} kg
+                                        @endforeach
+                                    </span>
+                                @else
+                                    <span class="font-mono font-bold text-[#047857] text-xs">0,0 kg</span>
+                                @endif
                             </div>
                         </div>
                     </div>

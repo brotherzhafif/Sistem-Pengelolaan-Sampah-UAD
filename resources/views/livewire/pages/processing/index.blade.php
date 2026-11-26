@@ -9,19 +9,19 @@
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
                 <h2 class="font-bold text-xl text-slate-900 tracking-tight">Pengolahan Sampah Organik</h2>
-                <p class="text-xs text-slate-500 mt-0.5">Pencatatan sampah organik yang diolah mandiri menjadi pupuk kompos dan pakan</p>
+                <p class="text-xs text-slate-500 mt-0.5">Pencatatan bahan sampah organik awal, jenis hasil olahan (Master Data), dan berat setelah diolah</p>
             </div>
         </div>
     </x-slot>
 
     <div class="py-6">
         <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 space-y-5">
-            <!-- 4 Metric Cards -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- 3 Metric Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
                     <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Organik Diolah</span>
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Berat Awal Organik Diolah</span>
                         <div class="w-7 h-7 rounded-md bg-emerald-50 text-emerald-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -32,13 +32,13 @@
                         <span class="font-mono text-2xl font-bold text-slate-900">{{ number_format($totalsFiltered['total_input_kg'] ?? 0, 1, ',', '.') }}</span>
                         <span class="text-xs text-slate-500 font-medium">kg</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">Akumulasi bahan organik masuk pengolahan</p>
+                    <p class="text-[11px] text-slate-400 mt-1">Total bahan organik sebelum diolah</p>
                 </div>
 
                 <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
                     <div class="absolute top-0 left-0 right-0 h-1 bg-teal-500"></div>
                     <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hasil Olah: Pupuk</span>
+                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Total Hasil Setelah Diolah</span>
                         <div class="w-7 h-7 rounded-md bg-teal-50 text-teal-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
@@ -46,27 +46,19 @@
                         </div>
                     </div>
                     <div class="mt-3 flex items-baseline gap-1.5">
-                        <span class="font-mono text-2xl font-bold text-teal-700">{{ number_format($totalsFiltered['total_compost_kg'] ?? 0, 1, ',', '.') }}</span>
+                        <span class="font-mono text-2xl font-bold text-teal-700">{{ number_format($totalsFiltered['total_output_kg'] ?? 0, 1, ',', '.') }}</span>
                         <span class="text-xs text-slate-500 font-medium">kg</span>
                     </div>
-                    <p class="text-[11px] text-slate-400 mt-1">Output kompos / pupuk organik</p>
-                </div>
-
-                <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
-                    <div class="absolute top-0 left-0 right-0 h-1 bg-amber-500"></div>
-                    <div class="flex items-center justify-between">
-                        <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Hasil Olah: Pakan</span>
-                        <div class="w-7 h-7 rounded-md bg-amber-50 text-amber-600 flex items-center justify-center">
-                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                            </svg>
-                        </div>
+                    <div class="mt-2 flex flex-wrap gap-1.5">
+                        @forelse ($totalsFiltered['by_category'] ?? [] as $catStat)
+                            <span class="inline-flex items-center gap-1 px-1.5 py-0.5 rounded bg-teal-50 border border-teal-200/70 text-[10px] font-semibold text-teal-800">
+                                <span>{{ $catStat['category_name'] }}:</span>
+                                <span class="font-mono">{{ number_format($catStat['total_output_kg'], 1, ',', '.') }} kg</span>
+                            </span>
+                        @empty
+                            <span class="text-[11px] text-slate-400">Belum ada hasil olahan tercatat</span>
+                        @endforelse
                     </div>
-                    <div class="mt-3 flex items-baseline gap-1.5">
-                        <span class="font-mono text-2xl font-bold text-amber-700">{{ number_format($totalsFiltered['total_feed_kg'] ?? 0, 1, ',', '.') }}</span>
-                        <span class="text-xs text-slate-500 font-medium">kg</span>
-                    </div>
-                    <p class="text-[11px] text-slate-400 mt-1">Output pakan ternak / maggot</p>
                 </div>
 
                 <div class="bg-white border border-slate-200 rounded-xl p-5 shadow-sm relative overflow-hidden">
@@ -74,7 +66,7 @@
                     <div class="flex items-center justify-between">
                         <div>
                             <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-500">Stok Organik TPS</span>
-                            <p class="text-[10px] text-slate-400 mt-0.5">Siap diolah menjadi pupuk/pakan</p>
+                            <p class="text-[10px] text-slate-400 mt-0.5">Siap diolah dari penimbangan</p>
                         </div>
                         <div class="w-7 h-7 rounded-md bg-slate-100 text-slate-600 flex items-center justify-center">
                             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -160,10 +152,11 @@
                         <thead class="sticky top-0 z-10 bg-slate-50/95 backdrop-blur-[2px] shadow-xs border-b border-slate-200 uppercase text-[10px] font-bold text-slate-500 tracking-wider">
                             <tr>
                                 <th class="py-3 px-3 w-[13%]">Tanggal</th>
-                                <th class="py-3 px-3 w-[17%]">Kampus &amp; Metode</th>
-                                <th class="py-3 px-3 w-[25%]">Sampah Organik Diolah</th>
-                                <th class="py-3 px-3 text-right w-[12%]">Berat Input</th>
-                                <th class="py-3 px-3 w-[23%]">Hasil Olah (Pupuk / Pakan)</th>
+                                <th class="py-3 px-3 w-[16%]">Kampus</th>
+                                <th class="py-3 px-3 w-[25%]">Apa yang Diolah</th>
+                                <th class="py-3 px-3 text-right w-[12%]">Berat Awal</th>
+                                <th class="py-3 px-3 w-[12%]">Jadi Apa</th>
+                                <th class="py-3 px-3 text-right w-[12%]">Berat Hasil</th>
                                 <th class="py-3 px-2 text-center w-[10%]">Aksi</th>
                             </tr>
                         </thead>
@@ -175,10 +168,9 @@
                                         <div class="text-[10px] text-slate-400 truncate">{{ $proc->creator?->name ?? 'Sistem' }}</div>
                                     </td>
                                     <td class="py-2.5 px-3 truncate">
-                                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 mb-0.5 truncate max-w-full" title="{{ $proc->campus->name }}">
+                                        <span class="inline-block px-1.5 py-0.5 rounded text-[10px] font-semibold bg-slate-100 text-slate-700 truncate max-w-full" title="{{ $proc->campus->name }}">
                                             {{ $proc->campus->name }}
                                         </span>
-                                        <div class="text-[11px] text-slate-600 truncate">{{ $proc->method ?: 'Kompos / Mandiri' }}</div>
                                     </td>
                                     <td class="py-2.5 px-3">
                                         <div class="flex flex-wrap gap-1">
@@ -194,20 +186,12 @@
                                         {{ number_format($proc->input_weight_kg, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
                                     </td>
                                     <td class="py-2.5 px-3">
-                                        <div class="flex flex-wrap items-center gap-1.5">
-                                            @if ((float) $proc->compost_output_kg > 0)
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200/70 text-[11px] font-semibold">
-                                                    <span>Pupuk:</span>
-                                                    <span class="font-mono font-bold">{{ number_format($proc->compost_output_kg, 1, ',', '.') }} kg</span>
-                                                </span>
-                                            @endif
-                                            @if ((float) $proc->feed_output_kg > 0)
-                                                <span class="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-amber-50 text-amber-800 border border-amber-200/70 text-[11px] font-semibold">
-                                                    <span>Pakan:</span>
-                                                    <span class="font-mono font-bold">{{ number_format($proc->feed_output_kg, 1, ',', '.') }} kg</span>
-                                                </span>
-                                            @endif
-                                        </div>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded bg-teal-50 text-teal-800 border border-teal-200/70 text-[11px] font-semibold">
+                                            {{ $proc->outputCategory?->name ?? ($proc->method ?: 'Produk Olah') }}
+                                        </span>
+                                    </td>
+                                    <td class="py-2.5 px-3 text-right font-mono font-bold text-teal-700 whitespace-nowrap">
+                                        {{ number_format($proc->output_weight_kg, 1, ',', '.') }} <span class="text-xs font-sans font-normal text-slate-500">kg</span>
                                     </td>
                                     <td class="py-2.5 px-2 text-center">
                                         <div class="flex items-center justify-center gap-1">
@@ -246,7 +230,7 @@
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="6" class="py-8 text-center text-slate-400">
+                                    <td colspan="7" class="py-8 text-center text-slate-400">
                                         <svg class="w-10 h-10 mx-auto text-slate-300 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                                         </svg>
@@ -274,7 +258,7 @@
                         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                             <div>
                                 <h3 class="text-base font-bold text-slate-900">Catat Pengolahan Sampah Organik</h3>
-                                <p class="text-xs text-slate-500">Catat bahan sampah organik dan hasil olahannya berupa pupuk atau pakan</p>
+                                <p class="text-xs text-slate-500">Pilih sampah organik beserta berat awal, lalu tentukan jadi apa dan berat hasilnya</p>
                             </div>
                             <button @click="showModal = false; $wire.closeCreateModal()" type="button" aria-label="Tutup modal" class="p-1.5 text-slate-400 hover:text-slate-600 rounded-lg hover:bg-slate-100 transition cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
@@ -282,14 +266,7 @@
                         </div>
 
                         <form wire:submit="saveProcessing" class="p-6 space-y-5">
-                            <datalist id="organic-method-presets">
-                                <option value="Kompos Aerobik">
-                                <option value="Budidaya Maggot BSF">
-                                <option value="Kompos & Pakan Campuran">
-                                <option value="Eco-Enzyme">
-                            </datalist>
-
-                            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
+                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-slate-50/75 p-4 rounded-xl border border-slate-200/60">
                                 <div>
                                     <label class="block text-xs font-semibold text-slate-700 mb-1">Kampus <span class="text-rose-500">*</span></label>
                                     @if ($isSuperAdmin)
@@ -303,31 +280,25 @@
                                             {{ auth()->user()->campus?->name }}
                                         </div>
                                     @endif
-                                    @error('formCampusId') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                    @error('campus_id') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                                 </div>
 
                                 <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Olah <span class="text-rose-500">*</span></label>
+                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pengolahan <span class="text-rose-500">*</span></label>
                                     <input type="date" wire:model="formDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                    @error('formDate') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Pengolahan</label>
-                                    <input type="text" list="organic-method-presets" wire:model="formMethod" placeholder="Kompos / Maggot BSF" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 bg-white">
-                                    @error('formMethod') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                    @error('process_date') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                                 </div>
                             </div>
 
-                            <!-- Input Bahan Organik -->
+                            <!-- Input: Apa yang Diolah & Berapa Kilo Awalnya -->
                             <div>
                                 <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
                                     <div>
-                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Bahan Sampah Organik <span class="text-rose-500">*</span></h4>
-                                        <p class="text-[11px] text-slate-500">Pilih jenis sampah organik dan masukkan bobot yang diolah.</p>
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Apa yang Diolah &amp; Berat Awal (kg) <span class="text-rose-500">*</span></h4>
+                                        <p class="text-[11px] text-slate-500">Isi jumlah kilogram sampah organik sebelum diolah.</p>
                                     </div>
                                     <div class="text-right">
-                                        <span class="text-xs font-bold text-slate-700">Total Input: </span>
+                                        <span class="text-xs font-bold text-slate-700">Total Berat Awal: </span>
                                         <span class="font-mono text-sm font-bold text-emerald-700">{{ number_format($this->totalInputWeight, 1, ',', '.') }} kg</span>
                                     </div>
                                 </div>
@@ -340,7 +311,7 @@
                                     <div class="p-5 text-center bg-slate-50 rounded-xl border border-dashed border-slate-200">
                                         <h5 class="text-xs font-bold text-slate-800">Belum Ada Stok Sampah Organik di TPS</h5>
                                         <p class="text-[11px] text-slate-500 mt-1 max-w-sm mx-auto leading-relaxed">
-                                            Silakan catat penimbangan sampah kategori Organik (Sisa Makanan atau Sampah Taman) terlebih dahulu pada menu Penimbangan.
+                                            Silakan catat penimbangan sampah kategori Organik terlebih dahulu pada menu Penimbangan.
                                         </p>
                                     </div>
                                 @else
@@ -382,33 +353,39 @@
                                 @endif
                             </div>
 
-                            <!-- Hasil Olah: Pupuk & Pakan -->
+                            <!-- Output: Jadi Apa & Berapa Kilo Setelah Diolah -->
                             <div class="p-4 rounded-xl bg-teal-50/60 border border-teal-200/70 space-y-3">
-                                <div>
-                                    <h4 class="text-xs font-bold uppercase tracking-wider text-teal-900">Hasil Pengolahan (Pupuk &amp; Pakan) <span class="text-rose-500">*</span></h4>
-                                    <p class="text-[11px] text-teal-700">Isi jumlah hasil pupuk kompos, hasil pakan, atau keduanya.</p>
+                                <div class="flex flex-wrap items-center justify-between gap-2">
+                                    <div>
+                                        <h4 class="text-xs font-bold uppercase tracking-wider text-teal-900">Hasil Pengolahan Organik <span class="text-rose-500">*</span></h4>
+                                        <p class="text-[11px] text-teal-700">Pilih produk hasil olah dari Master Data dan masukkan berat setelah diolah.</p>
+                                    </div>
+                                    <a href="{{ route('master-data') }}" class="text-[11px] font-semibold text-teal-800 hover:underline">Kelola di Master Data</a>
                                 </div>
-                                @error('formOutputs')
-                                    <div class="p-2 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">{{ $message }}</div>
-                                @enderror
+
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Hasil Pupuk / Kompos (kg)</label>
-                                        <input type="number" step="0.01" min="0" wire:model="formCompostOutputKg" placeholder="0.0" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white">
-                                        @error('compost_output_kg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Diolah Jadi Apa <span class="text-rose-500">*</span></label>
+                                        <select wire:model="formOutputCategoryId" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white">
+                                            <option value="">-- Pilih Hasil Olah --</option>
+                                            @foreach ($outputCategories as $cat)
+                                                <option value="{{ $cat->id }}">{{ $cat->name }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('organic_output_category_id') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Hasil Pakan (kg)</label>
-                                        <input type="number" step="0.01" min="0" wire:model="formFeedOutputKg" placeholder="0.0" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-amber-500 focus:border-amber-500 bg-white">
-                                        @error('feed_output_kg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Berat Setelah Diolah (kg) <span class="text-rose-500">*</span></label>
+                                        <input type="number" step="0.01" min="0.01" wire:model="formOutputWeightKg" placeholder="0.0" class="w-full font-mono text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-teal-500 focus:border-teal-500 bg-white">
+                                        @error('output_weight_kg') <span class="text-rose-500 text-[10px] block mt-0.5">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
 
                             <div>
                                 <label class="block text-xs font-semibold text-slate-700 mb-1">Catatan (Opsional)</label>
-                                <textarea wire:model="formNotes" rows="2" placeholder="Lokasi bak kompos, kondisi bahan, atau keterangan pemanfaatan..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
-                                @error('formNotes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
+                                <textarea wire:model="formNotes" rows="2" placeholder="Keterangan tambahan lokasi atau proses pengolahan..." class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500"></textarea>
+                                @error('notes') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
                             <div class="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5 sticky bottom-0 bg-white">
@@ -437,7 +414,7 @@
                         <div class="px-6 py-4 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10">
                             <div>
                                 <h3 class="font-bold text-base text-slate-800">Edit Pengolahan Sampah Organik</h3>
-                                <p class="text-xs text-slate-500 mt-0.5">Sesuaikan bobot bahan organik dan hasil olah pupuk / pakan</p>
+                                <p class="text-xs text-slate-500 mt-0.5">Sesuaikan bahan organik awal, kategori hasil olah, dan berat hasilnya</p>
                             </div>
                             <button @click="showEditModal = false; $wire.closeEditModal()" type="button" aria-label="Tutup modal edit" class="text-slate-400 hover:text-slate-600 p-1.5 rounded-lg hover:bg-slate-100 transition cursor-pointer">
                                 <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
@@ -445,22 +422,16 @@
                         </div>
 
                         <form wire:submit="updateProcessing" class="p-6 space-y-4">
-                            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pengolahan <span class="text-rose-500">*</span></label>
-                                    <input type="date" wire:model="editDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
-                                    @error('process_date') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-semibold text-slate-700 mb-1">Metode Pengolahan</label>
-                                    <input type="text" list="organic-method-presets" wire:model="editMethod" placeholder="Kompos / Maggot BSF" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
-                                </div>
+                            <div>
+                                <label class="block text-xs font-semibold text-slate-700 mb-1">Tanggal Pengolahan <span class="text-rose-500">*</span></label>
+                                <input type="date" wire:model="editDate" class="w-full text-xs rounded-lg border-slate-300 focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500">
+                                @error('process_date') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                             </div>
 
                             <div>
                                 <div class="flex flex-wrap items-center justify-between gap-2 mb-2">
-                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Bahan Sampah Organik</h4>
-                                    <span class="font-mono text-xs font-bold text-emerald-700">Total Input: {{ number_format($this->editTotalInputWeight, 1, ',', '.') }} kg</span>
+                                    <h4 class="text-xs font-bold uppercase tracking-wider text-slate-700">Bahan Organik &amp; Berat Awal</h4>
+                                    <span class="font-mono text-xs font-bold text-emerald-700">Total Awal: {{ number_format($this->editTotalInputWeight, 1, ',', '.') }} kg</span>
                                 </div>
                                 @error('editItems')
                                     <div class="p-2 mb-2 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">{{ $message }}</div>
@@ -488,17 +459,20 @@
                             </div>
 
                             <div class="p-4 rounded-xl bg-teal-50/60 border border-teal-200/70 space-y-3">
-                                @error('editOutputs')
-                                    <div class="p-2 rounded-lg bg-rose-50 text-rose-700 text-xs border border-rose-200">{{ $message }}</div>
-                                @enderror
                                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Hasil Pupuk (kg)</label>
-                                        <input type="number" step="0.01" min="0" wire:model="editCompostOutputKg" class="w-full font-mono text-xs rounded-lg border-slate-300 bg-white">
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Diolah Jadi Apa <span class="text-rose-500">*</span></label>
+                                        <select wire:model="editOutputCategoryId" class="w-full text-xs rounded-lg border-slate-300 bg-white">
+                                            @foreach ($allOutputCategories as $cat)
+                                                <option value="{{ $cat->id }}">{{ $cat->name }}{{ $cat->is_active ? '' : ' (Nonaktif)' }}</option>
+                                            @endforeach
+                                        </select>
+                                        @error('organic_output_category_id') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                                     </div>
                                     <div>
-                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Hasil Pakan (kg)</label>
-                                        <input type="number" step="0.01" min="0" wire:model="editFeedOutputKg" class="w-full font-mono text-xs rounded-lg border-slate-300 bg-white">
+                                        <label class="block text-xs font-semibold text-slate-700 mb-1">Berat Setelah Diolah (kg) <span class="text-rose-500">*</span></label>
+                                        <input type="number" step="0.01" min="0.01" wire:model="editOutputWeightKg" class="w-full font-mono text-xs rounded-lg border-slate-300 bg-white">
+                                        @error('output_weight_kg') <span class="text-rose-500 text-[10px]">{{ $message }}</span> @enderror
                                     </div>
                                 </div>
                             </div>
@@ -536,7 +510,7 @@
                         </div>
                         <h3 class="text-base font-bold text-slate-900">Hapus Catatan Pengolahan?</h3>
                         <p class="text-xs text-slate-600 mt-1.5 leading-relaxed">
-                            Data pengolahan #{{ $confirmDeleteId }} tanggal {{ $deleteDateLabel }} dengan bahan <span class="font-mono font-bold text-slate-900">{{ number_format($deleteInputWeight, 1, ',', '.') }} kg</span> akan dihapus dan stok organik dikembalikan ke TPS.
+                            Data pengolahan #{{ $confirmDeleteId }} tanggal {{ $deleteDateLabel }} (<span class="font-mono font-bold text-slate-900">{{ number_format($deleteInputWeight, 1, ',', '.') }} kg</span> menjadi <span class="font-semibold">{{ $deleteOutputLabel }}</span> {{ number_format($deleteOutputWeight, 1, ',', '.') }} kg) akan dihapus dan stok organik awal dikembalikan ke TPS.
                         </p>
                         <div class="flex items-center justify-center gap-3 mt-6">
                             <button type="button" @click="deleteModal = false; $wire.cancelDelete()" class="w-full py-2.5 px-4 rounded-xl bg-slate-100 hover:bg-slate-200 border border-slate-300 text-xs font-semibold text-slate-800 transition cursor-pointer">
@@ -568,23 +542,23 @@
                             </div>
 
                             <div class="p-6 space-y-4">
-                                <div class="grid grid-cols-3 gap-3">
+                                <div class="grid grid-cols-1 sm:grid-cols-3 gap-3">
                                     <div class="p-3 rounded-xl bg-slate-50 border border-slate-200/70">
-                                        <span class="text-[11px] font-medium text-slate-500">Input Organik</span>
+                                        <span class="text-[11px] font-medium text-slate-500">Berat Awal Organik</span>
                                         <div class="font-mono text-lg font-bold text-slate-900 mt-0.5">{{ number_format($selectedProcessing->input_weight_kg, 1, ',', '.') }} kg</div>
                                     </div>
                                     <div class="p-3 rounded-xl bg-teal-50/70 border border-teal-200/70">
-                                        <span class="text-[11px] font-medium text-teal-700">Hasil Pupuk</span>
-                                        <div class="font-mono text-lg font-bold text-teal-800 mt-0.5">{{ number_format($selectedProcessing->compost_output_kg, 1, ',', '.') }} kg</div>
+                                        <span class="text-[11px] font-medium text-teal-700">Diolah Menjadi</span>
+                                        <div class="text-sm font-bold text-teal-900 mt-1">{{ $selectedProcessing->outputCategory?->name ?? ($selectedProcessing->method ?: 'Produk Olah') }}</div>
                                     </div>
-                                    <div class="p-3 rounded-xl bg-amber-50/70 border border-amber-200/70">
-                                        <span class="text-[11px] font-medium text-amber-700">Hasil Pakan</span>
-                                        <div class="font-mono text-lg font-bold text-amber-800 mt-0.5">{{ number_format($selectedProcessing->feed_output_kg, 1, ',', '.') }} kg</div>
+                                    <div class="p-3 rounded-xl bg-emerald-50/70 border border-emerald-200/70">
+                                        <span class="text-[11px] font-medium text-emerald-700">Berat Setelah Diolah</span>
+                                        <div class="font-mono text-lg font-bold text-emerald-800 mt-0.5">{{ number_format($selectedProcessing->output_weight_kg, 1, ',', '.') }} kg</div>
                                     </div>
                                 </div>
 
                                 <div class="rounded-xl border border-slate-200 overflow-hidden">
-                                    <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700">Bahan Organik Digunakan</div>
+                                    <div class="px-4 py-2.5 bg-slate-50 border-b border-slate-200 text-xs font-bold text-slate-700">Rincian Bahan Organik Awal</div>
                                     <div class="divide-y divide-slate-100 text-xs">
                                         @foreach ($selectedProcessing->items as $item)
                                             <div class="px-4 py-2.5 flex items-center justify-between">
@@ -601,8 +575,8 @@
                                         <span class="font-semibold text-slate-800">{{ $selectedProcessing->campus->name }}</span>
                                     </div>
                                     <div class="px-4 py-2.5 flex justify-between">
-                                        <span class="text-slate-500">Tanggal &amp; Metode</span>
-                                        <span class="font-semibold text-slate-800">{{ $selectedProcessing->process_date->translatedFormat('d M Y') }} ({{ $selectedProcessing->method ?: 'Pengolahan Mandiri' }})</span>
+                                        <span class="text-slate-500">Tanggal Pengolahan</span>
+                                        <span class="font-semibold text-slate-800">{{ $selectedProcessing->process_date->translatedFormat('d M Y') }}</span>
                                     </div>
                                     <div class="px-4 py-2.5 flex justify-between bg-slate-50/50">
                                         <span class="text-slate-500">Petugas Pencatat</span>
